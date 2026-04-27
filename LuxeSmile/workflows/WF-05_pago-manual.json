@@ -1,0 +1,290 @@
+{
+  "name": "Luxe Smile — Confirmación de Pago Manual",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodes": [
+    {
+      "id": "w5n01", "name": "Webhook WhatsApp Grupos",
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2,
+      "position": [200, 400],
+      "parameters": {
+        "path": "luxe-smile-whatsapp-webhook",
+        "method": "POST",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "notes": "Mismo webhook que WF-01/WF-02 — el router en WF-01 derivará mensajes del grupo de pagos a este workflow"
+    },
+    {
+      "id": "w5n02", "name": "Extraer datos del webhook",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [420, 400],
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst data = body.data || body;\nconst remoteJid = data.key?.remoteJid || data.remoteJid || '';\nconst fromMe = data.key?.fromMe || false;\nconst messageText = data.message?.conversation || data.message?.extendedTextMessage?.text || data.body || '';\nconst hasMedia = !!(data.message?.imageMessage || data.message?.documentMessage || data.hasMedia);\nconst mediaUrl = data.message?.imageMessage?.url || data.mediaUrl || '';\nconst instanceName = body.instance || '';\n\n// Determinar si viene del grupo de pagos\nconst grupoPagosId = $env['WHATSAPP_GROUP_PAGOS'] || '';\nconst esGrupoPagos = remoteJid === grupoPagosId || remoteJid.includes('@g.us');\n\nreturn [{ json: {\n  remoteJid, fromMe, messageText, hasMedia, mediaUrl, instanceName,\n  esGrupoPagos,\n  rawBody: JSON.stringify(body)\n}}];"
+      }
+    },
+    {
+      "id": "w5n03", "name": "¿Es del grupo de pagos?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [640, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [
+            {"id": "c1", "leftValue": "={{ $json.esGrupoPagos }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}},
+            {"id": "c2", "leftValue": "={{ $json.fromMe }}", "rightValue": false, "operator": {"type": "boolean", "operation": "equal"}}
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w5n04", "name": "Ignorar — no es del grupo de pagos",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [860, 280], "parameters": {}
+    },
+    {
+      "id": "w5n05", "name": "¿Tiene imagen (comprobante)?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [860, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.hasMedia }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w5n06", "name": "Parsear SKU y acción del texto",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1080, 500],
+      "parameters": {
+        "jsCode": "// Formato esperado del admin en el grupo: [SKU] CONFIRMADO o [SKU] RECHAZADO: motivo\nconst text = ($json.messageText || '').trim();\n\n// Match: [0042] CONFIRMADO o 0042 CONFIRMADO o 0042 RECHAZADO: motivo\nconst match = text.match(/[\\[\\(]?(\\d{4})[\\]\\)]?\\s+(CONFIRMADO|RECHAZADO)(?:[:\\s]+(.*))?/i);\n\nif (!match) {\n  return [{ json: { skuEncontrado: false, rawText: text } }];\n}\n\nconst sku = match[1].padStart(4, '0');\nconst accion = match[2].toUpperCase();\nconst motivo = (match[3] || '').trim();\n\nreturn [{ json: {\n  skuEncontrado: true,\n  leadSku: sku,\n  accion,\n  motivo,\n  rawText: text\n}}];"
+      }
+    },
+    {
+      "id": "w5n07", "name": "Reenviar comprobante al grupo de pagos con contexto",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1080, 300],
+      "parameters": {
+        "jsCode": "// Extraer SKU del caption de la imagen si viene del lead via WF-01\n// El caption debería tener el SKU embebido por WF-01\nconst caption = $json.messageText || '';\nconst skuMatch = caption.match(/SKU[:\\s]*(\\d{4})/i) || caption.match(/(\\d{4})/);\nconst leadSku = skuMatch ? skuMatch[1].padStart(4,'0') : 'DESCONOCIDO';\n\nreturn [{ json: {\n  leadSku,\n  mediaUrl: $json.mediaUrl,\n  caption,\n  textoParaGrupo: `💰 COMPROBANTE DE PAGO RECIBIDO\\nSKU: ${leadSku}\\n\\nEl lead envió un comprobante. Verificar y responder:\\n✅ ${leadSku} CONFIRMADO\\n❌ ${leadSku} RECHAZADO: [motivo]`\n}}];"
+      }
+    },
+    {
+      "id": "w5n08", "name": "Enviar notificación al grupo de pagos",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1300, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $env['WHATSAPP_GROUP_PAGOS'] }}"},
+          {"name": "text",   "value": "={{ $json.textoParaGrupo }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w5n09", "name": "¿SKU encontrado en respuesta?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [1300, 500],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.skuEncontrado }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w5n10", "name": "Ignorar — texto sin SKU válido",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [1520, 380], "parameters": {}
+    },
+    {
+      "id": "w5n11", "name": "Buscar lead por SKU",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1520, 520],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, sku, phone, name, language, estado FROM luxe_smile.leads WHERE sku = $1 AND estado = 'pago_pendiente' LIMIT 1",
+        "options": {"queryReplacement": "={{ $json.leadSku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w5n12", "name": "¿Lead encontrado?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [1740, 520],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.id !== undefined && $json.id !== null }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w5n13", "name": "Detener — lead no encontrado",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [1960, 400], "parameters": {}
+    },
+    {
+      "id": "w5n14", "name": "¿Confirmado o rechazado?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [1960, 540],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $('Parsear SKU y acción del texto').item.json.accion }}", "rightValue": "CONFIRMADO", "operator": {"type": "string", "operation": "equals"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w5n15", "name": "Registrar pago manual en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [2180, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.pagos (lead_sku, metodo, monto_usd, estado, confirmado_at) VALUES ($1, 'manual', 500, 'confirmado', NOW()) ON CONFLICT DO NOTHING",
+        "options": {"queryReplacement": "={{ $json.sku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w5n16", "name": "Actualizar lead a pago confirmado",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [2400, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.leads SET estado = 'pago_confirmado', deposit_paid = TRUE, payment_method = 'manual', pago_at = NOW() WHERE sku = $1",
+        "options": {"queryReplacement": "={{ $json.sku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w5n17", "name": "Preparar mensaje bienvenida (pago confirmado)",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2620, 440],
+      "parameters": {
+        "jsCode": "const lead = $('Buscar lead por SKU').item.json;\nconst isEs = lead.language === 'es';\nconst msg = isEs\n  ? `¡Hola ${lead.name || 'ahí'}! 🎉 ¡Confirmamos la recepción de tu pago!\\n\\n¡Bienvenid@ a la familia Luxe Smile! 😁✨\\n\\nEn los próximos minutos te contactaremos para confirmar los detalles de tu viaje.`\n  : `Hi ${lead.name || 'there'}! 🎉 We have confirmed receipt of your payment!\\n\\nWelcome to the Luxe Smile family! 😁✨\\n\\nWe'll be in touch shortly to confirm your travel details.`;\nreturn [{ json: { ...lead, mensajeParaLead: msg } }];"
+      }
+    },
+    {
+      "id": "w5n18", "name": "Enviar bienvenida al lead",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2840, 440],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.mensajeParaLead }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w5n19", "name": "Guardar mensaje en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [3060, 440],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.mensajes (lead_sku, rol, contenido) VALUES ($1, 'assistant', $2)",
+        "options": {"queryReplacement": "={{ [$json.sku, $json.mensajeParaLead].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w5n20", "name": "Preparar mensaje pago rechazado",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2180, 640],
+      "parameters": {
+        "jsCode": "const lead = $('Buscar lead por SKU').item.json;\nconst motivo = $('Parsear SKU y acción del texto').item.json.motivo || '';\nconst isEs = lead.language === 'es';\nconst msg = isEs\n  ? `Hola ${lead.name || 'ahí'}, hemos revisado tu comprobante de pago pero no pudimos verificarlo.${motivo ? ' Motivo: ' + motivo : ''}\\n\\nPor favor, vuelve a enviarlo o contáctanos directamente. 🙏`\n  : `Hi ${lead.name || 'there'}, we reviewed your payment confirmation but were unable to verify it.${motivo ? ' Reason: ' + motivo : ''}\\n\\nPlease send it again or contact us directly. 🙏`;\nreturn [{ json: { ...lead, mensajeParaLead: msg } }];"
+      }
+    },
+    {
+      "id": "w5n21", "name": "Enviar mensaje rechazo al lead",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2400, 640],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.mensajeParaLead }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w5n22", "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1,
+      "position": [200, 700], "parameters": {}
+    },
+    {
+      "id": "w5n23", "name": "Notificar error al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [420, 700],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '⚠️ ERROR WF-05\\nNodo: ' + $json.execution?.lastNodeExecuted + '\\nError: ' + $json.execution?.error?.message }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    }
+  ],
+  "connections": {
+    "Webhook WhatsApp Grupos":                    {"main": [[{"node": "Extraer datos del webhook",                    "type": "main", "index": 0}]]},
+    "Extraer datos del webhook":                  {"main": [[{"node": "¿Es del grupo de pagos?",                      "type": "main", "index": 0}]]},
+    "¿Es del grupo de pagos?":                    {"main": [[{"node": "Ignorar — no es del grupo de pagos",           "type": "main", "index": 0}], [{"node": "¿Tiene imagen (comprobante)?",              "type": "main", "index": 0}]]},
+    "¿Tiene imagen (comprobante)?":               {"main": [[{"node": "Reenviar comprobante al grupo de pagos con contexto", "type": "main", "index": 0}], [{"node": "Parsear SKU y acción del texto",            "type": "main", "index": 0}]]},
+    "Reenviar comprobante al grupo de pagos con contexto": {"main": [[{"node": "Enviar notificación al grupo de pagos", "type": "main", "index": 0}]]},
+    "Parsear SKU y acción del texto":             {"main": [[{"node": "¿SKU encontrado en respuesta?",               "type": "main", "index": 0}]]},
+    "¿SKU encontrado en respuesta?":              {"main": [[{"node": "Ignorar — texto sin SKU válido",              "type": "main", "index": 0}], [{"node": "Buscar lead por SKU",                           "type": "main", "index": 0}]]},
+    "Buscar lead por SKU":                        {"main": [[{"node": "¿Lead encontrado?",                           "type": "main", "index": 0}]]},
+    "¿Lead encontrado?":                          {"main": [[{"node": "¿Confirmado o rechazado?",                    "type": "main", "index": 0}], [{"node": "Detener — lead no encontrado",                  "type": "main", "index": 0}]]},
+    "¿Confirmado o rechazado?":                   {"main": [[{"node": "Registrar pago manual en DB",                 "type": "main", "index": 0}], [{"node": "Preparar mensaje pago rechazado",              "type": "main", "index": 0}]]},
+    "Registrar pago manual en DB":                {"main": [[{"node": "Actualizar lead a pago confirmado",           "type": "main", "index": 0}]]},
+    "Actualizar lead a pago confirmado":          {"main": [[{"node": "Preparar mensaje bienvenida (pago confirmado)", "type": "main", "index": 0}]]},
+    "Preparar mensaje bienvenida (pago confirmado)": {"main": [[{"node": "Enviar bienvenida al lead",               "type": "main", "index": 0}]]},
+    "Enviar bienvenida al lead":                  {"main": [[{"node": "Guardar mensaje en DB",                       "type": "main", "index": 0}]]},
+    "Preparar mensaje pago rechazado":            {"main": [[{"node": "Enviar mensaje rechazo al lead",              "type": "main", "index": 0}]]},
+    "Error Trigger":                              {"main": [[{"node": "Notificar error al admin",                    "type": "main", "index": 0}]]}
+  }
+}

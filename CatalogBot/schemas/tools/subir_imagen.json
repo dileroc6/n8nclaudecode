@@ -1,0 +1,23 @@
+{
+  "name": "subir_imagen",
+  "description": "Sube una imagen recibida por WhatsApp a Cloudinary y retorna la URL pública para asignarla a un producto. Validar que el tamaño no supere 5MB ANTES de llamar a esta tool. Si la imagen supera el límite, informar al usuario sin llamar a Cloudinary. Si la subida falla, reportar el error directamente — nunca continuar silenciosamente con una URL vacía. Requiere rol admin o editor.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "base64": {
+        "type": "string",
+        "description": "Imagen codificada en base64. Obtenida de la respuesta de Evolution API /chat/getBase64FromMediaMessage. Máximo 5MB antes de codificar."
+      },
+      "mimetype": {
+        "type": "string",
+        "description": "Tipo MIME de la imagen. Ejemplos: 'image/jpeg', 'image/png', 'image/webp'.",
+        "enum": ["image/jpeg", "image/png", "image/webp", "image/gif"]
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente. Determina la carpeta en Cloudinary: /{cliente_id}/. Formato: cli_XXXXX. Siempre requerido."
+      }
+    },
+    "required": ["base64", "mimetype", "cliente_id"]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "eliminar_descuento",
+  "description": "Elimina el descuento o precio de oferta activo de un producto, restaurando el precio regular. Usar cuando el usuario quiere quitar una promoción. SIEMPRE confirmar con el usuario antes de ejecutar. Requiere rol admin o editor.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "producto_id": {
+        "type": "string",
+        "description": "ID único del producto cuyo descuento se eliminará. Ejemplo: '1234'."
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Siempre requerido."
+      },
+      "descuento_id": {
+        "type": "string",
+        "description": "ID específico del descuento o variante a limpiar. Opcional. Si no se provee, elimina el descuento del producto principal."
+      }
+    },
+    "required": ["producto_id", "cliente_id"]
+  }
+}

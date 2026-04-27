@@ -1,0 +1,36 @@
+{
+  "name": "crear_descuento",
+  "description": "Crea un descuento o precio de oferta en un producto. Soporta tres tipos: porcentaje (ej: 20% de descuento), monto_fijo (ej: restar $10.000) y precio_especial (ej: poner precio exacto de $45.000). Opcionalmente con fechas de inicio y fin. SIEMPRE mostrar el precio resultante en el resumen de confirmación. Requiere rol admin o editor.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "producto_id": {
+        "type": "string",
+        "description": "ID único del producto. Ejemplo: '1234'."
+      },
+      "tipo": {
+        "type": "string",
+        "description": "Tipo de descuento a aplicar.",
+        "enum": ["porcentaje", "monto_fijo", "precio_especial"]
+      },
+      "valor": {
+        "type": "number",
+        "description": "Valor del descuento según el tipo: si es 'porcentaje', número entre 1 y 99 (ej: 20 para 20%); si es 'monto_fijo', cantidad a restar del precio (ej: 10000); si es 'precio_especial', el precio final exacto (ej: 45000).",
+        "exclusiveMinimum": 0
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Siempre requerido."
+      },
+      "fecha_inicio": {
+        "type": "string",
+        "description": "Fecha y hora de inicio del descuento en formato ISO 8601. Opcional. Ejemplo: '2024-12-01T00:00:00Z'."
+      },
+      "fecha_fin": {
+        "type": "string",
+        "description": "Fecha y hora de fin del descuento en formato ISO 8601. Opcional. Ejemplo: '2024-12-31T23:59:59Z'."
+      }
+    },
+    "required": ["producto_id", "tipo", "valor", "cliente_id"]
+  }
+}

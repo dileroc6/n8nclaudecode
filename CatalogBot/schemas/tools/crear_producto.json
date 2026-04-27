@@ -1,0 +1,46 @@
+{
+  "name": "crear_producto",
+  "description": "Crea un nuevo producto en el catálogo del ecommerce. Usar cuando el usuario solicita agregar un producto que no existe. SIEMPRE mostrar resumen de confirmación antes de ejecutar y esperar aprobación del usuario. Requiere rol admin o editor. Para obtener categorías disponibles usar listar_categorias primero.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "datos": {
+        "type": "object",
+        "description": "Datos del nuevo producto.",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "description": "Nombre del producto. Ejemplo: 'Camiseta Azul Talla M'."
+          },
+          "descripcion": {
+            "type": "string",
+            "description": "Descripción detallada del producto. Puede estar vacía si el usuario no la proporciona."
+          },
+          "precio": {
+            "type": "number",
+            "description": "Precio regular del producto en la moneda del ecommerce. Debe ser mayor a 0. Ejemplo: 89900.",
+            "exclusiveMinimum": 0
+          },
+          "categoria_id": {
+            "type": "string",
+            "description": "ID de la categoría a la que pertenece el producto. Obtener con listar_categorias si no se conoce."
+          },
+          "sku": {
+            "type": "string",
+            "description": "Código SKU único del producto. Opcional. Ejemplo: 'CAM-AZU-M'."
+          },
+          "imagen_url": {
+            "type": "string",
+            "description": "URL pública de la imagen principal del producto. Opcional. Obtener con subir_imagen si el usuario envió una foto."
+          }
+        },
+        "required": ["nombre", "precio"]
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Ejemplo: 'cli_00001'. Siempre requerido."
+      }
+    },
+    "required": ["datos", "cliente_id"]
+  }
+}

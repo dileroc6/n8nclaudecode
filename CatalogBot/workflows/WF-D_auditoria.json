@@ -1,0 +1,358 @@
+{
+  "name": "WF-D_auditoria",
+  "nodes": [
+    {
+      "id": "wfd-001",
+      "name": "Trigger sub-workflow auditoria",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "wfd-002",
+      "name": "Insertar registro de auditoría",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [480, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'INSERT INTO ' + $json.schema + '.auditoria (telefono, usuario_nombre, rol, accion, producto_id, producto_nombre, campo, valor_anterior, valor_nuevo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, timestamp' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }},={{ $json.usuario_nombre || null }},={{ $json.rol || null }},={{ $json.accion }},={{ $json.producto_id || null }},={{ $json.producto_nombre || null }},={{ $json.campo || null }},={{ $json.valor_anterior !== undefined ? String($json.valor_anterior) : null }},={{ $json.valor_nuevo !== undefined ? String($json.valor_nuevo) : null }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfd-003",
+      "name": "Verificar si INSERT de auditoría fue exitoso",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 400],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-insert-ok",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfd-004",
+      "name": "Confirmar auditoría registrada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [960, 280],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-ok",
+              "name": "auditoria_registrada",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "assign-id",
+              "name": "auditoria_id",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "assign-ts",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfd-005",
+      "name": "Registrar fallo de auditoría en tabla errores",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [960, 520],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'INSERT INTO ' + $(\"Trigger sub-workflow auditoria\").item.json.schema + '.errores (workflow, nodo, telefono, error_tipo, error_detalle, notificado) VALUES ($1, $2, $3, $4, $5, false) RETURNING id' }}",
+        "options": {
+          "queryParams": "={{ 'WF-D_auditoria' }},={{ 'Insertar registro de auditoría' }},={{ $(\"Trigger sub-workflow auditoria\").item.json.telefono }},={{ 'ERROR_AUDITORIA' }},={{ 'Fallo al insertar en auditoria: ' + ($json.error?.message || JSON.stringify($json.error || 'insert sin id')) }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfd-006",
+      "name": "Preparar mensaje de alerta para admin",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1180, 520],
+      "parameters": {
+        "jsCode": "const trigger = $('Trigger sub-workflow auditoria').first().json;\nconst fechaHora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });\n\nconst texto = [\n  '⚠️ Error en sistema CatalogBot',\n  '',\n  'No se pudo registrar una operación en el historial de auditoría.',\n  '',\n  `Acción: ${trigger.accion || 'desconocida'}`,\n  `Producto: ${trigger.producto_nombre || trigger.producto_id || 'N/A'}`,\n  `Usuario: ${trigger.usuario_nombre || trigger.telefono || 'N/A'}`,\n  `Hora: ${fechaHora}`,\n  '',\n  'El cambio SÍ se aplicó en el ecommerce, pero no quedó registrado en el historial. Revisar logs de n8n.'\n].join('\\n');\n\nreturn [{\n  json: {\n    schema: trigger.schema,\n    whatsapp_instance: trigger.whatsapp_instance,\n    cliente_id: trigger.cliente_id,\n    texto_alerta: texto\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfd-007",
+      "name": "Obtener teléfono del admin del cliente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1400, 520],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'SELECT telefono FROM ' + $json.schema + '.usuarios WHERE rol = \\'admin\\' AND activo = true LIMIT 1' }}",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfd-008",
+      "name": "Combinar datos de alerta con teléfono admin",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1620, 520],
+      "parameters": {
+        "jsCode": "const alertaData = $('Preparar mensaje de alerta para admin').first().json;\nconst adminData = $input.first().json;\n\nreturn [{\n  json: {\n    schema: alertaData.schema,\n    whatsapp_instance: alertaData.whatsapp_instance,\n    admin_telefono: adminData.telefono || null,\n    texto_alerta: alertaData.texto_alerta\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfd-009",
+      "name": "Verificar que existe teléfono de admin",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1840, 520],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-admin-phone",
+              "leftValue": "={{ $json.admin_telefono }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfd-010",
+      "name": "Notificar fallo de auditoría al admin via WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2060, 460],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $credentials.evolutionApiUrl + '/message/sendText/' + $json.whatsapp_instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.admin_telefono }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.texto_alerta }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "evolution-api-key",
+          "name": "CatalogBot Evolution API Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfd-011",
+      "name": "Marcar error como notificado en base de datos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2060, 620],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'UPDATE ' + $('Preparar mensaje de alerta para admin').item.json.schema + '.errores SET notificado = true WHERE workflow = \\'WF-D_auditoria\\' AND notificado = false AND timestamp > NOW() - INTERVAL \\'1 minute\\'' }}",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfd-012",
+      "name": "Error Trigger — fallo crítico de auditoría",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 760],
+      "parameters": {}
+    },
+    {
+      "id": "wfd-013",
+      "name": "Preparar datos del error crítico para log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 760],
+      "parameters": {
+        "jsCode": "const errorData = $input.first().json;\nreturn [{\n  json: {\n    workflow: 'WF-D_auditoria',\n    nodo: errorData.execution?.lastNodeExecuted || 'desconocido',\n    error_tipo: 'ERROR_CRITICO_AUDITORIA',\n    error_detalle: errorData.error?.message || JSON.stringify(errorData.error || {})\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfd-014",
+      "name": "Log de error crítico en sistema",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [720, 760],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DO $$ BEGIN RAISE WARNING 'Error critico WF-D: %', $1; END $$;",
+        "options": {
+          "queryParams": "={{ $json.error_detalle }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Trigger sub-workflow auditoria": {
+      "main": [
+        [{ "node": "Insertar registro de auditoría", "type": "main", "index": 0 }]
+      ]
+    },
+    "Insertar registro de auditoría": {
+      "main": [
+        [{ "node": "Verificar si INSERT de auditoría fue exitoso", "type": "main", "index": 0 }]
+      ]
+    },
+    "Verificar si INSERT de auditoría fue exitoso": {
+      "main": [
+        [{ "node": "Confirmar auditoría registrada", "type": "main", "index": 0 }],
+        [{ "node": "Registrar fallo de auditoría en tabla errores", "type": "main", "index": 0 }]
+      ]
+    },
+    "Registrar fallo de auditoría en tabla errores": {
+      "main": [
+        [{ "node": "Preparar mensaje de alerta para admin", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar mensaje de alerta para admin": {
+      "main": [
+        [{ "node": "Obtener teléfono del admin del cliente", "type": "main", "index": 0 }]
+      ]
+    },
+    "Obtener teléfono del admin del cliente": {
+      "main": [
+        [{ "node": "Combinar datos de alerta con teléfono admin", "type": "main", "index": 0 }]
+      ]
+    },
+    "Combinar datos de alerta con teléfono admin": {
+      "main": [
+        [{ "node": "Verificar que existe teléfono de admin", "type": "main", "index": 0 }]
+      ]
+    },
+    "Verificar que existe teléfono de admin": {
+      "main": [
+        [{ "node": "Notificar fallo de auditoría al admin via WhatsApp", "type": "main", "index": 0 }],
+        [{ "node": "Marcar error como notificado en base de datos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Notificar fallo de auditoría al admin via WhatsApp": {
+      "main": [
+        [{ "node": "Marcar error como notificado en base de datos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Trigger — fallo crítico de auditoría": {
+      "main": [
+        [{ "node": "Preparar datos del error crítico para log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar datos del error crítico para log": {
+      "main": [
+        [{ "node": "Log de error crítico en sistema", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "active": false,
+  "tags": [{ "name": "CatalogBot" }, { "name": "auditoria" }]
+}

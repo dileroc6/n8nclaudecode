@@ -1,0 +1,271 @@
+{
+  "name": "Luxe Smile — Admin Control",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodes": [
+    {
+      "id": "w7n01", "name": "Webhook Admin",
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2,
+      "position": [200, 400],
+      "parameters": {
+        "path": "luxe-smile-admin",
+        "method": "POST",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "notes": "Configurar este webhook como destino para mensajes del admin en WhatsApp (número de admin registrado en ADMIN_PHONES)"
+    },
+    {
+      "id": "w7n02", "name": "Extraer mensaje del admin",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [420, 400],
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst data = body.data || body;\nconst remoteJid = data.key?.remoteJid || data.remoteJid || '';\nconst fromMe = data.key?.fromMe || false;\nconst phone = remoteJid.replace('@s.whatsapp.net','').replace(/[^0-9]/g,'');\nconst messageText = (data.message?.conversation || data.message?.extendedTextMessage?.text || data.body || '').trim();\n\n// Solo procesar mensajes del admin\nconst adminPhones = ($env['ADMIN_PHONES'] || '').split(',').map(p => p.trim().replace(/[^0-9]/g,''));\nconst esAdmin = adminPhones.includes(phone);\n\nreturn [{ json: { phone, remoteJid, fromMe, messageText, esAdmin } }];"
+      }
+    },
+    {
+      "id": "w7n03", "name": "¿Es el admin?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [640, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [
+            {"id": "c1", "leftValue": "={{ $json.esAdmin }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}},
+            {"id": "c2", "leftValue": "={{ $json.fromMe }}", "rightValue": false, "operator": {"type": "boolean", "operation": "equal"}}
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w7n04", "name": "Ignorar — no es admin",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [860, 280], "parameters": {}
+    },
+    {
+      "id": "w7n05", "name": "Parsear comando del admin",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [860, 440],
+      "parameters": {
+        "jsCode": "const text = $json.messageText.toUpperCase();\nlet comando = 'desconocido';\nlet parametro = '';\n\n// Comandos disponibles:\n// STATUS [SKU] — ver estado de un lead\n// LISTA [estado] — listar leads por estado  \n// BLOQUEAR [mes] — bloquear un mes en la agenda\n// DESBLOQUEAR [mes] — desbloquear un mes\n// STATS — estadísticas generales\n// HELP — mostrar comandos\n\nif (text.startsWith('STATUS')) {\n  comando = 'STATUS';\n  parametro = text.replace('STATUS','').trim();\n} else if (text.startsWith('LISTA')) {\n  comando = 'LISTA';\n  parametro = text.replace('LISTA','').trim() || 'todos';\n} else if (text.startsWith('BLOQUEAR')) {\n  comando = 'BLOQUEAR';\n  parametro = text.replace('BLOQUEAR','').trim();\n} else if (text.startsWith('DESBLOQUEAR')) {\n  comando = 'DESBLOQUEAR';\n  parametro = text.replace('DESBLOQUEAR','').trim();\n} else if (text.startsWith('STATS')) {\n  comando = 'STATS';\n} else if (text.startsWith('HELP') || text === '?') {\n  comando = 'HELP';\n}\n\nreturn [{ json: { ...($input.item.json), comando, parametro } }];"
+      }
+    },
+    {
+      "id": "w7n06", "name": "Switch por comando",
+      "type": "n8n-nodes-base.switch", "typeVersion": 3.1,
+      "position": [1080, 440],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {"outputKey": "STATUS",      "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "STATUS",      "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"outputKey": "LISTA",       "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "LISTA",       "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"outputKey": "BLOQUEAR",    "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "BLOQUEAR",    "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"outputKey": "DESBLOQUEAR", "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "DESBLOQUEAR", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"outputKey": "STATS",       "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "STATS",       "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"outputKey": "HELP",        "conditions": {"options": {"caseSensitive": true}, "conditions": [{"leftValue": "={{ $json.comando }}", "rightValue": "HELP",        "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}}
+          ]
+        },
+        "options": {"fallbackOutput": "extra"}
+      }
+    },
+    {
+      "id": "w7n07", "name": "DB: Buscar lead por SKU",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1380, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sku, name, phone, language, estado, email, mes_preferido, deposit_paid, payment_method, created_at, pago_at FROM luxe_smile.leads WHERE sku = $1 LIMIT 1",
+        "options": {"queryReplacement": "={{ $json.parametro.padStart(4,'0') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w7n08", "name": "DB: Listar leads por estado",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1380, 360],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sku, name, phone, estado, mes_preferido, deposit_paid FROM luxe_smile.leads WHERE ($1 = 'TODOS' OR UPPER(estado) = $1) ORDER BY created_at DESC LIMIT 20",
+        "options": {"queryReplacement": "={{ $json.parametro.toUpperCase() }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w7n09", "name": "DB: Bloquear mes en agenda",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1380, 520],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.agenda_bloques (descripcion, fecha_inicio, fecha_fin, activo) VALUES ($1, DATE_TRUNC('month', NOW() + ($2::INTEGER || ' months')::INTERVAL), DATE_TRUNC('month', NOW() + ($2::INTEGER || ' months')::INTERVAL) + INTERVAL '1 month' - INTERVAL '1 day', TRUE) ON CONFLICT DO NOTHING RETURNING id, descripcion, fecha_inicio, fecha_fin",
+        "options": {"queryReplacement": "={{ ['Bloqueo admin: ' + $json.parametro, '1'].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w7n10", "name": "DB: Desbloquear mes",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1380, 680],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.agenda_bloques SET activo = FALSE WHERE activo = TRUE AND (TO_CHAR(fecha_inicio, 'Month') ILIKE '%' || $1 || '%' OR descripcion ILIKE '%' || $1 || '%') RETURNING id, descripcion",
+        "options": {"queryReplacement": "={{ $json.parametro }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w7n11", "name": "DB: Stats generales",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1380, 840],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT estado, COUNT(*) AS total FROM luxe_smile.leads GROUP BY estado ORDER BY total DESC; SELECT COUNT(*) AS pagos_hoy FROM luxe_smile.pagos WHERE confirmado_at::DATE = CURRENT_DATE; SELECT COUNT(*) AS agendados_mes FROM luxe_smile.leads WHERE estado = 'agendado' AND agendado_at >= DATE_TRUNC('month', CURRENT_DATE)"
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w7n12", "name": "Formatear respuesta STATUS",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1620, 200],
+      "parameters": {
+        "jsCode": "const lead = $json;\nif (!lead.sku) return [{ json: { respuesta: '❌ SKU no encontrado.' } }];\nconst msg = `📋 LEAD ${lead.sku}\\nNombre: ${lead.name || 'N/A'}\\nTel: ${lead.phone}\\nEstado: ${lead.estado}\\nIdioma: ${lead.language}\\nEmail: ${lead.email || 'N/A'}\\nMes: ${lead.mes_preferido || 'N/A'}\\nDepósito: ${lead.deposit_paid ? '✅ PAGADO (' + lead.payment_method + ')' : '⏳ Pendiente'}\\nCreado: ${lead.created_at ? new Date(lead.created_at).toLocaleDateString('es-CO') : 'N/A'}`;\nreturn [{ json: { respuesta: msg, phone: $('Extraer mensaje del admin').item.json.phone } }];"
+      }
+    },
+    {
+      "id": "w7n13", "name": "Formatear respuesta LISTA",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1620, 360],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items.length) return [{ json: { respuesta: '📭 No hay leads con ese estado.', phone: $('Extraer mensaje del admin').item.json.phone } }];\nconst lines = items.map(i => `• ${i.json.sku} | ${i.json.name || 'N/A'} | ${i.json.estado} | ${i.json.deposit_paid ? '💰' : '⏳'}`);\nconst msg = `📋 LEADS (${items.length}):\\n` + lines.join('\\n');\nreturn [{ json: { respuesta: msg, phone: $('Extraer mensaje del admin').item.json.phone } }];"
+      }
+    },
+    {
+      "id": "w7n14", "name": "Formatear respuesta BLOQUEAR",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1620, 520],
+      "parameters": {
+        "jsCode": "const r = $json;\nconst msg = r.id ? `✅ Mes bloqueado correctamente.\\nID: ${r.id}\\nPeriodo: ${r.fecha_inicio} → ${r.fecha_fin}` : '⚠️ No se pudo bloquear (ya existe o error).';\nreturn [{ json: { respuesta: msg, phone: $('Extraer mensaje del admin').item.json.phone } }];"
+      }
+    },
+    {
+      "id": "w7n15", "name": "Formatear respuesta DESBLOQUEAR",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1620, 680],
+      "parameters": {
+        "jsCode": "const r = $json;\nconst msg = r.id ? `✅ Bloqueo desactivado.\\nDescripción: ${r.descripcion}` : '⚠️ No se encontró bloqueo activo para ese mes.';\nreturn [{ json: { respuesta: msg, phone: $('Extraer mensaje del admin').item.json.phone } }];"
+      }
+    },
+    {
+      "id": "w7n16", "name": "Formatear respuesta STATS",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1620, 840],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst byEstado = items.filter(i => i.json.estado).map(i => `  ${i.json.estado}: ${i.json.total}`).join('\\n');\nconst pagosHoy = items.find(i => i.json.pagos_hoy !== undefined)?.json?.pagos_hoy || 0;\nconst agendadosMes = items.find(i => i.json.agendados_mes !== undefined)?.json?.agendados_mes || 0;\nconst msg = `📊 ESTADÍSTICAS LUXE SMILE\\n\\nPor estado:\\n${byEstado}\\n\\n💰 Pagos hoy: ${pagosHoy}\\n📅 Agendados este mes: ${agendadosMes}`;\nreturn [{ json: { respuesta: msg, phone: $('Extraer mensaje del admin').item.json.phone } }];"
+      }
+    },
+    {
+      "id": "w7n17", "name": "Mensaje HELP",
+      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
+      "position": [1380, 1000],
+      "parameters": {
+        "assignments": {"assignments": [
+          {"id": "a1", "name": "respuesta", "value": "🤖 COMANDOS ADMIN LUXE SMILE\\n\\nSTATUS [SKU] — Estado de un lead\\nLISTA [estado] — Listar leads (o LISTA TODOS)\\nBLOQUEAR [mes] — Bloquear mes en agenda\\nDESBLOQUEAR [mes] — Desbloquear mes\\nSTATS — Estadísticas generales\\nHELP — Esta ayuda", "type": "string"},
+          {"id": "a2", "name": "phone", "value": "={{ $('Extraer mensaje del admin').item.json.phone }}", "type": "string"}
+        ]},
+        "options": {}
+      }
+    },
+    {
+      "id": "w7n18", "name": "Mensaje comando desconocido",
+      "type": "n8n-nodes-base.set", "typeVersion": 3.4,
+      "position": [1380, 1160],
+      "parameters": {
+        "assignments": {"assignments": [
+          {"id": "a1", "name": "respuesta", "value": "❓ Comando no reconocido. Envía HELP para ver los comandos disponibles.", "type": "string"},
+          {"id": "a2", "name": "phone", "value": "={{ $('Extraer mensaje del admin').item.json.phone }}", "type": "string"}
+        ]},
+        "options": {}
+      }
+    },
+    {
+      "id": "w7n19", "name": "Enviar respuesta al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1860, 680],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.respuesta }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w7n20", "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1,
+      "position": [200, 700], "parameters": {}
+    },
+    {
+      "id": "w7n21", "name": "Notificar error al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [420, 700],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '⚠️ ERROR WF-07\\nNodo: ' + $json.execution?.lastNodeExecuted + '\\nError: ' + $json.execution?.error?.message }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    }
+  ],
+  "connections": {
+    "Webhook Admin":                  {"main": [[{"node": "Extraer mensaje del admin",         "type": "main", "index": 0}]]},
+    "Extraer mensaje del admin":      {"main": [[{"node": "¿Es el admin?",                     "type": "main", "index": 0}]]},
+    "¿Es el admin?":                  {"main": [[{"node": "Ignorar — no es admin",             "type": "main", "index": 0}], [{"node": "Parsear comando del admin",              "type": "main", "index": 0}]]},
+    "Parsear comando del admin":      {"main": [[{"node": "Switch por comando",                 "type": "main", "index": 0}]]},
+    "Switch por comando": {
+      "main": [
+        [{"node": "DB: Buscar lead por SKU",       "type": "main", "index": 0}],
+        [{"node": "DB: Listar leads por estado",   "type": "main", "index": 0}],
+        [{"node": "DB: Bloquear mes en agenda",    "type": "main", "index": 0}],
+        [{"node": "DB: Desbloquear mes",           "type": "main", "index": 0}],
+        [{"node": "DB: Stats generales",           "type": "main", "index": 0}],
+        [{"node": "Mensaje HELP",                  "type": "main", "index": 0}],
+        [{"node": "Mensaje comando desconocido",   "type": "main", "index": 0}]
+      ]
+    },
+    "DB: Buscar lead por SKU":        {"main": [[{"node": "Formatear respuesta STATUS",       "type": "main", "index": 0}]]},
+    "DB: Listar leads por estado":    {"main": [[{"node": "Formatear respuesta LISTA",        "type": "main", "index": 0}]]},
+    "DB: Bloquear mes en agenda":     {"main": [[{"node": "Formatear respuesta BLOQUEAR",     "type": "main", "index": 0}]]},
+    "DB: Desbloquear mes":            {"main": [[{"node": "Formatear respuesta DESBLOQUEAR",  "type": "main", "index": 0}]]},
+    "DB: Stats generales":            {"main": [[{"node": "Formatear respuesta STATS",        "type": "main", "index": 0}]]},
+    "Formatear respuesta STATUS":     {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Formatear respuesta LISTA":      {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Formatear respuesta BLOQUEAR":   {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Formatear respuesta DESBLOQUEAR":{"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Formatear respuesta STATS":      {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Mensaje HELP":                   {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Mensaje comando desconocido":    {"main": [[{"node": "Enviar respuesta al admin",        "type": "main", "index": 0}]]},
+    "Error Trigger":                  {"main": [[{"node": "Notificar error al admin",         "type": "main", "index": 0}]]}
+  }
+}

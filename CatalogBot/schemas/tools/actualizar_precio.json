@@ -1,0 +1,27 @@
+{
+  "name": "actualizar_precio",
+  "description": "Actualiza el precio de un producto o de una variante específica. Usar EXCLUSIVAMENTE esta tool para cambios de precio — no usar actualizar_producto para precios. SIEMPRE mostrar el precio actual y el nuevo precio en el resumen de confirmación antes de ejecutar. Requiere rol admin o editor.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "producto_id": {
+        "type": "string",
+        "description": "ID único del producto en el ecommerce. Ejemplo: '1234'."
+      },
+      "precio": {
+        "type": "number",
+        "description": "Nuevo precio regular del producto. Debe ser un número positivo mayor a 0. Ejemplo: 75000.",
+        "exclusiveMinimum": 0
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Siempre requerido."
+      },
+      "variante_id": {
+        "type": "string",
+        "description": "ID de la variante específica a actualizar. Opcional. Si no se provee, actualiza el precio del producto principal o su primera variante. Ejemplo: '9876'."
+      }
+    },
+    "required": ["producto_id", "precio", "cliente_id"]
+  }
+}

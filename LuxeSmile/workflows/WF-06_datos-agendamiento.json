@@ -1,0 +1,287 @@
+{
+  "name": "Luxe Smile — Datos y Agendamiento",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodes": [
+    {
+      "id": "w6n01", "name": "Trigger — pago confirmado",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 400],
+      "parameters": {},
+      "notes": "Llamado desde WF-04 (PayPal) o WF-05 (manual) cuando el pago es confirmado. Recibe: leadSku, leadPhone, language, leadName, mesElegido"
+    },
+    {
+      "id": "w6n02", "name": "Validar datos de entrada",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [420, 400],
+      "parameters": {
+        "jsCode": "const d = $json;\nconst required = ['leadSku', 'leadPhone', 'language'];\nconst missing = required.filter(k => !d[k]);\nif (missing.length) throw new Error('WF-06: datos faltantes: ' + missing.join(', '));\nreturn [{ json: {\n  leadSku:    d.leadSku,\n  leadPhone:  d.leadPhone,\n  language:   d.language || 'en',\n  leadName:   d.leadName || '',\n  mesElegido: d.mesElegido || ''\n}}];"
+      }
+    },
+    {
+      "id": "w6n03", "name": "Solicitar datos personales",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [640, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.leadPhone }}"},
+          {"name": "text",   "value": "={{ $json.language === 'es' ? '¡Perfecto ' + ($json.leadName || '') + '! Para completar tu reserva, necesito algunos datos.\\n\\nPor favor envíame:\\n1️⃣ Nombre completo\\n2️⃣ Correo electrónico\\n3️⃣ País de residencia\\n4️⃣ Fecha de nacimiento (DD/MM/AAAA)' : 'Perfect ' + ($json.leadName || '') + '! To complete your reservation, I need a few details.\\n\\nPlease send me:\\n1️⃣ Full name\\n2️⃣ Email address\\n3️⃣ Country of residence\\n4️⃣ Date of birth (DD/MM/YYYY)' }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w6n04", "name": "Actualizar estado a datos_solicitados",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [860, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.leads SET estado = 'datos_solicitados' WHERE sku = $1",
+        "options": {"queryReplacement": "={{ $json.leadSku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n05", "name": "Guardar mensaje solicitud en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1080, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.mensajes (lead_sku, rol, contenido) VALUES ($1, 'assistant', $2)",
+        "options": {"queryReplacement": "={{ [$json.leadSku, $json.language === 'es' ? 'Solicitud de datos personales enviada' : 'Personal data request sent'].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n06", "name": "Webhook — respuesta del lead con datos",
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2,
+      "position": [200, 700],
+      "parameters": {
+        "path": "luxe-smile-datos-lead",
+        "method": "POST",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "notes": "Este webhook recibe el mensaje del lead con sus datos personales — WF-01 redirige aquí cuando estado=datos_solicitados"
+    },
+    {
+      "id": "w6n07", "name": "Extraer y parsear datos del lead",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [420, 700],
+      "parameters": {
+        "jsCode": "const body = $json.body || $json;\nconst data = body.data || body;\nconst remoteJid = data.key?.remoteJid || data.remoteJid || '';\nconst phone = remoteJid.replace('@s.whatsapp.net','').replace(/[^0-9]/g,'');\nconst messageText = data.message?.conversation || data.message?.extendedTextMessage?.text || data.body || '';\n\n// Extraer datos del mensaje de texto libre\n// Patrones comunes: 1. Juan Pérez 2. juan@email.com 3. Colombia 4. 15/03/1990\nconst lines = messageText.split('\\n').map(l => l.replace(/^[1-4][.):º]\\s*/, '').trim()).filter(Boolean);\n\n// Buscar email\nconst emailMatch = messageText.match(/[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/);\nconst email = emailMatch ? emailMatch[0] : '';\n\n// Buscar fecha nacimiento\nconst fechaMatch = messageText.match(/(\\d{1,2}[\\/\\-\\.](\\d{1,2})[\\/\\-\\.](\\d{4}))/);\nconst fechaNacimiento = fechaMatch ? fechaMatch[0] : '';\n\n// Nombre: primera línea que no sea email ni fecha\nconst nombre = lines.find(l => !l.includes('@') && !/\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{4}/.test(l) && l.length > 3) || '';\n\n// País: tercera línea o línea con pais/country\nconst pais = lines.find(l => !l.includes('@') && !/\\d{1,2}[\\/\\-\\.]\\d{1,2}[\\/\\-\\.]\\d{4}/.test(l) && l !== nombre) || '';\n\nreturn [{ json: {\n  phone,\n  remoteJid,\n  messageText,\n  nombre,\n  email,\n  pais,\n  fechaNacimiento,\n  datosCompletos: !!(nombre && email)\n}}];"
+      }
+    },
+    {
+      "id": "w6n08", "name": "Buscar lead por teléfono",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [640, 700],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, sku, phone, name, language, estado, mes_preferido FROM luxe_smile.leads WHERE phone = $1 AND estado = 'datos_solicitados' LIMIT 1",
+        "options": {"queryReplacement": "={{ $json.phone }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n09", "name": "¿Lead en estado correcto?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [860, 700],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.id !== undefined && $json.id !== null }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w6n10", "name": "Ignorar — lead no en estado datos_solicitados",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [1080, 580], "parameters": {}
+    },
+    {
+      "id": "w6n11", "name": "¿Datos completos?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [1080, 720],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $('Extraer y parsear datos del lead').item.json.datosCompletos }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w6n12", "name": "Pedir datos faltantes",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1300, 620],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.language === 'es' ? 'Gracias, pero necesito asegurarme de tener tu nombre completo y correo electrónico. ¿Podrías confirmármelos? 🙏' : 'Thank you! I just need to confirm your full name and email address. Could you send those? 🙏' }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w6n13", "name": "Actualizar datos del lead en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1300, 760],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.leads SET name = COALESCE(NULLIF($1,''), name), email = COALESCE(NULLIF($2,''), email), pais = COALESCE(NULLIF($3,''), pais), fecha_nacimiento = COALESCE(NULLIF($4,'')::DATE, fecha_nacimiento), estado = 'datos_recopilados' WHERE sku = $5",
+        "options": {"queryReplacement": "={{ [$('Extraer y parsear datos del lead').item.json.nombre, $('Extraer y parsear datos del lead').item.json.email, $('Extraer y parsear datos del lead').item.json.pais, $('Extraer y parsear datos del lead').item.json.fechaNacimiento, $json.sku].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n14", "name": "Enviar datos al CRM",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1520, 760],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['CRM_WEBHOOK_URL'] }}",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [
+          {"name": "Content-Type", "value": "application/json"},
+          {"name": "X-API-Key",    "value": "={{ $env['CRM_API_KEY'] }}"}
+        ]},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  source: 'luxe-smile-whatsapp',\n  sku: $json.sku,\n  name: $('Extraer y parsear datos del lead').item.json.nombre || $json.name,\n  email: $('Extraer y parsear datos del lead').item.json.email,\n  phone: $json.phone,\n  country: $('Extraer y parsear datos del lead').item.json.pais,\n  birthdate: $('Extraer y parsear datos del lead').item.json.fechaNacimiento,\n  preferredMonth: $json.mes_preferido,\n  paymentMethod: 'confirmed',\n  depositPaid: true,\n  language: $json.language,\n  createdAt: new Date().toISOString()\n}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "w6n15", "name": "Crear evento en Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar", "typeVersion": 1.3,
+      "position": [1740, 760],
+      "parameters": {
+        "operation": "create",
+        "calendar": {"__rl": true, "value": "={{ $env['GOOGLE_CALENDAR_ID'] }}", "mode": "id"},
+        "start": "={{ (() => { const mes = $json.mes_preferido || 'next month'; const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(15); d.setHours(10,0,0,0); return d.toISOString(); })() }}",
+        "end":   "={{ (() => { const d = new Date(); d.setMonth(d.getMonth() + 1); d.setDate(15); d.setHours(11,0,0,0); return d.toISOString(); })() }}",
+        "additionalFields": {
+          "summary": "={{ 'Luxe Smile — ' + ($('Extraer y parsear datos del lead').item.json.nombre || $json.name) + ' [SKU ' + $json.sku + ']' }}",
+          "description": "={{ 'Lead: ' + ($('Extraer y parsear datos del lead').item.json.nombre || $json.name) + '\\nEmail: ' + $('Extraer y parsear datos del lead').item.json.email + '\\nPhone: ' + $json.phone + '\\nCountry: ' + $('Extraer y parsear datos del lead').item.json.pais + '\\nSKU: ' + $json.sku + '\\nDeposit: PAID' }}",
+          "location": "Luxe Smile Clinic"
+        }
+      },
+      "credentials": {"googleCalendarOAuth2Api": {"id": "PENDIENTE", "name": "Google Calendar — Luxe Smile"}}
+    },
+    {
+      "id": "w6n16", "name": "Actualizar lead a agendado",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1960, 760],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.leads SET estado = 'agendado', agendado_at = NOW() WHERE sku = $1",
+        "options": {"queryReplacement": "={{ $json.sku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n17", "name": "Preparar mensaje confirmación final",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [2180, 760],
+      "parameters": {
+        "jsCode": "const lead = $('Buscar lead por teléfono').item.json;\nconst datos = $('Extraer y parsear datos del lead').item.json;\nconst isEs = lead.language === 'es';\nconst nombre = datos.nombre || lead.name || '';\nconst mes = lead.mes_preferido || (isEs ? 'el mes acordado' : 'the agreed month');\nconst msg = isEs\n  ? `¡Todo listo ${nombre}! 🎉\\n\\nTu reserva está confirmada para ${mes}.\\n\\nRecibirás un correo de confirmación en ${datos.email || 'tu correo'} con todos los detalles.\\n\\nSi tienes alguna pregunta antes de tu viaje, estoy aquí para ayudarte. ¡Nos vemos pronto! 😊✈️`\n  : `All set ${nombre}! 🎉\\n\\nYour reservation is confirmed for ${mes}.\\n\\nYou'll receive a confirmation email at ${datos.email || 'your email'} with all the details.\\n\\nIf you have any questions before your trip, I'm here to help. See you soon! 😊✈️`;\nreturn [{ json: { ...lead, mensajeParaLead: msg, emailDatos: datos.email } }];"
+      }
+    },
+    {
+      "id": "w6n18", "name": "Enviar confirmación final al lead",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2400, 760],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.mensajeParaLead }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w6n19", "name": "Guardar mensaje final en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [2620, 760],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.mensajes (lead_sku, rol, contenido) VALUES ($1, 'assistant', $2)",
+        "options": {"queryReplacement": "={{ [$json.sku, $json.mensajeParaLead].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w6n20", "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1,
+      "position": [200, 1000], "parameters": {}
+    },
+    {
+      "id": "w6n21", "name": "Notificar error al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [420, 1000],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '⚠️ ERROR WF-06\\nNodo: ' + $json.execution?.lastNodeExecuted + '\\nError: ' + $json.execution?.error?.message }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    }
+  ],
+  "connections": {
+    "Trigger — pago confirmado":          {"main": [[{"node": "Validar datos de entrada",              "type": "main", "index": 0}]]},
+    "Validar datos de entrada":           {"main": [[{"node": "Solicitar datos personales",             "type": "main", "index": 0}]]},
+    "Solicitar datos personales":         {"main": [[{"node": "Actualizar estado a datos_solicitados",  "type": "main", "index": 0}]]},
+    "Actualizar estado a datos_solicitados": {"main": [[{"node": "Guardar mensaje solicitud en DB",     "type": "main", "index": 0}]]},
+    "Webhook — respuesta del lead con datos": {"main": [[{"node": "Extraer y parsear datos del lead",  "type": "main", "index": 0}]]},
+    "Extraer y parsear datos del lead":   {"main": [[{"node": "Buscar lead por teléfono",              "type": "main", "index": 0}]]},
+    "Buscar lead por teléfono":           {"main": [[{"node": "¿Lead en estado correcto?",             "type": "main", "index": 0}]]},
+    "¿Lead en estado correcto?":          {"main": [[{"node": "¿Datos completos?",                     "type": "main", "index": 0}], [{"node": "Ignorar — lead no en estado datos_solicitados", "type": "main", "index": 0}]]},
+    "¿Datos completos?":                  {"main": [[{"node": "Pedir datos faltantes",                 "type": "main", "index": 0}], [{"node": "Actualizar datos del lead en DB",              "type": "main", "index": 0}]]},
+    "Actualizar datos del lead en DB":    {"main": [[{"node": "Enviar datos al CRM",                   "type": "main", "index": 0}]]},
+    "Enviar datos al CRM":                {"main": [[{"node": "Crear evento en Google Calendar",       "type": "main", "index": 0}]]},
+    "Crear evento en Google Calendar":    {"main": [[{"node": "Actualizar lead a agendado",             "type": "main", "index": 0}]]},
+    "Actualizar lead a agendado":         {"main": [[{"node": "Preparar mensaje confirmación final",   "type": "main", "index": 0}]]},
+    "Preparar mensaje confirmación final":{"main": [[{"node": "Enviar confirmación final al lead",     "type": "main", "index": 0}]]},
+    "Enviar confirmación final al lead":  {"main": [[{"node": "Guardar mensaje final en DB",           "type": "main", "index": 0}]]},
+    "Error Trigger":                      {"main": [[{"node": "Notificar error al admin",              "type": "main", "index": 0}]]}
+  }
+}

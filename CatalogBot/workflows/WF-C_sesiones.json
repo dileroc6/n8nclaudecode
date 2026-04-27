@@ -1,0 +1,313 @@
+{
+  "name": "WF-C_sesiones",
+  "nodes": [
+    {
+      "id": "wfc-001",
+      "name": "Trigger sub-workflow sesiones",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "wfc-002",
+      "name": "Determinar operación solicitada",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [480, 400],
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $json.operacion }}",
+        "rules": {
+          "rules": [
+            { "value": "leer" },
+            { "value": "escribir" },
+            { "value": "adquirir_lock" },
+            { "value": "liberar_lock" },
+            { "value": "limpiar_expiradas" }
+          ]
+        },
+        "fallbackOutput": "none"
+      }
+    },
+    {
+      "id": "wfc-003",
+      "name": "Leer sesión actual de base de datos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [740, 80],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'SELECT telefono, estado, paso, datos_pendientes, timestamp_inicio, timestamp_update, expira, lock_timestamp FROM ' + $json.schema + '.sesiones WHERE telefono = $1' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-004",
+      "name": "Upsert estado de sesión en base de datos",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [740, 240],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'INSERT INTO ' + $json.schema + '.sesiones (telefono, estado, paso, datos_pendientes, timestamp_inicio, timestamp_update, expira) VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW(), $5::timestamptz) ON CONFLICT (telefono) DO UPDATE SET estado = EXCLUDED.estado, paso = EXCLUDED.paso, datos_pendientes = EXCLUDED.datos_pendientes, timestamp_update = NOW(), expira = EXCLUDED.expira RETURNING telefono, estado, paso, datos_pendientes, timestamp_update, expira' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }},={{ $json.datos.estado || 'idle' }},={{ $json.datos.paso || null }},={{ $json.datos.datos_pendientes ? JSON.stringify($json.datos.datos_pendientes) : null }},={{ $json.datos.expira || null }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-005",
+      "name": "Leer timestamp del lock actual",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [740, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'SELECT telefono, lock_timestamp, CASE WHEN lock_timestamp IS NOT NULL AND lock_timestamp > NOW() - INTERVAL \\'30 seconds\\' THEN true ELSE false END AS lock_vigente FROM ' + $json.schema + '.sesiones WHERE telefono = $1' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-006",
+      "name": "Verificar si lock está vigente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 400],
+      "parameters": {
+        "jsCode": "const sesion = $input.first().json;\nconst triggerData = $('Trigger sub-workflow sesiones').first().json;\n\nconst lockVigente = sesion.lock_vigente === true || sesion.lock_vigente === 'true';\n\nreturn [{\n  json: {\n    schema: triggerData.schema,\n    telefono: triggerData.telefono,\n    lock_vigente: lockVigente,\n    lock_timestamp_anterior: sesion.lock_timestamp,\n    debe_adquirir: !lockVigente\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfc-007",
+      "name": "Evaluar si el lock debe adquirirse",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1180, 400],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-lock",
+              "leftValue": "={{ $json.debe_adquirir }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfc-008",
+      "name": "Actualizar lock de sesión a timestamp actual",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1400, 340],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'UPDATE ' + $json.schema + '.sesiones SET lock_timestamp = NOW(), timestamp_update = NOW() WHERE telefono = $1 RETURNING telefono, lock_timestamp, false AS lock_vigente' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-009",
+      "name": "Retornar lock ya activo sin modificar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1400, 480],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-lock-vigente",
+              "name": "lock_vigente",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "assign-telefono",
+              "name": "telefono",
+              "value": "={{ $json.telefono }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-mensaje",
+              "name": "mensaje",
+              "value": "Lock activo — mensaje descartado",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfc-010",
+      "name": "Liberar lock de sesión",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [740, 560],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'UPDATE ' + $json.schema + '.sesiones SET lock_timestamp = NULL, timestamp_update = NOW() WHERE telefono = $1 RETURNING telefono, lock_timestamp, estado' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-011",
+      "name": "Limpiar sesiones expiradas del cliente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [740, 720],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'UPDATE ' + $json.schema + '.sesiones SET estado = \\'idle\\', paso = NULL, datos_pendientes = NULL, lock_timestamp = NULL, timestamp_update = NOW() WHERE expira < NOW() AND estado != \\'idle\\' RETURNING telefono, estado' }}",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    },
+    {
+      "id": "wfc-012",
+      "name": "Error Trigger — fallos de gestión de sesión",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 940],
+      "parameters": {}
+    },
+    {
+      "id": "wfc-013",
+      "name": "Preparar datos del error para registro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 940],
+      "parameters": {
+        "jsCode": "const errorData = $input.first().json;\nreturn [{\n  json: {\n    workflow: 'WF-C_sesiones',\n    nodo: errorData.execution?.lastNodeExecuted || 'desconocido',\n    telefono: null,\n    error_tipo: 'ERROR_SESION',\n    error_detalle: errorData.error?.message || JSON.stringify(errorData.error || {}),\n    notificado: false\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfc-014",
+      "name": "Registrar error de sesión en public",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [720, 940],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.db_migrations (nombre, schema_objetivo) SELECT 'noop' WHERE false; DO $$ BEGIN RAISE NOTICE 'Error en WF-C: %', $1; END $$;",
+        "options": {
+          "queryParams": "={{ $json.error_detalle }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Trigger sub-workflow sesiones": {
+      "main": [
+        [{ "node": "Determinar operación solicitada", "type": "main", "index": 0 }]
+      ]
+    },
+    "Determinar operación solicitada": {
+      "main": [
+        [{ "node": "Leer sesión actual de base de datos", "type": "main", "index": 0 }],
+        [{ "node": "Upsert estado de sesión en base de datos", "type": "main", "index": 0 }],
+        [{ "node": "Leer timestamp del lock actual", "type": "main", "index": 0 }],
+        [{ "node": "Liberar lock de sesión", "type": "main", "index": 0 }],
+        [{ "node": "Limpiar sesiones expiradas del cliente", "type": "main", "index": 0 }]
+      ]
+    },
+    "Leer timestamp del lock actual": {
+      "main": [
+        [{ "node": "Verificar si lock está vigente", "type": "main", "index": 0 }]
+      ]
+    },
+    "Verificar si lock está vigente": {
+      "main": [
+        [{ "node": "Evaluar si el lock debe adquirirse", "type": "main", "index": 0 }]
+      ]
+    },
+    "Evaluar si el lock debe adquirirse": {
+      "main": [
+        [{ "node": "Actualizar lock de sesión a timestamp actual", "type": "main", "index": 0 }],
+        [{ "node": "Retornar lock ya activo sin modificar", "type": "main", "index": 0 }]
+      ]
+    },
+    "Error Trigger — fallos de gestión de sesión": {
+      "main": [
+        [{ "node": "Preparar datos del error para registro", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar datos del error para registro": {
+      "main": [
+        [{ "node": "Registrar error de sesión en public", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "active": false,
+  "tags": [{ "name": "CatalogBot" }, { "name": "sesiones" }]
+}

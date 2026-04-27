@@ -1,0 +1,29 @@
+# Blueprints y Skills de Producción
+
+## 1. Estructura Blog (SEO Master)
+* **H1:** Keyword + Beneficio.
+* **Intro:** Hook empático (<100 palabras).
+* **Cuerpo:** H2 y H3 con consejos accionables y LSI Keywords.
+* **FAQ:** Basado en Google Autocomplete.
+* **Meta:** Description (<155 car.) y Alt-text.
+
+## 2. Guiones y Redes
+* **TikTok/Reels:** Hook (0-3s) -> Valor (3-25s) -> Curiosidad (25-40s) -> CTA (40-45s).
+* **Post Meta:** Estructura AIDA (Atención, Interés, Deseo, Acción).
+
+## 3. Master Sheet
+* `[keyword | estado | prioridad | nicho | país | audiencia | intencion | url_post | wordcount | posicion_gsc]`
+
+## 4. Skills de Experto (Protocolos de Ejecución)
+
+* **Skill SEO:** Aplicar técnica de Pirámide Invertida. Párrafos de máximo 4 líneas.
+* **Skill Copywriter:** Crear "Stop-Scrolls" potentes. Emojis usados como viñetas de lectura.
+* **Skill Visual:** Prompts de DALL-E 3 detallados (lente 85mm, hora dorada, textura de pelaje visible). No humanizar gatos con ropa.
+* **Skill Comedia:** Generar situaciones de "La vida secreta de los gatos" basadas en comportamientos reales (ej: el zoomie nocturno).
+
+## 5. Skill de Engagement (Pilar Comunidad)
+Por cada artículo de blog generado, crear obligatoriamente un "Interactivity Asset":
+* **Instagram Stories:** Una pregunta de encuesta (Poll) o caja de preguntas relacionada con el tema del blog (ej: "¿Tu gato también hace esto?").
+* **Facebook:** Un llamado a la acción pidiendo a los seguidores que suban una foto de su gato en los comentarios.
+* **Objetivo:** Convertir el tráfico informativo en conversación activa.
+

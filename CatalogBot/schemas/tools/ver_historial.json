@@ -1,0 +1,39 @@
+{
+  "name": "ver_historial",
+  "description": "Muestra el historial de cambios realizados en el catálogo, con filtros opcionales por usuario, producto o fecha. Máximo 50 registros por consulta. Disponible para todos los roles, pero viewer solo puede ver sus propios cambios. Usar cuando el usuario pregunta '¿qué cambios se hicieron?' o 'quiero ver los últimos cambios'.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Siempre requerido."
+      },
+      "filtros": {
+        "type": "object",
+        "description": "Filtros opcionales para acotar los resultados.",
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "description": "Número de teléfono del usuario cuyos cambios se quieren ver. Formato: 573001234567. Para viewer, este campo se fuerza automáticamente a su propio teléfono."
+          },
+          "producto_id": {
+            "type": "string",
+            "description": "ID del producto del que se quiere ver el historial. Ejemplo: '1234'."
+          },
+          "fecha_desde": {
+            "type": "string",
+            "description": "Fecha de inicio del rango en formato ISO 8601. Ejemplo: '2024-04-01T00:00:00Z'."
+          },
+          "limite": {
+            "type": "integer",
+            "description": "Número de registros a retornar. Máximo 50. Default: 20.",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        }
+      }
+    },
+    "required": ["cliente_id"]
+  }
+}

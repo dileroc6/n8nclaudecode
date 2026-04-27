@@ -1,0 +1,14 @@
+{
+  "name": "listar_categorias",
+  "description": "Lista todas las categorías disponibles en el ecommerce del cliente. Usar cuando el usuario quiere crear un producto y necesita conocer las categorías disponibles, o cuando menciona una categoría sin dar su ID exacto. Disponible para todos los roles.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Ejemplo: 'cli_00001'. Siempre requerido."
+      }
+    },
+    "required": ["cliente_id"]
+  }
+}

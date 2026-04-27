@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find / -name \"docker-compose.yml\")",
+      "Bash(docker volume *)",
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile/workflows)",
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile/prompts)",
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile/schemas)",
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile/docs)",
+      "mcp__n8n__n8n_create_workflow",
+      "mcp__n8n__n8n_get_workflow",
+      "Bash(curl -s https://n8n.srv1398596.hstgr.cloud/api/v1/workflows/CuBrhx5KucZ4mMXX -H 'X-N8N-API-KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTQ2YTU1ZS00NmVjLTQ2ODEtOGM5My1jMzE4YzM5NTAzYzgiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiYWFkMWNjY2ItNDFjNy00ZGM5LThiMjktOWQwNmUwMTlhZDhmIiwiaWF0IjoxNzc2NDY0MDU1fQ.-7gjT29XaGUGaNuOwS2bXzM2NziFUqHjErFPC6dLylM')",
+      "Bash(curl -s -X POST https://n8n.srv1398596.hstgr.cloud/api/v1/workflows -H 'X-N8N-API-KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OTQ2YTU1ZS00NmVjLTQ2ODEtOGM5My1jMzE4YzM5NTAzYzgiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwianRpIjoiYWFkMWNjY2ItNDFjNy00ZGM5LThiMjktOWQwNmUwMTlhZDhmIiwiaWF0IjoxNzc2NDY0MDU1fQ.-7gjT29XaGUGaNuOwS2bXzM2NziFUqHjErFPC6dLylM' -H 'Content-Type: application/json' -d @/tmp/wf02.json)",
+      "Bash(python3 -m json.tool)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "n8n-mcp-skills@n8n-skills-local": true
+  },
+  "extraKnownMarketplaces": {
+    "n8n-skills-local": {
+      "source": {
+        "source": "directory",
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-skills"
+      }
+    }
+  }
+}

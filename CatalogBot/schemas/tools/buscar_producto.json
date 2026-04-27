@@ -1,0 +1,25 @@
+{
+  "name": "buscar_producto",
+  "description": "Busca productos en el catálogo del ecommerce por nombre, descripción o SKU. Usar cuando el usuario menciona un producto sin dar su ID exacto. Si la búsqueda retorna múltiples candidatos con confianza menor al 80%, presentar la lista numerada al usuario para que elija. Ejemplos de uso: 'buscar camiseta azul', 'encontrar el producto con SKU AZU-M-001'.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Término de búsqueda. Puede ser nombre, SKU, parte del nombre o descripción. Ejemplo: 'camiseta azul talla M' o 'AZU-M-001'."
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Ejemplo: 'cli_00001'. Siempre requerido."
+      },
+      "limite": {
+        "type": "integer",
+        "description": "Número máximo de resultados a retornar. Default: 10. Máximo: 20.",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 10
+      }
+    },
+    "required": ["query", "cliente_id"]
+  }
+}

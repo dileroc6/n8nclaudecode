@@ -1,0 +1,33 @@
+{
+  "name": "precio_masivo",
+  "description": "Actualiza el precio de TODOS los productos de una categoría de forma masiva. LÍMITE ESTRICTO: máximo 100 productos. Si la categoría tiene más de 100 productos, rechazar y pedir al usuario que divida por subcategoría. Esta operación SIEMPRE requiere doble confirmación: el usuario debe responder exactamente 'CONFIRMAR MASIVO'. Solo disponible para rol admin. Mostrar número de productos afectados y precio resultante en el resumen de confirmación.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "categoria_id": {
+        "type": "string",
+        "description": "ID de la categoría cuyos productos se actualizarán. Obtener con listar_categorias. Ejemplo: '15'."
+      },
+      "tipo_cambio": {
+        "type": "string",
+        "description": "Tipo de ajuste de precio: 'porcentaje_aumento' (sube X%), 'porcentaje_descuento' (baja X%), 'precio_fijo' (establece precio exacto igual para todos).",
+        "enum": ["porcentaje_aumento", "porcentaje_descuento", "precio_fijo"]
+      },
+      "valor": {
+        "type": "number",
+        "description": "Valor del ajuste: si es porcentaje, número entre 1 y 99 (ej: 10 para 10%); si es precio_fijo, el precio exacto en la moneda del ecommerce (ej: 50000).",
+        "exclusiveMinimum": 0
+      },
+      "cliente_id": {
+        "type": "string",
+        "description": "Identificador del cliente en el sistema. Formato: cli_XXXXX. Siempre requerido."
+      },
+      "confirmacion_recibida": {
+        "type": "boolean",
+        "description": "true solo cuando el usuario ya escribió exactamente 'CONFIRMAR MASIVO'. Nunca asumir true sin la confirmación explícita.",
+        "default": false
+      }
+    },
+    "required": ["categoria_id", "tipo_cambio", "valor", "cliente_id", "confirmacion_recibida"]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [],
+    "additionalDirectories": [
+      "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "n8n-skills-local": {
+      "source": {
+        "source": "directory",
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "n8n-mcp-skills@n8n-skills-local": true
+  },
+  "enableAllProjectMcpServers": true
+}

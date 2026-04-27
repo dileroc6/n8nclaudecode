@@ -1,0 +1,228 @@
+{
+  "name": "Luxe Smile — Confirmación de Pago PayPal",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodes": [
+    {
+      "id": "w4n01", "name": "Webhook PayPal IPN",
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2,
+      "position": [200, 400],
+      "parameters": {
+        "path": "luxe-smile-paypal-webhook",
+        "method": "POST",
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "notes": "Configurar este webhook URL en el portal de PayPal Developer como IPN o Webhook"
+    },
+    {
+      "id": "w4n02", "name": "Extraer datos del pago PayPal",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [420, 400],
+      "parameters": {
+        "jsCode": "// PayPal Webhook v2 payload\nconst body = $json.body || $json;\nconst eventType = body.event_type || body.event_name || '';\nconst resource = body.resource || body || {};\n\n// Extraer campos según tipo de evento\nconst orderId = resource.id || resource.parent_payment || body.txn_id || '';\nconst payerEmail = resource.payer?.email_address || resource.payer_email || body.payer_email || '';\nconst amount = resource.amount?.value || resource.purchase_units?.[0]?.amount?.value || body.mc_gross || '0';\nconst currency = resource.amount?.currency_code || body.mc_currency || 'USD';\nconst status = resource.status || body.payment_status || '';\n\n// El custom field debe llevar el leadSku (configurarlo al crear el link de pago en WF-01)\nconst leadSku = resource.purchase_units?.[0]?.custom_id || resource.custom || body.custom || '';\n\nreturn [{ json: {\n  eventType, orderId, payerEmail,\n  amount: parseFloat(amount),\n  currency, status, leadSku,\n  rawPayload: JSON.stringify(body)\n}}];"
+      }
+    },
+    {
+      "id": "w4n03", "name": "¿Es pago completado?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [640, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": false, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.status }}", "rightValue": "COMPLETED", "operator": {"type": "string", "operation": "equals"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w4n04", "name": "Detener — pago no completado",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [860, 280], "parameters": {}
+    },
+    {
+      "id": "w4n05", "name": "¿Tiene SKU válido?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [860, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.leadSku }}", "rightValue": "", "operator": {"type": "string", "operation": "notEmpty"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w4n06", "name": "Notificar SKU faltante al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [1080, 280],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '⚠️ PAGO PAYPAL SIN SKU\\nOrder ID: ' + $json.orderId + '\\nEmail: ' + $json.payerEmail + '\\nMonto: $' + $json.amount + ' ' + $json.currency + '\\nRevisar manualmente en PayPal.' }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w4n07", "name": "Buscar lead por SKU",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1080, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, sku, phone, name, language, estado FROM luxe_smile.leads WHERE sku = $1 AND estado = 'pago_pendiente' LIMIT 1",
+        "options": {"queryReplacement": "={{ $json.leadSku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w4n08", "name": "¿Lead en pago pendiente?",
+      "type": "n8n-nodes-base.if", "typeVersion": 2,
+      "position": [1300, 400],
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict"},
+          "conditions": [{"id": "c1", "leftValue": "={{ $json.id !== undefined && $json.id !== null }}", "rightValue": true, "operator": {"type": "boolean", "operation": "equal"}}],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w4n09", "name": "Detener — lead no encontrado",
+      "type": "n8n-nodes-base.noOp", "typeVersion": 1,
+      "position": [1520, 280], "parameters": {}
+    },
+    {
+      "id": "w4n10", "name": "Registrar pago en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1520, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.pagos (lead_sku, metodo, monto_usd, estado, paypal_order_id, confirmado_at) VALUES ($1, 'paypal', $2, 'confirmado', $3, NOW()) ON CONFLICT (paypal_order_id) DO NOTHING",
+        "options": {"queryReplacement": "={{ [$json.sku, $('Extraer datos del pago PayPal').item.json.amount, $('Extraer datos del pago PayPal').item.json.orderId].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w4n11", "name": "Actualizar lead a pago confirmado",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [1740, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE luxe_smile.leads SET estado = 'pago_confirmado', deposit_paid = TRUE, payment_method = 'paypal', pago_at = NOW() WHERE sku = $1",
+        "options": {"queryReplacement": "={{ $('Buscar lead por SKU').item.json.sku }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w4n12", "name": "Preparar mensaje bienvenida",
+      "type": "n8n-nodes-base.code", "typeVersion": 2,
+      "position": [1960, 400],
+      "parameters": {
+        "jsCode": "const lead = $('Buscar lead por SKU').item.json;\nconst pago = $('Extraer datos del pago PayPal').item.json;\nconst isEs = lead.language === 'es';\nconst msg = isEs\n  ? `¡Hola ${lead.name || 'ahí'}! 🎉 Recibimos tu pago de $${pago.amount} USD correctamente.\\n\\n¡Bienvenid@ a la familia Luxe Smile! 😁✨\\n\\nEn los próximos minutos te contactaremos para confirmar los detalles de tu viaje.`\n  : `Hi ${lead.name || 'there'}! 🎉 We received your payment of $${pago.amount} USD successfully.\\n\\nWelcome to the Luxe Smile family! 😁✨\\n\\nWe'll be in touch shortly to confirm your travel details.`;\nreturn [{ json: { ...lead, mensajeParaLead: msg } }];"
+      }
+    },
+    {
+      "id": "w4n13", "name": "Enviar mensaje bienvenida al lead",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2180, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ $json.phone }}"},
+          {"name": "text",   "value": "={{ $json.mensajeParaLead }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w4n14", "name": "Notificar admin pago confirmado",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [2400, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '✅ PAGO PAYPAL CONFIRMADO\\nSKU: ' + $json.sku + '\\nLead: ' + $json.name + '\\nMonto: $' + $('Extraer datos del pago PayPal').item.json.amount + ' USD\\nOrder ID: ' + $('Extraer datos del pago PayPal').item.json.orderId }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    },
+    {
+      "id": "w4n15", "name": "Guardar mensaje en DB",
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.5,
+      "position": [2620, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO luxe_smile.mensajes (lead_sku, rol, contenido) VALUES ($1, 'assistant', $2)",
+        "options": {"queryReplacement": "={{ [$json.sku, $json.mensajeParaLead].join(',') }}"}
+      },
+      "credentials": {"postgres": {"id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI"}}
+    },
+    {
+      "id": "w4n16", "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1,
+      "position": [200, 700], "parameters": {}
+    },
+    {
+      "id": "w4n17", "name": "Notificar error al admin",
+      "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
+      "position": [420, 700],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env['EVOLUTION_API_URL'] }}/message/sendText/{{ $env['EVOLUTION_INSTANCE_LUXE'] }}",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+        "sendBody": true,
+        "bodyParameters": {"parameters": [
+          {"name": "number", "value": "={{ ($env['ADMIN_PHONES'] || '').split(',')[0].trim().replace('+','') }}"},
+          {"name": "text",   "value": "={{ '⚠️ ERROR WF-04\\nNodo: ' + $json.execution?.lastNodeExecuted + '\\nError: ' + $json.execution?.error?.message }}"}
+        ]},
+        "options": {}
+      },
+      "credentials": {"httpHeaderAuth": {"id": "QT0zn550ysJh8VpI", "name": "Evolution API — Luxe Smile"}}
+    }
+  ],
+  "connections": {
+    "Webhook PayPal IPN":             {"main": [[{"node": "Extraer datos del pago PayPal",     "type": "main", "index": 0}]]},
+    "Extraer datos del pago PayPal":  {"main": [[{"node": "¿Es pago completado?",              "type": "main", "index": 0}]]},
+    "¿Es pago completado?":           {"main": [[{"node": "Detener — pago no completado",      "type": "main", "index": 0}], [{"node": "¿Tiene SKU válido?",                 "type": "main", "index": 0}]]},
+    "¿Tiene SKU válido?":             {"main": [[{"node": "Notificar SKU faltante al admin",   "type": "main", "index": 0}], [{"node": "Buscar lead por SKU",                 "type": "main", "index": 0}]]},
+    "Buscar lead por SKU":            {"main": [[{"node": "¿Lead en pago pendiente?",          "type": "main", "index": 0}]]},
+    "¿Lead en pago pendiente?":       {"main": [[{"node": "Registrar pago en DB",              "type": "main", "index": 0}], [{"node": "Detener — lead no encontrado",         "type": "main", "index": 0}]]},
+    "Registrar pago en DB":           {"main": [[{"node": "Actualizar lead a pago confirmado", "type": "main", "index": 0}]]},
+    "Actualizar lead a pago confirmado": {"main": [[{"node": "Preparar mensaje bienvenida",    "type": "main", "index": 0}]]},
+    "Preparar mensaje bienvenida":    {"main": [[{"node": "Enviar mensaje bienvenida al lead", "type": "main", "index": 0}]]},
+    "Enviar mensaje bienvenida al lead": {"main": [[{"node": "Notificar admin pago confirmado","type": "main", "index": 0}]]},
+    "Notificar admin pago confirmado":{"main": [[{"node": "Guardar mensaje en DB",             "type": "main", "index": 0}]]},
+    "Error Trigger":                  {"main": [[{"node": "Notificar error al admin",          "type": "main", "index": 0}]]}
+  }
+}

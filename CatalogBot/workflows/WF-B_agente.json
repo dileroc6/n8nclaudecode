@@ -1,0 +1,847 @@
+{
+  "name": "WF-B_agente",
+  "nodes": [
+    {
+      "id": "wfb-001",
+      "name": "Trigger sub-workflow agente",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [240, 400],
+      "parameters": {}
+    },
+    {
+      "id": "wfb-002",
+      "name": "Consultar historial reciente de conversación",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'SELECT turno, rol, contenido, tokens_aprox FROM ' + $json.schema + '.historial_conversacion WHERE telefono = $1 ORDER BY turno DESC LIMIT 10' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-003",
+      "name": "Reconstruir historial y verificar límite de tokens",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 400],
+      "parameters": {
+        "jsCode": "const triggerData = $('Trigger sub-workflow agente').first().json;\nconst filas = $input.all().map(i => i.json);\n\nconst MAX_TOKENS = 6000;\nlet tokensAcum = 0;\nconst historialFiltrado = [];\n\nfor (const fila of filas) {\n  const tokens = fila.tokens_aprox || Math.ceil((fila.contenido || '').length / 4);\n  if (tokensAcum + tokens > MAX_TOKENS && fila.turno !== Math.min(...filas.map(f => f.turno))) break;\n  tokensAcum += tokens;\n  historialFiltrado.push(fila);\n}\n\nconst historialOrdenado = historialFiltrado.reverse();\nconst messages = historialOrdenado.map(h => ({\n  role: h.rol,\n  content: h.contenido\n}));\n\nreturn [{\n  json: {\n    historial: messages,\n    turno_maximo: filas.length > 0 ? Math.max(...filas.map(f => f.turno)) : 0,\n    tokens_acumulados: tokensAcum\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfb-004",
+      "name": "Consultar estado de sesión y datos pendientes",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [900, 400],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'SELECT estado, paso, datos_pendientes, expira FROM ' + $(\"Trigger sub-workflow agente\").item.json.schema + '.sesiones WHERE telefono = $1' }}",
+        "options": {
+          "queryParams": "={{ $('Trigger sub-workflow agente').first().json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-005",
+      "name": "Evaluar estado de sesión y tipo de flujo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 400],
+      "parameters": {
+        "jsCode": "const triggerData = $('Trigger sub-workflow agente').first().json;\nconst historialData = $('Reconstruir historial y verificar límite de tokens').first().json;\nconst sessionData = $input.first().json || {};\n\nconst msgTexto = (triggerData.mensaje_texto || '').trim();\nconst PATRONES_CONFIRMAR = ['CONFIRMAR', 'CONFIRMAR ELIMINAR', 'CONFIRMAR MASIVO'];\nconst PATRONES_CANCELAR = ['cancelar', 'no', 'no confirmar', 'cancela'];\n\nconst hayPendiente = !!sessionData.datos_pendientes && sessionData.estado === 'pendiente_confirmacion';\nconst expirado = sessionData.expira && new Date(sessionData.expira) < new Date();\nconst esConfirmacion = PATRONES_CONFIRMAR.includes(msgTexto.toUpperCase());\nconst esCancelacion = PATRONES_CANCELAR.includes(msgTexto.toLowerCase());\nconst esReseteo = ['nueva consulta', 'reiniciar', 'restart'].includes(msgTexto.toLowerCase());\n\nlet flujo;\nif (triggerData.imagen_error) {\n  flujo = 'agente_normal';\n} else if (hayPendiente && !expirado && esConfirmacion) {\n  flujo = 'ejecutar_confirmacion';\n} else if (hayPendiente && !expirado && esCancelacion) {\n  flujo = 'cancelar_confirmacion';\n} else if (hayPendiente && expirado) {\n  flujo = 'confirmacion_expirada';\n} else if (esReseteo) {\n  flujo = 'resetear_sesion';\n} else {\n  flujo = 'agente_normal';\n}\n\nconst datosParaAgente = {\n  ...triggerData,\n  historial: historialData.historial || [],\n  turno_maximo: historialData.turno_maximo || 0,\n  session_estado: sessionData.estado || 'idle',\n  datos_pendientes: sessionData.datos_pendientes || null,\n  flujo,\n  mensaje_para_agente: triggerData.imagen_error || msgTexto\n};\n\nreturn [{ json: datosParaAgente }];"
+      }
+    },
+    {
+      "id": "wfb-006",
+      "name": "Enrutar según flujo de la sesión",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1340, 400],
+      "parameters": {
+        "mode": "expression",
+        "output": "={{ $json.flujo }}",
+        "rules": {
+          "rules": [
+            { "value": "agente_normal" },
+            { "value": "ejecutar_confirmacion" },
+            { "value": "cancelar_confirmacion" },
+            { "value": "confirmacion_expirada" },
+            { "value": "resetear_sesion" }
+          ]
+        },
+        "fallbackOutput": "0"
+      }
+    },
+    {
+      "id": "wfb-007",
+      "name": "Construir mensaje completo para el AI Agent",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 280],
+      "parameters": {
+        "jsCode": "const datos = $input.first().json;\n\nlet contenidoMensaje = datos.mensaje_para_agente || '';\n\nif (datos.tipo_mensaje === 'imagen' && datos.imagen_base64) {\n  contenidoMensaje = JSON.stringify({\n    tipo: 'imagen_con_texto',\n    texto: datos.mensaje_para_agente || '',\n    imagen_base64: datos.imagen_base64,\n    imagen_mimetype: datos.imagen_mimetype\n  });\n}\n\nif (datos.datos_pendientes) {\n  contenidoMensaje += '\\n\\n[CONTEXTO SISTEMA: Hay una acción pendiente de confirmación. ' +\n    'El usuario puede responder CONFIRMAR para ejecutarla o CANCELAR para descartarla. ' +\n    'Acción pendiente: ' + JSON.stringify(datos.datos_pendientes) + ']';\n}\n\nconst systemPromptBase = `Eres el asistente de gestión de catálogo para esta empresa.\\nROL DEL USUARIO: ${datos.rol}\\nCLIENTE ID: ${datos.cliente_id}\\nSCHEMA BD: ${datos.schema}\\nECOMMERCE: ${datos.ecommerce_tipo}\\nCREDENCIAL N8N: ${datos.n8n_credential_name}\\nCARPETA CLOUDINARY: ${datos.cloudinary_folder}\\nINSTANCIA WHATSAPP: ${datos.whatsapp_instance}\\nSERVER URL: ${datos.server_url}\\nTELÉFONO USUARIO: ${datos.telefono}`;\n\nreturn [{\n  json: {\n    ...datos,\n    mensaje_construido: contenidoMensaje,\n    system_prompt_contexto: systemPromptBase\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfb-008",
+      "name": "AI Agent Claude Sonnet con 15 tools",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1780, 280],
+      "parameters": {
+        "agent": "toolsAgent",
+        "text": "={{ $json.mensaje_construido }}",
+        "options": {
+          "systemMessage": "={{ $json.system_prompt_contexto + '\\n\\n' + `Eres el asistente de gestión de catálogo de productos. Ayudas a gestionar el catálogo desde WhatsApp.\\n\\nREGLAS OBLIGATORIAS:\\n1. Antes de ejecutar cualquier cambio, muestra un resumen y pide CONFIRMAR al usuario.\\n2. Para eliminar_producto y precio_masivo exige CONFIRMAR ELIMINAR o CONFIRMAR MASIVO respectivamente.\\n3. Valida siempre los permisos del rol antes de invocar una tool.\\n4. Nunca expongas errores técnicos: usa mensajes en español claro.\\n5. Si la búsqueda retorna múltiples resultados con baja confianza, presenta lista numerada.\\n6. Respuestas concisas, máximo 3-4 oraciones cuando sea posible.\\n7. Si el usuario envía imagen, usar analizar_imagen primero para identificar el producto.\\n8. El campo cliente_id para todas las tools es: ` + $json.cliente_id }}",
+          "maxIterations": 5
+        }
+      }
+    },
+    {
+      "id": "wfb-009",
+      "name": "Modelo Claude Sonnet para el agente",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [1560, 140],
+      "parameters": {
+        "model": "claude-sonnet-4-5",
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 1500
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropic-api",
+          "name": "CatalogBot Anthropic API"
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-01",
+      "name": "Tool: buscar_producto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [1560, 540],
+      "parameters": {
+        "name": "buscar_producto",
+        "description": "Busca productos en el catálogo del ecommerce por nombre, descripción o SKU. Usar cuando el usuario menciona un producto sin dar su ID exacto. Si confianza menor 80%, presentar lista numerada.",
+        "workflowId": "TOOL_BUSCAR_PRODUCTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "query": "={{ $fromAI('query', 'Término de búsqueda: nombre, SKU o descripción del producto', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}",
+            "limite": "={{ $fromAI('limite', 'Número máximo de resultados, default 10', 'number') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-02",
+      "name": "Tool: obtener_producto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [1680, 540],
+      "parameters": {
+        "name": "obtener_producto",
+        "description": "Obtiene el detalle completo de un producto por su ID, incluyendo precio, variantes e imágenes. Usar DESPUÉS de buscar_producto cuando ya se tiene el ID exacto.",
+        "workflowId": "TOOL_OBTENER_PRODUCTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID único del producto en el ecommerce', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-03",
+      "name": "Tool: crear_producto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [1800, 540],
+      "parameters": {
+        "name": "crear_producto",
+        "description": "Crea un nuevo producto en el catálogo. SIEMPRE mostrar resumen de confirmación antes de ejecutar. Requiere rol admin o editor.",
+        "workflowId": "TOOL_CREAR_PRODUCTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "datos": "={{ $fromAI('datos', 'Objeto con nombre, descripcion, precio (requerido), categoria_id, sku, imagen_url', 'object') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-04",
+      "name": "Tool: actualizar_producto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [1920, 540],
+      "parameters": {
+        "name": "actualizar_producto",
+        "description": "Actualiza campos generales de un producto: nombre, descripción, SKU, categoría o imagen. NO usar para precio — usar actualizar_precio. Requiere confirmación.",
+        "workflowId": "TOOL_ACTUALIZAR_PRODUCTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID único del producto', 'string') }}",
+            "campos": "={{ $fromAI('campos', 'Objeto con los campos a actualizar: nombre, descripcion, sku, categoria_id, imagen_url, estado', 'object') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-05",
+      "name": "Tool: eliminar_producto",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2040, 540],
+      "parameters": {
+        "name": "eliminar_producto",
+        "description": "Elimina un producto del catálogo. SIEMPRE requiere doble confirmación con 'CONFIRMAR ELIMINAR'. Solo disponible para rol admin.",
+        "workflowId": "TOOL_ELIMINAR_PRODUCTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID único del producto a eliminar', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}",
+            "confirmacion_recibida": "={{ $fromAI('confirmacion_recibida', 'true solo si usuario escribió CONFIRMAR ELIMINAR exactamente', 'boolean') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-06",
+      "name": "Tool: listar_categorias",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2160, 540],
+      "parameters": {
+        "name": "listar_categorias",
+        "description": "Lista todas las categorías disponibles en el ecommerce. Usar antes de crear un producto si no se conoce el ID de categoría.",
+        "workflowId": "TOOL_LISTAR_CATEGORIAS_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-07",
+      "name": "Tool: actualizar_precio",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2280, 540],
+      "parameters": {
+        "name": "actualizar_precio",
+        "description": "Actualiza el precio de un producto o variante. Usar EXCLUSIVAMENTE esta tool para cambios de precio. Mostrar precio actual y nuevo antes de confirmar.",
+        "workflowId": "TOOL_ACTUALIZAR_PRECIO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID único del producto', 'string') }}",
+            "precio": "={{ $fromAI('precio', 'Nuevo precio, número positivo mayor a 0', 'number') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, formato cli_XXXXX', 'string') }}",
+            "variante_id": "={{ $fromAI('variante_id', 'ID de variante específica, opcional', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-08",
+      "name": "Tool: crear_descuento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2400, 540],
+      "parameters": {
+        "name": "crear_descuento",
+        "description": "Crea un descuento en un producto. Tipos: porcentaje (1-99%), monto_fijo (cantidad a restar), precio_especial (precio exacto de oferta).",
+        "workflowId": "TOOL_CREAR_DESCUENTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID del producto', 'string') }}",
+            "tipo": "={{ $fromAI('tipo', 'porcentaje, monto_fijo o precio_especial', 'string') }}",
+            "valor": "={{ $fromAI('valor', 'Valor del descuento según el tipo', 'number') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}",
+            "fecha_inicio": "={{ $fromAI('fecha_inicio', 'Fecha ISO 8601, opcional', 'string') }}",
+            "fecha_fin": "={{ $fromAI('fecha_fin', 'Fecha ISO 8601, opcional', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-09",
+      "name": "Tool: eliminar_descuento",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2520, 540],
+      "parameters": {
+        "name": "eliminar_descuento",
+        "description": "Elimina el descuento activo de un producto, restaurando el precio regular.",
+        "workflowId": "TOOL_ELIMINAR_DESCUENTO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "producto_id": "={{ $fromAI('producto_id', 'ID del producto', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}",
+            "descuento_id": "={{ $fromAI('descuento_id', 'ID específico del descuento, opcional', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-10",
+      "name": "Tool: precio_masivo",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2640, 540],
+      "parameters": {
+        "name": "precio_masivo",
+        "description": "Actualiza precio de todos los productos de una categoría. LÍMITE: 100 productos. Requiere 'CONFIRMAR MASIVO'. Solo admin.",
+        "workflowId": "TOOL_PRECIO_MASIVO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "categoria_id": "={{ $fromAI('categoria_id', 'ID de la categoría', 'string') }}",
+            "tipo_cambio": "={{ $fromAI('tipo_cambio', 'porcentaje_aumento, porcentaje_descuento o precio_fijo', 'string') }}",
+            "valor": "={{ $fromAI('valor', 'Valor del ajuste', 'number') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}",
+            "confirmacion_recibida": "={{ $fromAI('confirmacion_recibida', 'true solo si usuario escribió CONFIRMAR MASIVO', 'boolean') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-11",
+      "name": "Tool: subir_imagen",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2760, 540],
+      "parameters": {
+        "name": "subir_imagen",
+        "description": "Sube imagen de WhatsApp a Cloudinary. Valida tamaño ≤5MB. Retorna URL pública. Si falla, reportar error explícito.",
+        "workflowId": "TOOL_SUBIR_IMAGEN_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "base64": "={{ $fromAI('base64', 'Imagen en base64', 'string') }}",
+            "mimetype": "={{ $fromAI('mimetype', 'Tipo MIME: image/jpeg, image/png, etc.', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente, determina carpeta en Cloudinary', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-12",
+      "name": "Tool: analizar_imagen",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [2880, 540],
+      "parameters": {
+        "name": "analizar_imagen",
+        "description": "Analiza imagen con Claude Vision. Retorna nombre_probable, descripcion, caracteristicas[], nivel_confianza (alto/medio/bajo). Si nivel_confianza es bajo, pedir imagen más clara.",
+        "workflowId": "TOOL_ANALIZAR_IMAGEN_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "base64": "={{ $fromAI('base64', 'Imagen en base64', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-13",
+      "name": "Tool: ver_historial",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [3000, 540],
+      "parameters": {
+        "name": "ver_historial",
+        "description": "Muestra historial de cambios del catálogo. Máximo 50 registros. viewer solo ve sus propios cambios.",
+        "workflowId": "TOOL_VER_HISTORIAL_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}",
+            "filtros": "={{ $fromAI('filtros', 'Objeto opcional con usuario, producto_id, fecha_desde, limite', 'object') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-14",
+      "name": "Tool: revertir_cambio",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [3120, 540],
+      "parameters": {
+        "name": "revertir_cambio",
+        "description": "Revierte un cambio del historial. Solo admin. Verifica que no haya sido revertido antes. Muestra confirmación antes de ejecutar.",
+        "workflowId": "TOOL_REVERTIR_CAMBIO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "auditoria_id": "={{ $fromAI('auditoria_id', 'ID del registro de auditoría a revertir', 'number') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-tool-15",
+      "name": "Tool: programar_cambio",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [3240, 540],
+      "parameters": {
+        "name": "programar_cambio",
+        "description": "Programa una acción para ejecutarse en fecha futura. Valida que la fecha sea futura. Retorna ID para seguimiento.",
+        "workflowId": "TOOL_PROGRAMAR_CAMBIO_WF_ID",
+        "workflowInputs": {
+          "value": {
+            "accion": "={{ $fromAI('accion', 'Nombre de la tool a programar', 'string') }}",
+            "datos": "={{ $fromAI('datos', 'Parámetros de la acción incluyendo cliente_id', 'object') }}",
+            "fecha_ejecucion": "={{ $fromAI('fecha_ejecucion', 'Fecha futura en ISO 8601', 'string') }}",
+            "cliente_id": "={{ $fromAI('cliente_id', 'ID del cliente', 'string') }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-010",
+      "name": "Preparar respuesta para cancelación de acción",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1560, 440],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-resp-cancel",
+              "name": "respuesta_agente",
+              "value": "Operación cancelada. Puedes empezar una nueva consulta cuando quieras.",
+              "type": "string"
+            },
+            {
+              "id": "assign-flujo-cancel",
+              "name": "flujo",
+              "value": "cancelar_confirmacion",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfb-011",
+      "name": "Preparar respuesta para confirmación expirada",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1560, 500],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-resp-expired",
+              "name": "respuesta_agente",
+              "value": "Tu operación anterior expiró. Puedes empezar de nuevo cuando quieras.",
+              "type": "string"
+            },
+            {
+              "id": "assign-flujo-expired",
+              "name": "flujo",
+              "value": "confirmacion_expirada",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfb-012",
+      "name": "Preparar respuesta para reseteo de sesión",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1560, 560],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-resp-reset",
+              "name": "respuesta_agente",
+              "value": "Sesión reiniciada. ¿En qué puedo ayudarte?",
+              "type": "string"
+            },
+            {
+              "id": "assign-flujo-reset",
+              "name": "flujo",
+              "value": "resetear_sesion",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wfb-013",
+      "name": "Unificar respuesta de todos los flujos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 340],
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json;\nconst triggerData = $('Trigger sub-workflow agente').first().json;\n\nlet respuesta;\nlet nuevoEstado = 'idle';\nlet datosPendientes = null;\n\nif (inputData.output !== undefined) {\n  respuesta = String(inputData.output);\n} else if (inputData.respuesta_agente !== undefined) {\n  respuesta = inputData.respuesta_agente;\n} else {\n  respuesta = 'Ocurrió un error inesperado. Ya fue registrado y el administrador fue notificado.';\n}\n\nif (respuesta.includes('CONFIRMAR') || respuesta.includes('Confirmas')) {\n  nuevoEstado = 'pendiente_confirmacion';\n}\n\nconst MAX_CHARS = 4000;\nlet respuestaFinal = respuesta;\nif (respuesta.length > MAX_CHARS) {\n  respuestaFinal = respuesta.substring(0, MAX_CHARS - 50) +\n    '...\\n\\n_Respuesta truncada. Escribe \"continuar\" para ver más._';\n}\n\nreturn [{\n  json: {\n    ...triggerData,\n    respuesta_final: respuestaFinal,\n    respuesta_completa: respuesta,\n    nuevo_estado_sesion: nuevoEstado,\n    datos_pendientes_nuevos: datosPendientes\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfb-014",
+      "name": "Guardar turno del usuario en historial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2220, 340],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'INSERT INTO ' + $json.schema + '.historial_conversacion (telefono, turno, rol, contenido, tokens_aprox) VALUES ($1, $2, \\'user\\', $3, $4)' }}",
+        "options": {
+          "queryParams": "={{ $json.telefono }},={{ $json.turno_maximo + 1 }},={{ $json.mensaje_para_agente || $json.mensaje_texto || '' }},={{ Math.ceil(($json.mensaje_para_agente || '').length / 4) }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-015",
+      "name": "Guardar respuesta del agente en historial",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2440, 340],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ 'INSERT INTO ' + $(\"Unificar respuesta de todos los flujos\").item.json.schema + '.historial_conversacion (telefono, turno, rol, contenido, tokens_aprox) VALUES ($1, $2, \\'assistant\\', $3, $4)' }}",
+        "options": {
+          "queryParams": "={{ $('Unificar respuesta de todos los flujos').first().json.telefono }},={{ $('Unificar respuesta de todos los flujos').first().json.turno_maximo + 2 }},={{ $('Unificar respuesta de todos los flujos').first().json.respuesta_final }},={{ Math.ceil($('Unificar respuesta de todos los flujos').first().json.respuesta_final.length / 4) }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "catalogbot-pg",
+          "name": "CatalogBot PostgreSQL"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-016",
+      "name": "Actualizar estado de sesión via WF-C",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [2660, 340],
+      "parameters": {
+        "source": "database",
+        "workflowId": "WFC_WORKFLOW_ID_PLACEHOLDER",
+        "options": {},
+        "workflowInputs": {
+          "value": {
+            "operacion": "escribir",
+            "schema": "={{ $('Unificar respuesta de todos los flujos').first().json.schema }}",
+            "telefono": "={{ $('Unificar respuesta de todos los flujos').first().json.telefono }}",
+            "datos": "={{ { estado: $('Unificar respuesta de todos los flujos').first().json.nuevo_estado_sesion, paso: null, datos_pendientes: $('Unificar respuesta de todos los flujos').first().json.datos_pendientes_nuevos, expira: $('Unificar respuesta de todos los flujos').first().json.nuevo_estado_sesion === 'pendiente_confirmacion' ? new Date(Date.now() + 5*60*1000).toISOString() : null } }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-017",
+      "name": "Enviar respuesta al usuario via Evolution API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2880, 340],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Unificar respuesta de todos los flujos').first().json.server_url + '/message/sendText/' + $('Unificar respuesta de todos los flujos').first().json.whatsapp_instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Unificar respuesta de todos los flujos').first().json.telefono, text: $('Unificar respuesta de todos los flujos').first().json.respuesta_final }) }}",
+        "options": { "timeout": 10000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "evolution-api-key",
+          "name": "CatalogBot Evolution API Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-018",
+      "name": "Liberar lock de sesión via WF-C",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [3100, 340],
+      "parameters": {
+        "source": "database",
+        "workflowId": "WFC_WORKFLOW_ID_PLACEHOLDER",
+        "options": {},
+        "workflowInputs": {
+          "value": {
+            "operacion": "liberar_lock",
+            "schema": "={{ $('Unificar respuesta de todos los flujos').first().json.schema }}",
+            "telefono": "={{ $('Unificar respuesta de todos los flujos').first().json.telefono }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-019",
+      "name": "Llamar WF-D para registro en auditoría",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [3320, 340],
+      "parameters": {
+        "source": "database",
+        "workflowId": "WFD_WORKFLOW_ID_PLACEHOLDER",
+        "options": { "waitForSubWorkflow": false },
+        "workflowInputs": {
+          "value": {
+            "schema": "={{ $('Unificar respuesta de todos los flujos').first().json.schema }}",
+            "cliente_id": "={{ $('Unificar respuesta de todos los flujos').first().json.cliente_id }}",
+            "whatsapp_instance": "={{ $('Unificar respuesta de todos los flujos').first().json.whatsapp_instance }}",
+            "telefono": "={{ $('Unificar respuesta de todos los flujos').first().json.telefono }}",
+            "usuario_nombre": "={{ $('Unificar respuesta de todos los flujos').first().json.usuario_nombre }}",
+            "rol": "={{ $('Unificar respuesta de todos los flujos').first().json.rol }}",
+            "accion": "interaccion_whatsapp",
+            "producto_id": null,
+            "producto_nombre": null,
+            "campo": null,
+            "valor_anterior": null,
+            "valor_nuevo": "={{ $('Unificar respuesta de todos los flujos').first().json.respuesta_final }}"
+          }
+        }
+      }
+    },
+    {
+      "id": "wfb-020",
+      "name": "Error Trigger — fallos del agente principal",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 760],
+      "parameters": {}
+    },
+    {
+      "id": "wfb-021",
+      "name": "Preparar mensaje de error genérico para usuario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 760],
+      "parameters": {
+        "jsCode": "const errorData = $input.first().json;\nconst triggerData = $('Trigger sub-workflow agente').first().json;\n\nreturn [{\n  json: {\n    schema: triggerData.schema,\n    telefono: triggerData.telefono,\n    whatsapp_instance: triggerData.whatsapp_instance,\n    server_url: triggerData.server_url,\n    mensaje_error: 'Ocurrió un error inesperado. Ya fue registrado y el administrador fue notificado.',\n    error_detalle: errorData.error?.message || JSON.stringify(errorData.error || {}),\n    nodo_fallido: errorData.execution?.lastNodeExecuted || 'desconocido'\n  }\n}];"
+      }
+    },
+    {
+      "id": "wfb-022",
+      "name": "Enviar mensaje de error al usuario",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 760],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.server_url + '/message/sendText/' + $json.whatsapp_instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.telefono, text: $json.mensaje_error }) }}",
+        "options": { "timeout": 8000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "evolution-api-key",
+          "name": "CatalogBot Evolution API Key"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "wfb-023",
+      "name": "Liberar lock tras error del agente",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [920, 760],
+      "parameters": {
+        "source": "database",
+        "workflowId": "WFC_WORKFLOW_ID_PLACEHOLDER",
+        "options": {},
+        "workflowInputs": {
+          "value": {
+            "operacion": "liberar_lock",
+            "schema": "={{ $json.schema }}",
+            "telefono": "={{ $json.telefono }}"
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Trigger sub-workflow agente": {
+      "main": [
+        [{ "node": "Consultar historial reciente de conversación", "type": "main", "index": 0 }]
+      ]
+    },
+    "Consultar historial reciente de conversación": {
+      "main": [
+        [{ "node": "Reconstruir historial y verificar límite de tokens", "type": "main", "index": 0 }]
+      ]
+    },
+    "Reconstruir historial y verificar límite de tokens": {
+      "main": [
+        [{ "node": "Consultar estado de sesión y datos pendientes", "type": "main", "index": 0 }]
+      ]
+    },
+    "Consultar estado de sesión y datos pendientes": {
+      "main": [
+        [{ "node": "Evaluar estado de sesión y tipo de flujo", "type": "main", "index": 0 }]
+      ]
+    },
+    "Evaluar estado de sesión y tipo de flujo": {
+      "main": [
+        [{ "node": "Enrutar según flujo de la sesión", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enrutar según flujo de la sesión": {
+      "main": [
+        [{ "node": "Construir mensaje completo para el AI Agent", "type": "main", "index": 0 }],
+        [{ "node": "Construir mensaje completo para el AI Agent", "type": "main", "index": 0 }],
+        [{ "node": "Preparar respuesta para cancelación de acción", "type": "main", "index": 0 }],
+        [{ "node": "Preparar respuesta para confirmación expirada", "type": "main", "index": 0 }],
+        [{ "node": "Preparar respuesta para reseteo de sesión", "type": "main", "index": 0 }]
+      ]
+    },
+    "Construir mensaje completo para el AI Agent": {
+      "main": [
+        [{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "main", "index": 0 }]
+      ]
+    },
+    "AI Agent Claude Sonnet con 15 tools": {
+      "main": [
+        [{ "node": "Unificar respuesta de todos los flujos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar respuesta para cancelación de acción": {
+      "main": [
+        [{ "node": "Unificar respuesta de todos los flujos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar respuesta para confirmación expirada": {
+      "main": [
+        [{ "node": "Unificar respuesta de todos los flujos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar respuesta para reseteo de sesión": {
+      "main": [
+        [{ "node": "Unificar respuesta de todos los flujos", "type": "main", "index": 0 }]
+      ]
+    },
+    "Unificar respuesta de todos los flujos": {
+      "main": [
+        [{ "node": "Guardar turno del usuario en historial", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guardar turno del usuario en historial": {
+      "main": [
+        [{ "node": "Guardar respuesta del agente en historial", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guardar respuesta del agente en historial": {
+      "main": [
+        [{ "node": "Actualizar estado de sesión via WF-C", "type": "main", "index": 0 }]
+      ]
+    },
+    "Actualizar estado de sesión via WF-C": {
+      "main": [
+        [{ "node": "Enviar respuesta al usuario via Evolution API", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar respuesta al usuario via Evolution API": {
+      "main": [
+        [{ "node": "Liberar lock de sesión via WF-C", "type": "main", "index": 0 }]
+      ]
+    },
+    "Liberar lock de sesión via WF-C": {
+      "main": [
+        [{ "node": "Llamar WF-D para registro en auditoría", "type": "main", "index": 0 }]
+      ]
+    },
+    "Modelo Claude Sonnet para el agente": {
+      "ai_languageModel": [
+        [{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_languageModel", "index": 0 }]
+      ]
+    },
+    "Tool: buscar_producto": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: obtener_producto": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: crear_producto": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: actualizar_producto": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: eliminar_producto": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: listar_categorias": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: actualizar_precio": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: crear_descuento": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: eliminar_descuento": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: precio_masivo": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: subir_imagen": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: analizar_imagen": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: ver_historial": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: revertir_cambio": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Tool: programar_cambio": { "ai_tool": [[{ "node": "AI Agent Claude Sonnet con 15 tools", "type": "ai_tool", "index": 0 }]] },
+    "Error Trigger — fallos del agente principal": {
+      "main": [
+        [{ "node": "Preparar mensaje de error genérico para usuario", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar mensaje de error genérico para usuario": {
+      "main": [
+        [{ "node": "Enviar mensaje de error al usuario", "type": "main", "index": 0 }]
+      ]
+    },
+    "Enviar mensaje de error al usuario": {
+      "main": [
+        [{ "node": "Liberar lock tras error del agente", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "active": false,
+  "tags": [{ "name": "CatalogBot" }, { "name": "agente" }]
+}
