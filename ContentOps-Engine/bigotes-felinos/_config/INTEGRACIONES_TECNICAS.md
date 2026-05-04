@@ -21,6 +21,19 @@
 | Razas de gatos | Guías por raza |
 | Salud del gato | Enfermedades, veterinaria, bienestar |
 
+**Schemas JSON-LD inyectados en cada artículo (AEO — desde Sprint 1+2 / 2026-05-03):**
+
+| Schema | Cuándo se inyecta | Selector / Contenido |
+|--------|-------------------|----------------------|
+| `FAQPage` | Siempre (si `faq_items.length > 0`) | Las 5-6 Q/A del artículo |
+| `WebPage` con `speakable` | Siempre | `cssSelector: ['.respuesta-directa', '.key-takeaways']` para asistentes de voz |
+| `WebPage.mentions[]` con `sameAs` Wikipedia | Si GPT genera `entities[]` válidas | 3-8 entidades canónicas (razas, enfermedades, parásitos, organizaciones) |
+| `HowTo` con `step[]` | Solo si keyword es procedural y GPT genera `howto_steps[]` con ≥4 pasos | Pasos numerados con `name` y `text` |
+
+**Recursos AEO en raíz del dominio:**
+- `https://bigotesfelinos.com/llms.txt` — declaración para crawlers de IA (Anthropic, OpenAI, Perplexity)
+- `https://bigotesfelinos.com/equipo-editorial/` — política editorial + fuentes consultadas (E-E-A-T signal)
+
 **Credenciales:** Ver `.env` → `WP_USER`, `WP_APP_PASSWORD`
 
 ---
@@ -29,22 +42,28 @@
 
 | Parámetro | Valor |
 |-----------|-------|
-| Estado | Crear nuevo documento |
-| Nombre sugerido | `Bigotes Felinos — Master Sheet` |
-| Hoja principal | `Pipeline` |
-| Trigger de workflow | Columna `estado` cambia de `Pendiente` → `Aprobado` |
+| Nombre | `Bigotes Felinos — Master Sheet` |
+| ID | `1dsHuDVuz3XuN9vBGhRuJEN-FZhx5zwZsOj6fvUEaH7s` |
+| Hojas activas | `Blog` (pipeline) · `Redes Sociales` (copies para publicación) |
+| Trigger de workflow | Columna `estado` en hoja `Blog` cambia a `Aprobado` |
 
-**Estructura de columnas:**
+**Hoja `Blog` — columnas:**
 ```
-keyword | estado | prioridad | nicho | país | audiencia | intencion | url_post | wordcount | posicion_gsc
+keyword(A) | estado(B) | prioridad(C) | nicho(D) | país(E) | audiencia(F) | intencion(G) | url_post(H) | wordcount(I) | posicion_gsc(J) | fecha_objetivo(K) | fecha_social(L) | fecha_reoptimizado(M)
 ```
 
-**Estados del pipeline:**
+**Hoja `Redes Sociales` — columnas:**
+```
+tipo(A) | keyword(B) | url_post(C) | fecha_social(D) | estado(E) | copy_instagram(F) | copy_facebook(G) | guion_tiktok(H) | guion_youtube(I)
+```
+
+**Estados del pipeline (hoja Blog):**
 - `Pendiente` — keyword registrada, en espera
 - `Aprobado` — disparador del workflow
 - `En proceso` — n8n está trabajando
 - `Publicado` — post live en WordPress
 - `Error` — falló en alguna fase (ver log)
+- `Canibalismo` — keyword similar a post existente
 - `Re-optimizar` — señalado por GSC para revisión
 
 **Credenciales:** Ver `.env` → `GOOGLE_SHEETS_ID`, credencial OAuth en n8n
