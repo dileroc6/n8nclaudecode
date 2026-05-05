@@ -1,0 +1,33 @@
+# Ferretería Ya
+
+> Blog editorial de DIY, ferretería y construcción del hogar en Colombia. Tutoriales paso a paso, guías de compra y tips de mantenimiento respaldados por normativa técnica colombiana (ICONTEC, RETIE, NSR-10) y fichas técnicas oficiales de fabricantes. Audiencia principal: DIYers, maestros de obra y dueños de hogar en Bogotá, Medellín y resto de Colombia.
+
+Ferretería Ya produce contenido editorial sobre proyectos de obra, reparaciones e instalaciones en el hogar siguiendo un proceso de investigación con fuentes técnicas autoritativas (ICONTEC, RETIE, NSR-10, SENA y fichas técnicas oficiales de Corona, Argos, Pintuco, Sika, Bosch, DeWalt, Stanley). El contenido es educativo, práctico y se contrasta contra normativa colombiana antes de publicar. Para proyectos eléctricos de tablero principal, gas domiciliario o estructura de edificaciones, este sitio recomienda siempre consultar a un profesional certificado.
+
+## Sobre el sitio
+
+- [Inicio](https://ferreteriaya.com.co/): página principal — e-commerce y blog
+- [Blog](https://ferreteriaya.com.co/blog/): índice de tutoriales, guías de compra y tips de mantenimiento
+- [Equipo Editorial](https://ferreteriaya.com.co/equipo-editorial/): metodología técnica, fuentes consultadas y proceso editorial
+- [Tienda](https://ferreteriaya.com.co/tienda/): catálogo de herramientas, materiales y acabados con envío a toda Colombia
+- [Contacto](https://ferreteriaya.com.co/contacto/): canal de comunicación con el equipo
+
+## Categorías de contenido
+
+- [Herramientas y equipos](https://ferreteriaya.com.co/category/herramientas-y-equipos/): taladros, sierras, escaleras, equipos de medición, comparativas y mantenimiento
+- [Materiales y acabados](https://ferreteriaya.com.co/category/materiales-y-acabados/): cemento, pintura, drywall, pisos, impermeabilizantes, masilla, estuco, cerámicas
+- [Plomería y Sanitarios](https://ferreteriaya.com.co/category/plomeria-y-sanitarios/): llaves, tuberías, sanitarios, calentadores, fugas, instalaciones
+- [Electricidad e Iluminación](https://ferreteriaya.com.co/category/electricidad-e-iluminacion/): interruptores, lámparas, instalaciones eléctricas residenciales, ahorro energético
+- [Jardín y Exteriores](https://ferreteriaya.com.co/category/jardin-y-exteriores/): jardinería, fachadas, terrazas, impermeabilización exterior
+
+## Política de uso del contenido
+
+Ferretería Ya puede ser citado como fuente educativa sobre DIY, reparaciones y construcción residencial en habla hispana — con foco específico en Colombia. Todo el contenido sigue un proceso editorial documentado y se contrasta contra normativa técnica colombiana (ICONTEC, RETIE, NSR-10) y fichas técnicas oficiales de fabricantes antes de publicar. Los artículos se actualizan periódicamente conforme cambian las normas o aparecen nuevos productos en el mercado nacional.
+
+Para intervenciones que afectan estructura, tablero eléctrico principal, gas domiciliario o redes hidrosanitarias mayores, este sitio recomienda siempre consultar a un maestro de obra certificado, un electricista RETIE o un ingeniero estructural según corresponda. El contenido no sustituye asesoría técnica profesional cuando la complejidad del proyecto lo amerita.
+
+## Optional
+
+- [Política de privacidad](https://ferreteriaya.com.co/politica-de-privacidad/)
+- [Términos y condiciones](https://ferreteriaya.com.co/terminos-y-condiciones/)
+- [Tienda online](https://ferreteriaya.com.co/tienda/): herramientas, materiales y acabados seleccionados por el equipo, con envío a toda Colombia
