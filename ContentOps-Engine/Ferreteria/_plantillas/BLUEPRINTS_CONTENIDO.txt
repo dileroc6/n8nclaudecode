@@ -1,0 +1,82 @@
+# Blueprints y Skills de Producción — Ferretería Ya
+
+## 1. Estructura Blog (SEO Master)
+
+* **H1:** Keyword + Beneficio concreto
+  Ej: "Cómo instalar un lavamanos: guía paso a paso sin complicaciones"
+* **Intro:** Hook práctico (<100 palabras) — el problema que el lector quiere resolver HOY
+  Ej: "Si llevas semanas con esa llave goteando, esta guía es para ti. En menos de 2 horas y con materiales que consigues en cualquier ferretería, quedará como nueva."
+* **Cuerpo:** H2 con secciones principales + H3 para pasos numerados; listas de materiales; consejos de seguridad
+* **FAQ:** Basada en Google Autocomplete + PAA para Colombia (ej: "¿Cuánto cuesta instalar un lavamanos en Bogotá?")
+* **Meta:** Description <155 caracteres — keyword + beneficio + CTA implícito
+  Ej: "Aprende cómo instalar un lavamanos tú mismo con esta guía paso a paso. Materiales, herramientas y trucos para que quede perfecto. ¡Manos a la obra!"
+* **CTA obligatorio:** Al menos 1 enlace a un producto relevante en ferreteriaya.com.co
+
+## 2. Skill SEO (Protocolo Obligatorio)
+
+* Pirámide Invertida — la información más valiosa primero
+* Párrafos máximo 4 líneas
+* Pasos numerados con H3 por cada fase mayor en tutoriales
+* Modificadores de ciudad naturales en el texto: "en Bogotá", "en Medellín", "en Colombia"
+* LSI Keywords del sector: materiales de construcción, herramientas eléctricas, bricolaje, reforma, plomería, electricidad, carpintería, ferretería...
+* Extensión mínima: 1.800 palabras (objetivo 2.000)
+* Densidad: cada H2 mínimo 4 párrafos; cada H3 mínimo 3 párrafos
+* FAQ como faq_items[] — el Code node genera el HTML y el FAQPage JSON-LD automáticamente
+* 1 enlace externo a fuente autoritativa (SENA, CAMACOL, norma técnica colombiana ICONTEC, ficha técnica del fabricante) con rel="nofollow" target="_blank"
+* Schema FAQPage: JSON-LD generado automáticamente al final del artículo para rich snippets
+
+## 3. Skill Visual — Prompts nano banana (gemini-2.5-flash-image)
+
+Elementos obligatorios en cada prompt:
+* Lente: 85mm para herramientas close-up / wide-angle para proyectos de espacio
+* Luz: Natural workshop lighting, bright daylight, well-lit work environment
+* Sujeto: Herramienta en uso en contexto real / material de construcción destacado / proyecto terminado
+* Foco: Sharp focus on tool/material texture and detail
+* Composición: Manos trabajando + herramienta + material — sin personas completas ni rostros
+* Estilo: Realistic photography, not illustration, not 3D render
+* Aspecto: 16:9 (especificado en generationConfig.aspectRatio: "16:9")
+* Nomenclatura: keyword-principal.webp
+
+Ejemplos de prompt por pilar:
+- Tutorial: "Close-up photograph, 85mm lens, natural workshop lighting. Human hands holding a wrench, tightening a copper pipe under a sink. Sharp focus on the tool and pipe detail. Realistic photography, not illustration. 16:9 aspect ratio."
+- Guía de compra: "Wide-angle photograph, bright daylight. Three different power drills displayed on a wooden workbench with sawdust. Brand logos visible. Sharp focus on tool details. Realistic photography, 16:9."
+- Tip: "85mm lens, bright indoor lighting. A paint roller applying white paint evenly on a wall. Human hands in work gloves visible. Sharp focus on texture and technique. Realistic photography, 16:9."
+
+## 4. Categorías WordPress (5, SEO-optimizadas)
+
+| Categoría | Slug | Usar para |
+|-----------|------|-----------|
+| Herramientas y Equipos | `herramientas-y-equipos` | Taladros, sierras, escaleras, equipos de medición. Reseñas, comparativas, mantenimiento de herramientas |
+| Materiales y Acabados | `materiales-y-acabados` | Cemento, pintura, drywall, pisos, impermeabilizantes, masilla, estuco, cerámicas |
+| Plomería y Sanitarios | `plomeria-y-sanitarios` | Llaves, tuberías, sanitarios, calentadores, fugas, instalación, mantenimiento |
+| Electricidad e Iluminación | `electricidad-e-iluminacion` | Interruptores, lámparas, instalaciones eléctricas básicas, ahorro energético |
+| Jardín y Exteriores | `jardin-y-exteriores` | Jardinería, fachadas, terrazas, impermeabilización exterior, mantenimiento estacional |
+
+> **Nota:** Los tutoriales y guías de compra NO son una categoría aparte — viven dentro de su tema (un "cómo instalar una llave de paso" pertenece a "Plomería y Sanitarios"). El tipo de contenido se marca con tags transversales (`tutorial`, `guia-de-compra`, `mantenimiento`) que GPT genera en el campo `tags[]`.
+
+## 5. Mapeo de Keyword a Categoría
+
+Reglas de asignación por keyword (implementadas en el Code node `fy-node-006` con regex):
+* "plomería / llave / tubería / inodoro / sanitario / grifo / ducha / desagüe / fuga / calentador" → **Plomería y Sanitarios**
+* "electricidad / tomacorriente / interruptor / bombillo / lámpara / iluminación / cable / cortocircuito / breaker" → **Electricidad e Iluminación**
+* "jardín / planta / pasto / riego / fachada / exterior / piscina / impermeabilización exterior / terraza" → **Jardín y Exteriores**
+* "cemento / pintura / piso / baldosa / drywall / impermeabilizante / masilla / estuco / cerámica / acabado" → **Materiales y Acabados**
+* "taladro / sierra / herramienta / equipo / martillo / destornillador / llave inglesa / nivel / pulidora" → **Herramientas y Equipos**
+* Fallback (keyword no mapeable claramente) → **Materiales y Acabados** (es el cajón más amplio)
+
+## 6. Pilares de Contenido y Frecuencia
+
+* 60% Tutoriales y Guías Paso a Paso — alto volumen de búsqueda, alta intención informacional
+* 25% Guías de Compra y Comparativas — intención comercial, alta conversión hacia tienda
+* 15% Tips de Mantenimiento — búsquedas cortas, contenido estacional y de fidelización
+
+## 7. Diccionario de Marca
+
+SÍ usar: manos a la obra, paso a paso, fácil de hacer, más fácil de lo que crees, proyecto, arreglo, remodelación, tip, materiales de calidad, ahorra tiempo, queda perfecto, así se hace
+NO usar: jerga sin explicar, tono frío/corporativo, anglicismos sin traducción, lenguaje alarmista
+
+## 8. Master Sheet — Columnas hoja Blog
+
+keyword(A) | estado(B) | prioridad(C) | nicho(D) | país(E) | audiencia(F) | intencion(G) | url_post(H) | wordcount(I) | posicion_gsc(J) | fecha_objetivo(K) | fecha_social(L) | fecha_reoptimizado(M)
+
+Estados válidos: Pendiente | Aprobado | En proceso | Publicado | Error | Canibalismo | Re-optimizar
