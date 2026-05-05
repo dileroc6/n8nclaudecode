@@ -217,18 +217,21 @@ Google Sheets — keyword con estado "Aprobado"
 
 ### Google Sheets — Master Sheet
 - **ID:** `1dsHuDVuz3XuN9vBGhRuJEN-FZhx5zwZsOj6fvUEaH7s`
-- **Hojas activas:** `Blog` (pipeline principal) · `Redes Sociales` (copies para publicación)
+- **Hojas activas:** `Blog` (pipeline principal) · `Redes Sociales` (copies para publicación) · `AEO_Tracking` (citaciones AIO semanales, escrita por WF7) · `GSC_Tracking` (snapshot semanal sitewide, escrita por WF11) · `GSC_Pages_Tracking` (top 30 páginas con Δ pos vs sem anterior, escrita por WF11)
 
 #### Hoja `Blog`
 - **Trigger:** Columna `estado` = `"Aprobado"`
 - **Schedule:** Una vez al día a las 8am (`cron: 0 8 * * 1,3,5`) — L/M/V
 - **Estados:** `Pendiente` → `Aprobado` → `En proceso` → `Publicado` / `Error` / `Canibalismo` / `Re-optimizar`
-- **Columnas:** `keyword(A) | estado(B) | prioridad(C) | nicho(D) | país(E) | audiencia(F) | intencion(G) | url_post(H) | wordcount(I) | posicion_gsc(J) | fecha_objetivo(K) | fecha_social(L) | fecha_reoptimizado(M)`
+- **Columnas activas (A-M + R-S):** `keyword(A) | estado(B) | prioridad(C) | nicho(D) | país(E) | audiencia(F) | intencion(G) | url_post(H) | wordcount(I) | posicion_gsc(J) | fecha_objetivo(K) | fecha_social(L) | fecha_reoptimizado(M) | hub(R) | cluster_parent(S)`
+- **Columnas N-Q (huérfanas):** `copy_instagram(N) | copy_facebook(O) | guion_tiktok(P) | guion_youtube(Q)` — datos viejos pre-reestructuración a `Redes Sociales`. **Ningún workflow las usa**. Quedan como referencia histórica.
 - **`fecha_objetivo`:** Columna K. Solo para keywords estacionales. Fecha en que debe publicarse el blog (2 semanas antes del evento). El pipeline la detecta automáticamente y prioriza.
 - **`fecha_social`:** Columna L. Fecha en que debe publicarse en redes sociales (= fecha del evento para estacionales, vacío para normales). Usada por WF2.
 - **`fecha_reoptimizado`:** Columna M. Fecha en que WF3 re-optimizó este post. Bloquea re-procesamiento por 90 días.
+- **`hub`:** Columna R. Hub temático del post: `Salud` / `Alimentación` / `Razas` / `Mundo`. Asignada en Sprint 3 (2026-05-04). Usada por WF9 para agrupar clusters por pilar.
+- **`cluster_parent`:** Columna S. Slug del pilar correspondiente: `guia-salud-felina` / `guia-alimentacion-gatos` / `guia-razas-gatos` / `guia-comportamiento-felino`. Permite que WF9 sepa a qué pilar enlazar cada cluster.
 - **Fuente de verdad dual:** actúa como disparador de entrada (filas "Aprobado") e índice de posts publicados (filas "Publicado") para el check de canibalismo y contexto de enlaces internos
-- **Populated:** ✅ ~143 keywords (2026-04-25): 106 existentes + 4 publicadas + 27 nuevas + 10 estacionales adicionales
+- **Populated:** ✅ 188 keywords clasificadas en 4 hubs (Sprint 3, 2026-05-04): Salud 67 · Mundo 72 · Razas 32 · Alimentación 17. Distribución original: 106 existentes + 4 publicadas + 27 nuevas + 10 estacionales + ideas de WF5 acumuladas.
 
 #### Hoja `Redes Sociales`
 - **Escrita por:** WF2 (tipo=Blog, diario) · WF4 (tipo=Entretenimiento, sábados)
@@ -251,7 +254,7 @@ Google Sheets — keyword con estado "Aprobado"
 - **Auth:** Header `x-goog-api-key: {GEMINI_API_KEY}`
 - **Respuesta:** base64 en `candidates[0].content.parts[0].inlineData.data` → decodificar → subir a WordPress Media Library
 - **Credencial n8n:** ✅ Configurada — tipo `httpHeaderAuth`, nombre `nano banana` (ID: `ysOycTrtxEO3BRcW`)
-- **Formato imagen:** 16:9 — especificado en `generationConfig.aspectRatio` y reforzado en el prompt de texto
+- **Formato imagen:** 16:9 — **NO usar** `generationConfig.aspectRatio` (Gemini 2.5 Flash Image NO lo soporta y rechaza con 400). **Forma correcta:** reforzar `"16:9 horizontal cinematic widescreen aspect ratio"` directamente en el prompt de texto (ver WF6 wf6-007 como referencia).
 
 ### APIs SEO
 - **SerpAPI:** Resultados Google, PAA, Autocomplete → `SERPAPI_KEY`
@@ -318,6 +321,7 @@ Auditoría completa en [`_contexto/auditoria_estrategia.md`](_contexto/auditoria
 | 7 | **robots.txt conflictivo** | Creado `public_html/robots.txt` físico con reglas explícitas | ✅ Resuelto (2026-04-24) |
 | 8 | **Sin enlaces a redes sociales** en homepage | Instagram · Facebook · TikTok añadidos | ✅ Resuelto (2026-04-23) |
 | 9 | **URL duplicada de "guardería"** | Redirect 301 configurado en Hostinger hPanel hacia `/el-mundo-del-gato/guarderia-para-gatos/` | ✅ Resuelto (2026-04-24) |
+| 14 | **`/razas-de-gatos/razas-de-gatos/` post huérfano con redirect mal apuntado** (WP `redirect_canonical()` automático lo mandaba a `razas-que-no-sueltan-pelo`) | Regla en `.htaccess` (raíz `public_html/`) ANTES del bloque WordPress: `RewriteRule ^razas-de-gatos/razas-de-gatos/?$ /razas-de-gatos/ [R=301,L]` — apunta a la categoría WP. `.htaccess` tiene precedencia sobre `redirect_canonical()` | ✅ Resuelto (2026-05-05) |
 
 ### BLOQUE C — Estrategia de Contenido: Integrar al pipeline desde el inicio
 
@@ -380,15 +384,39 @@ bigotes-felinos/
 
 ---
 
-## Estado del Pipeline (2026-05-03)
+## Estado del Pipeline (2026-05-05 — Refuerzo anti-canibalismo desplegado)
 
-**AEO Sprint 1 + 2 desplegados** — los workflows generadores (WF1, WF3) ahora producen artículos con un stack completo de Answer Engine Optimization. Cada artículo nuevo tiene: respuesta directa citable por IAs, key takeaways como blockquote, tabla obligatoria (HARD GATE), bloque de Fuentes consultadas con 3-5 referencias, schemas JSON-LD múltiples (FAQPage + WebPage con Speakable + mentions de entidades canónicas Wikipedia + HowTo condicional), H2/H3 obligatoriamente question-first, y un Quality Gate que evalúa 18 checks sobre 120 puntos. El pipeline también dispone de `/equipo-editorial/` y `/llms.txt` como cimientos de E-E-A-T y AEO crawler signal. Ver sección **AEO upgrades (Sprint 1 + 2)** más abajo para detalle completo.
+**AEO Sprint 1 + 2 + 3 + 4 desplegados + cuota Colombia activa + WF1 anti-canibalismo v2** — pipeline completo de contenido omnicanal con sistema de hubs/pilares operativo y protecciones reforzadas contra duplicados.
+
+**Anti-canibalismo v2 (desplegado 2026-05-05):**
+- bf-node-017 reescrito: Jaccard kw threshold bajado 50% → 35% + nuevo Jaccard slug ≥60% + stemming básico (plurales/diminutivos)
+- 3 nuevos nodos antes del Internal Linker: `Slug Pre-Check WP` + `Slug Conflict Eval` + `IF Slug Conflict` — consultan WP REST API antes de publicar para detectar slugs ya existentes (previene `-2`)
+- bf-node-003b con bypass: ejecuciones manuales (`$execution.mode !== 'trigger'`) saltan filtro de día L/M/V
+- Llamar nano banana con `retryOnFail: 3 tries, 5s` para fallos HTTP transitorios
+- Preparar Imagen con guard explícito para `finishReason: NO_IMAGE` (Gemini rechazos)
+- Limpieza Sheet 188 → 154 filas (eliminados 26 duplicados Pendientes + 8 perdedores tras audit GSC)
+- Validado E2E en producción: post `comida-para-gatos-colombia-marcas` publicado el 2026-05-05
+
+**Sprint 3 (clusters + pilares, desplegado 2026-05-04):**
+- 188 keywords clasificadas en 4 hubs temáticos (cols R `hub` y S `cluster_parent` en hoja Blog)
+- 4 páginas pilar publicadas en WP (pages, no posts) con stack AEO completo
+- WF6 generador de pilares (manual, on-demand) — ya cumplió su rol inicial
+- WF9 sincronizador diario — refresca enlaces internos cluster ↔ pilar todos los días a las 8:30am
+
+**Stack AEO en cada artículo nuevo** (WF1, WF3): respuesta directa citable por IAs, key takeaways como blockquote, tabla obligatoria (HARD GATE), bloque de Fuentes consultadas con 3-5 referencias **(whitelist estricta de 7 organizaciones)**, schemas JSON-LD múltiples (FAQPage + WebPage con Speakable + mentions de entidades canónicas Wikipedia + HowTo condicional), H2/H3 obligatoriamente question-first, Quality Gate 18 checks/120 puntos.
+
+**WF7 (AEO Monitor)** corre los lunes 9am Colombia y registra en hoja `AEO_Tracking` cuántas keywords citan a Bigotes Felinos en Google AI Overview. WF1 Telegram ahora incluye **deeplink a GSC URL Inspection** para solicitar indexación con un click.
+
+**WF8 (Bulk AEO Migrator)** activo: 10 posts viejos migrados con AEO completo. ~120 pendientes (~12 runs más, 1/semana).
+
+**Baseline AEO Monitor 4 may:** 0/17 citas reales con AIO. **Análisis competitivo:** YouTube/TikTok dominan (~50% de citaciones), Tiendanimal/Purina/Hill's marcan retailers/marcas, queries colombianas locales tienen gap (sólo aseguradoras/marketplaces compiten ahí — ventana abierta para BF). Ver sección **AEO upgrades** más abajo para detalle.
 
 ### WF1 — Blog SEO: `BF - WF1 - Blog SEO: Keyword → Publicar en WordPress`
 - **ID n8n:** `IVKelNHLoEaWD92B`
-- **Nodos totales:** 33
+- **Nodos totales:** 36 (sumados 3 del slug pre-check WP el 2026-05-05)
 - **Estado:** ✅ Funcional y en producción — artículos publicados L/M/V 8am Colombia
 - **Trigger:** Diario a las 8am Colombia (`0 13 * * *`) — lógica L/M/V delegada a bf-node-003b
+- **Anti-canibalismo v2:** Capa 1 (bf-node-017) Jaccard kw≥35% / slug≥60% con stem; Capa 2 (bf-node-006sg/sgc/sgi) consulta WP `/posts?slug=` para detectar slug ya existente
 
 | ID | Nodo | Función | Estado |
 |----|------|---------|--------|
@@ -399,22 +427,25 @@ bigotes-felinos/
 | bf-node-s4 | Activar Estacional en Sheet | HTTP PUT a Sheets API → cambia `estado` de la keyword estacional a `"Aprobado"` | ✅ |
 | bf-node-002 | Leer Keywords Aprobadas | Lee Sheet filtrando `estado="Aprobado"` | ✅ |
 | bf-node-003 | Hay keyword | IF: ¿hay keyword para procesar? | ✅ |
-| bf-node-003b | Tomar Primera Keyword | Code: toma la primera keyword; estacionales publican cualquier día de la semana; regulares solo en L/M/V (check timezone Colombia) | ✅ |
+| bf-node-003b | Tomar Primera Keyword | Code: toma la primera keyword; estacionales publican cualquier día; regulares solo L/M/V en cron real; **bypass de día si `$execution.mode !== 'trigger'`** (manual/test desde UI siempre procesa) | ✅ |
 | bf-node-016 | Leer Posts Publicados | Lee Sheet filtrando `estado="Publicado"` | ✅ |
-| bf-node-017 | Formatear Posts Publicados | Check canibalismo Jaccard + formatea contexto para GPT | ✅ |
+| bf-node-017 | Formatear Posts Publicados | Check canibalismo dual: Jaccard kw≥35% + Jaccard slug (extraído de URL)≥60%, con stem básico (plurales/diminutivos: gatos→gato, gatito→gato). Emite `match_reason` (kw_NNpct/slug_NNpct). Formatea contexto para GPT | ✅ |
 | bf-node-018 | IF Canibalismo | Bifurca si hay o no canibalismo | ✅ |
-| bf-node-019 | Marcar Canibalismo en Sheet | Actualiza Sheet: "Canibalismo" + URL del similar | ✅ |
+| bf-node-019 | Marcar Canibalismo en Sheet | Actualiza Sheet: "Canibalismo" + URL del similar. Lee `$json.similar_url` directamente (sirve para canibalismo de kw/slug O de slug pre-check WP) | ✅ |
 | bf-node-004 | Marcar En Proceso | Actualiza Sheet: "En proceso" | ✅ |
 | bf-node-023 | Construir Body GPT | Serializa prompt + contexto de posts con `JSON.stringify` para evitar caracteres especiales | ✅ |
 | bf-node-005 | Generar Articulo GPT-4o | Llama OpenAI con `gpt_body_json` pre-serializado | ✅ |
-| bf-node-006 | Parsear JSON articulo | Slug, capitalización, FAQ HTML + FAQPage JSON-LD, `wp_body_json`, strip4Byte | ✅ |
-| bf-node-010 | Llamar nano banana | Genera imagen 16:9 vía Gemini | ✅ |
-| bf-node-011 | Preparar Imagen | Convierte base64 → Buffer binario | ✅ |
+| bf-node-006 | Parsear JSON articulo | Slug, capitalización, FAQ HTML + FAQPage JSON-LD, `wp_body_json`, strip4Byte. **Emite `slug` en root** del json (además de dentro de `wp_body_json`) para el slug pre-check WP | ✅ |
+| bf-node-006sg | Slug Pre-Check WP | HTTP GET `/wp-json/wp/v2/posts?slug={slug}` con `alwaysOutputData: true` (necesario porque WP devuelve `[]` cuando no hay match) | ✅ |
+| bf-node-006sgc | Slug Conflict Eval | Code: evalúa respuesta WP. Si match exacto → emite `cannibalism: true` con datos del post existente. Si no → propaga el item original con `slug_check_passed: true` | ✅ |
+| bf-node-006sgi | IF Slug Conflict | IF `cannibalism === true`: TRUE → bf-node-019 (Marcar Canibalismo); FALSE → Internal Linker (continúa flujo normal) | ✅ |
+| bf-node-010 | Llamar nano banana | Genera imagen 16:9 vía Gemini. `retryOnFail: 3 tries, 5s entre tries` para fallos HTTP transitorios | ✅ |
+| bf-node-011 | Preparar Imagen | Convierte base64 → Buffer binario. **Guard explícito**: si `finishReason !== 'STOP'` o `content.parts` ausente (NO_IMAGE rejection de Gemini) → throw Error claro pidiendo re-aprobar la kw | ✅ |
 | bf-node-012 | Subir a WP Media | Sube imagen a WordPress Media Library | ✅ |
 | bf-node-015 | Set Alt Text Imagen | Asigna alt text (keyword) al media item | ✅ |
 | bf-node-013 | Construir wp_body_final | Añade `featured_media` al payload | ✅ |
 | bf-node-007 | Publicar en WordPress | Publica post con todos los campos SEO | ✅ |
-| bf-node-008 | Actualizar Sheet Publicado | batchUpdate: columna B (Publicado) + H (url) | ✅ |
+| bf-node-008 | Actualizar Sheet Publicado | batchUpdate: columna B (Publicado) + H (url) + M (fecha_reoptimizado en timezone Colombia) — el M previene que WF8 Bulk reprocese posts recién publicados | ✅ |
 | bf-node-020 | Notificar Éxito Telegram | Envía título + URL + keyword al bot | ✅ |
 | bf-node-021a | Tags - Split | Divide `tags_list` en items individuales (uno por tag) | ✅ |
 | bf-node-021b | Tags - POST Tag | HTTP Request (wordpressApi): crea cada tag en WP, `neverError:true` para manejar "term_exists" | ✅ |
@@ -472,7 +503,7 @@ Cada columna agrupa los campos de su plataforma con separadores visuales (`🎣`
 - **ID n8n:** `T46531TOrPeT6VmS`
 - **Nodos totales:** 26
 - **Estado:** ✅ Activo — se ejecuta automáticamente el 1° de cada mes + disponible manualmente.
-- **Trigger:** Manual (fd-001) + Mensual automático (fd-001c) — ambos conectados al mismo nodo de entrada
+- **Trigger:** Manual (fd-001) + Mensual automático (fd-001c, cron `0 8 1 * *` con `timezone: America/Bogota` = día 1 de cada mes a las 8am Colombia) — ambos conectados al mismo nodo de entrada
 - **Notificación "Sin candidatos":** fd-004 emite `{no_candidates: true}` cuando no hay posts a re-optimizar → fd-004b (IF) bifurca: TRUE → fd-015 (Telegram aviso) · FALSE → fd-004c (Guard) → procesamiento normal. El Guard filtra el sentinel para evitar ghost items en `executionOrder: v1`.
 - **Internal Linker WF3 (fd-008b)** + **Quality Gate WF3 (fd-008c)**: insertados entre fd-008 (Parsear) y fd-009 (WordPress PATCH Post). Mismas reglas que en WF1 — Linker valida URLs alucinadas y suplementa hasta 2 enlaces internos reales; Gate aplica 15 checks ponderados con threshold 70 y throw Error con breakdown si falla.
 - **Prompt fd-006 refactored:** sistema con Vet-Friend reforzado, frases prohibidas, mini-historias obligatorias, AI Search rule. Schema GPT incluye `respuesta_directa` y `key_takeaways[]`. Parser fd-008 inyecta ambos en el HTML re-optimizado igual que WF1.
@@ -480,7 +511,7 @@ Cada columna agrupa los campos de su plataforma con separadores visuales (`🎣`
 | ID | Nodo | Función | Estado |
 |----|------|---------|--------|
 | fd-001 | Manual Trigger | Permite ejecución manual desde la UI de n8n | ✅ |
-| fd-001c | Schedule Trigger Mensual | Cron `0 13 1 * *` (1° de cada mes, 8am Colombia) | ✅ |
+| fd-001c | Schedule Trigger Mensual | Cron `0 8 1 * *` con timezone Bogotá (1° de cada mes, 8am Colombia) | ✅ |
 | fd-002 | Leer Posts Publicados | GSheets: filas con `estado="Publicado"` — fuente de candidatos + contexto de enlaces internos | ✅ |
 | fd-003 | Consultar GSC API | POST a GSC searchAnalytics — posiciones últimos 90 días de `bigotesfelinos.com` | ✅ |
 | fd-004 | Filtrar y Priorizar Candidatos | Code (`runOnceForAllItems`): cruza Sheet con GSC, filtra pos 6-50 con ≥5 impresiones, bloqueo 90 días col M (`fecha_reoptimizado`), dedup por URL, máx 10 candidatos ordenados por impresiones desc. Si 0 candidatos → emite `[{no_candidates: true}]` | ✅ |
@@ -578,6 +609,217 @@ IF Blog Ideas → Append Blog!A:M      IF Ent Ideas → Append RS!A:I    Telegra
 **Integración WF5 → WF4:**
 Las ideas de entretenimiento que WF5 inserta con `estado="Idea"` son consumidas por WF4 el siguiente sábado. WF4 detecta la primera fila con `tipo="Entretenimiento"` + `estado="Idea"`, genera el contenido viral para esa situación específica, y actualiza la fila (estado: `Pendiente`, contenido completo).
 
+### WF7 — AEO Monitor: `BF - WF7 - AEO Monitor: Detectar citas en Google AI Overview`
+- **ID n8n:** `73UFpj4m2vke6IPk`
+- **Nodos totales:** 12
+- **Estado:** ✅ Activo — Schedule semanal lunes 9am Colombia
+- **Trigger:** Schedule `0 9 * * 1` (lunes 9am hora Colombia, porque `settings.timezone: America/Bogota` interpreta el cron en hora local) + Manual Trigger
+- **Hoja:** Append a `AEO_Tracking!A:H` del Master Sheet (creada 4 may)
+
+| ID | Nodo | Función | Estado |
+|----|------|---------|--------|
+| aeo-001 | Schedule Trigger Lunes 9am | Cron `0 14 * * 1` (lunes 9am Colombia) | ✅ |
+| aeo-001b | Manual Trigger | Test/recovery manual | ✅ |
+| aeo-002 | Leer Master Sheet | HTTP GET `Blog!A:M` con cred googleSheetsOAuth2Api `70heM3IFsNK9Cyak` | ✅ |
+| aeo-003 | Pick Top 20 Keywords | Code `runOnceForAllItems`: filtra estado=Publicado + url_post + length≤55 + sin `:` ni "guía completa" → orden por prioridad Alta→Media→Baja, luego por posicion_gsc ASC → top 20 | ✅ |
+| aeo-004 | SerpAPI Query | HTTP GET `engine=google&q={kw}&gl=co&hl=es&num=10` con cred serpApi `44hTDtjkVRDKJOeU`. Devuelve `ai_overview.page_token` cuando hay AIO | ✅ |
+| aeo-004b | SerpAPI Async Fetch | HTTP GET `engine=google_ai_overview&page_token={...}` para obtener el contenido real del AIO (Google lo entrega async). `continueOnFail: true` | ✅ |
+| aeo-005 | Parse AI Overview | Code `runOnceForEachItem`: detecta `search_information.ai_overview_state="Fully empty"`, parsea `references[]`, busca `bigotesfelinos.com`, extrae top 3 competitors | ✅ |
+| aeo-006 | Aggregate Results | Code `runOnceForAllItems`: cuenta citados/total/sin_AIO, build sheet payload + Telegram summary | ✅ |
+| aeo-007 | Append AEO_Tracking | HTTP POST `AEO_Tracking!A:H:append` (todas las filas en un batch) | ✅ |
+| aeo-008 | Telegram Resumen Semanal | Mensaje formato Markdown con citados/with_aio/total + lista de keywords citadas | ✅ |
+| aeo-009 | Error Trigger | Captura errores no controlados | ✅ |
+| aeo-010 | Telegram Error AEO | Notifica fase + detalle al chat `1591872862` | ✅ |
+
+**Costo SerpAPI:** ~80 credits/mes (20 keywords × 2 calls × 4 sem). Plan free 100/mes — suficiente con margen 20%.
+
+**Baseline 4 may (primer test):** 0/14 keywords citadas, 14 con AIO real, 6 sin AIO. Sprint 4 está específicamente diseñado para detectar movimiento desde este 0 → primera cita en algún momento como evidencia de impacto del stack AEO.
+
+---
+
+### WF8 — Bulk AEO Migrator: `BF - WF8 - Bulk AEO Migrator: AEO en posts existentes (sin GSC)`
+- **ID n8n:** `vB8ya9OSUyLsQuLg` (importado 2026-05-04 21:33 UTC)
+- **Nodos totales:** 23
+- **Estado:** ✅ En producción — primera batch de 10 posts migrados exitosamente. ~120 posts pendientes (~12 runs más).
+- **Rate limit batching (`GPT-4o Optimizar Artículo`):** `batchSize: 1, batchInterval: 25000` (25s entre items). Necesario porque OpenAI Tier 1 = 30K TPM y cada request consume ~9.300 tokens (prompt+max_tokens reservado). 10 items × 25s ≈ 4 min runtime. Mismo patch aplicado a WF3.
+- **Patches WF8 vs WF3 originales (aplicados 2026-05-04 PM tras 1er fail):**
+  - **Quality Gate más permisivo** que WF1/WF3 — HARD GATE de tabla **removido** (posts narrativos/Q&A no siempre admiten tabla); threshold bajado **70 → 60**. Razón: el catálogo histórico tiene artículos más cortos y de formatos variados; ser estrictos haría que la mayoría falle. Para artículos NUEVOS (WF1) y re-optimizaciones SEO (WF3) el rigor original se mantiene.
+  - **Regex `^<p>` → `^<p[^>]*>`** para detectar correctamente `<p class="respuesta-directa">` en el chequeo de Respuesta directa. Bug pre-existente; corregido aquí.
+  - **Prompt fd-006: "TABLA OBLIGATORIA" → "TABLA RECOMENDADA cuando aplique"** para no forzar tablas artificiales en contenido narrativo.
+- **JSON fuente:** [`_aeo/sprint-4/WF8_Bulk_AEO_Migrator.json`](_aeo/sprint-4/WF8_Bulk_AEO_Migrator.json) (versionado en repo)
+- **Trigger:** Manual Trigger ÚNICAMENTE (sin schedule). El usuario ejecuta cuando quiere procesar el siguiente batch.
+- **Diferencia clave con WF3:** WF8 ignora GSC. Procesa posts ordenados cronológicamente (row_number ASC) cuya `fecha_reoptimizado` esté vacía. Esto permite migrar AEO a TODO el catálogo histórico sin esperar a que ganen posición en GSC.
+- **Cobertura:** 130 posts × 10 por run = 13 runs para migrar todo. Costo ~$3 GPT-4o por run = ~$30 total.
+- **Cadencia recomendada:** 1 run/semana o más espaciado, decisión del usuario.
+- **Interacción con WF3:** WF8 escribe en Blog!M (`fecha_reoptimizado`) → WF3 ve el post como "ya re-optimizado" y respeta el bloqueo de 90 días. Después de 90 días si tiene mal posicionamiento GSC, WF3 puede tomarlo. **Concertación limpia.**
+- **Reusa lógica de WF3:** mismo prompt (fd-006), mismo parser (fd-008) con scrubAIWatermarks + buildSpeakableJsonLD + buildHowToJsonLD + Internal Linker + Quality Gate. Solo cambia el filtro de candidatos (fd-004 reemplazado).
+- **Pendiente activación:** importar JSON, asignar credenciales (las mismas de WF3 — Sheets, WP, OpenAI, Telegram), test manual con 10 posts, escalar.
+
+---
+
+### WF6 — Pillar Generator: `BF - WF6 - Pillar Generator: Crear Página Pilar por Hub`
+- **ID n8n:** `cE3mJkzcKmJrWg4z`
+- **Nodos totales:** 17
+- **Estado:** ✅ Activo (manual). Ya generó los 4 pilares iniciales el 2026-05-04. Queda dormido hasta que se decida regenerar uno o crear un 5to hub.
+- **Trigger:** Manual ÚNICAMENTE
+- **Output:** Página WP (no post) con stack AEO completo + featured image. Status `publish` directo.
+- **Selección de hub:** Constante `HUB_SELECCIONADO` editable en el Code node `wf6-002 Definir Hub`. Valores válidos: `'Salud'`, `'Alimentación'`, `'Razas'`, `'Mundo'`. El usuario edita la línea, guarda, ejecuta.
+- **Ya publicado (4 pilares):**
+  - Salud → page ID 2700 → https://bigotesfelinos.com/guia-salud-felina/
+  - Alimentación → page ID 2702 → https://bigotesfelinos.com/guia-alimentacion-gatos/
+  - Razas → page ID 2704 → https://bigotesfelinos.com/guia-razas-gatos/
+  - Mundo → page ID 2706 → https://bigotesfelinos.com/guia-comportamiento-felino/
+- **Salvaguarda imagen:** nodo `wf6-008 Llamar nano banana` tiene `retryOnFail: true, maxTries: 3, waitBetweenTries: 2000ms` + `onError: continueRegularOutput`. Si Gemini falla 3 veces, el pilar se publica **sin imagen destacada** y Telegram avisa para añadirla manualmente. **Nunca se pierde el contenido GPT.**
+- **Fix slug attachment vs page:** `image_filename` usa prefijo `pilar-img-{slug}.webp` (no solo `{slug}.webp`) para evitar que el slug del attachment ocupe el slug de la page. Lección aprendida cuando los 4 pilares iniciales se publicaron como `/guia-salud-felina-2/` (con `-2` añadido por WP) — corregido manualmente vía PATCH y workflow utility (ya eliminado).
+- **Sentence case rule:** los títulos en `wf6-002` están en sentence case (solo primera letra mayúscula + nombres propios). El prompt (`wf6-005`) tiene regla #3 explícita pidiendo a GPT mantener sentence case en H2/H3. Parser (`wf6-007`) tiene función `headingsToSentenceCase()` defensiva que normaliza H2-H6 si GPT genera Title Case (preserva nombres propios: Colombia, Bogotá, WSAVA, Royal Canin, Bigotes Felinos, etc.).
+
+| ID | Nodo | Función | Estado |
+|----|------|---------|--------|
+| wf6-001 | Manual Trigger | Ejecución manual desde UI | ✅ |
+| wf6-002 | Definir Hub | Code: `HUB_SELECCIONADO` editable; mapea a slug, título, seo_title, descripción, prompt imagen | ✅ |
+| wf6-003 | Leer Blog Sheet | HTTP GET `Blog!A:S` (incluye col R = hub) | ✅ |
+| wf6-004 | Filtrar Clusters del Hub | Code: filtra publicados con `hub === ctx.hub`. Devuelve lista de clusters publicados + pendientes para enriquecer el prompt GPT | ✅ |
+| wf6-005 | Construir Prompt GPT | Code: prompt extenso con reglas SEO+AEO, tabla obligatoria, sentence case, frases prohibidas, JSON schema esperado | ✅ |
+| wf6-006 | GPT-4o Generar Pilar | HTTP POST OpenAI `max_tokens: 12000, timeout: 180s`. Devuelve respuesta_directa, key_takeaways, intro_html, secciones_html, tabla_html, faq_items, fuentes_consultadas, entities, prompt_imagen | ✅ |
+| wf6-007 | Parsear y Construir HTML | Code: scrubAIWatermarks, strip4Byte, headingsToSentenceCase, FAQ HTML + FAQPage JSON-LD, fuentes HTML, CollectionPage+Speakable+mentions JSON-LD. Valida tabla (HARD GATE), FAQ ≥5, fuentes ≥3 | ✅ |
+| wf6-008 | Llamar nano banana | HTTP POST Gemini con retry 3x | ✅ |
+| wf6-009 | Detectar Imagen Disponible | Code: si la respuesta tiene imagen → image_available=true + binary buffer; si falla → image_available=false (publica sin imagen) | ✅ |
+| wf6-010 | IF Imagen Disponible | Bifurca: TRUE → upload+alt; FALSE → directo a build wp_body | ✅ |
+| wf6-011 | Subir a WP Media | HTTP POST WP Media | ✅ |
+| wf6-012 | Set Alt Text Imagen | HTTP POST WP Media `{id}` con alt_text=título | ✅ |
+| wf6-013 | Construir wp_body_final | Code: añade featured_media si hubo imagen, mantiene null si no | ✅ |
+| wf6-014 | Publicar Pilar como Page WP | HTTP POST `/wp-json/wp/v2/pages` (NO `/posts`) | ✅ |
+| wf6-015 | Telegram Notificar Éxito | Mensaje con stats: palabras, FAQ, fuentes, entities, internal links, status imagen | ✅ |
+| wf6-016 | Error Trigger | Captura excepciones | ✅ |
+| wf6-017 | Telegram Error | Notifica error al chat | ✅ |
+
+---
+
+### WF9 — Pilares Auto-Sync: `BF - WF9 - Pilares Auto-Sync (cluster injection diaria)`
+- **ID n8n:** `XvMhI97WVqj49U9f`
+- **Nodos totales:** 11
+- **Estado:** ✅ Activo — backfill inicial ejecutado 2026-05-04 (~129 clusters distribuidos). Auto-refresh diario.
+- **Trigger:** Manual + Schedule Trigger Diario (cron `30 8 * * *` con `timezone: America/Bogota` = 8:30am Colombia local)
+- **Idempotencia:** strippea cualquier `<section class="cluster-list">` previa antes de regenerar. Re-ejecutar 100 veces da el mismo resultado.
+- **Costo:** $0 GPT (no usa GPT). Solo 4 GET + 4 PATCH al WP por ejecución.
+- **Por qué 8:30am:** 30 min después de WF1 (que publica clusters a las 8am L/M/V). Un cluster nuevo aparece en su pilar máximo 25 horas después.
+
+| ID | Nodo | Función | Estado |
+|----|------|---------|--------|
+| wf9-001 | Manual Trigger | Ejecución manual a demanda | ✅ |
+| wf9-001b | Schedule Trigger Diario | Cron `30 8 * * *` con timezone Bogotá = 8:30am Colombia local | ✅ |
+| wf9-002 | Leer Blog Sheet | HTTP GET `Blog!A:S` | ✅ |
+| wf9-003 | Agrupar Clusters por Hub | Code: filtra `estado=Publicado` con `url_post` válido y `hub` asignado. Agrupa en 4 items (uno por hub) con array de clusters | ✅ |
+| wf9-004 | GET Pilar por Slug | HTTP GET `/wp-json/wp/v2/pages?slug={pilar_slug}&context=edit` para obtener `content.raw` | ✅ |
+| wf9-005 | Construir HTML Inyectado | Code (`runOnceForEachItem`): regenera `<section class="cluster-list">` con todos los clusters del hub. Inserta antes del primer `<script>` JSON-LD para preservar schemas. Idempotente. | ✅ |
+| wf9-006 | PATCH Pilar | HTTP POST `/wp-json/wp/v2/pages/{id}` con nuevo content | ✅ |
+| wf9-007 | Resumen Final | Code: agrega resultados de los 4 hubs en mensaje Markdown | ✅ |
+| wf9-008 | Telegram Notificar | Mensaje resumen con cluster_count por hub | ✅ |
+| wf9-009 | Error Trigger | Captura excepciones | ✅ |
+| wf9-010 | Telegram Error | Notifica error al chat | ✅ |
+
+**Mapeo Hub → Pilar (hardcoded en wf9-003):**
+| Hub | Slug | Título sección |
+|-----|------|----------------|
+| Salud | `guia-salud-felina` | "Más artículos sobre salud felina" |
+| Alimentación | `guia-alimentacion-gatos` | "Más artículos sobre alimentación felina" |
+| Razas | `guia-razas-gatos` | "Más artículos sobre razas de gatos" |
+| Mundo | `guia-comportamiento-felino` | "Más artículos sobre comportamiento felino" |
+
+---
+
+### WF11 — GSC Weekly Dashboard: `BF - WF11 - GSC Weekly Dashboard`
+- **ID n8n:** `luUL1h3EVmzeUFCQ`
+- **Nodos totales:** 10
+- **Estado:** ✅ Activo — primer reporte ejecutado 2026-05-05 (sem 27 abr - 3 may)
+- **Trigger:** Schedule lunes 9am Colombia (cron `0 9 * * 1` con `timezone: America/Bogota`) + Manual Trigger
+- **Costo:** $0 — solo GSC API + Sheets, sin GPT
+- **Hojas escritas:** `GSC_Tracking` (snapshot semanal sitewide) y `GSC_Pages_Tracking` (top 30 páginas con Δ pos vs sem anterior)
+
+| ID | Nodo | Función | Estado |
+|----|------|---------|--------|
+| wf11-001 | Schedule Lunes 9am | Cron `0 9 * * 1` con timezone Bogotá | ✅ |
+| wf11-001b | Manual Trigger | Test/recovery manual | ✅ |
+| wf11-002 | Build Queries | Code: emite 6 query items (last_7d_total, prior_7d_total, last_28d_total, top_pages_7d, top_pages_prior, top_queries_7d) | ✅ |
+| wf11-003 | GSC Query | HTTP POST a GSC searchAnalytics, una request por query item con cred `googleOAuth2Api` (XWbfIBmitmx1uByl) | ✅ |
+| wf11-004 | Aggregate Snapshot | Code: agrega responses, computa WoW deltas, top 3 ganadores/perdedores por Δ pos, top queries semana, alerta concentración (>25% de imp en 1 página). Genera telegram_message + payloads para Sheets | ✅ |
+| wf11-005 | Append GSC_Tracking | HTTP POST `values:append` con 1 fila: sem_inicio, sem_fin, impresiones, clicks, ctr, pos_promedio, deltas | ✅ |
+| wf11-006 | Append GSC_Pages_Tracking | HTTP POST `values:append` con top 30 páginas: sem_inicio, url, imp, clk, ctr, pos, delta_pos_vs_prev, delta_clicks_vs_prev | ✅ |
+| wf11-007 | Telegram Weekly Report | Mensaje Markdown al chat `1591872862` | ✅ |
+| wf11-008 | Error Trigger | Captura excepciones | ✅ |
+| wf11-009 | Telegram Error | Notifica error al chat | ✅ |
+
+**Estructura del mensaje Telegram (formato real del primer reporte):**
+
+```
+📊 GSC Weekly — 2026-04-27 a 2026-05-03
+
+WoW (vs sem anterior):
+   Impresiones: 523 → 393 (-25%)
+   Clicks: 1 → 1 (+0)
+   CTR: 0.19% → 0.25%
+   Pos avg: 62.4 → 58.7 (+3.7)
+
+Últimos 28d (contexto): 2003 imp, 2 clk, pos 61.5
+
+🏆 Top ganadores (Δ pos): ...
+🔻 Top perdedores: ...
+🆕 Top queries semana: ...
+⚠️ Concentración: top page 27% de impresiones (...)
+```
+
+**Hojas creadas (2026-05-05) en Master Sheet:**
+- `GSC_Tracking` — columnas A-I: `sem_inicio | sem_fin | impresiones | clicks | ctr | pos_promedio | delta_impresiones | delta_clicks | delta_pos`
+- `GSC_Pages_Tracking` — columnas A-H: `sem_inicio | url | impresiones | clicks | ctr | pos | delta_pos_vs_prev | delta_clicks_vs_prev`
+
+**Análisis de gráficos:** Las hojas son fuente para gráficos nativos de Google Sheets (Insertar → Gráfico → Línea). No requiere dashboard externo.
+
+---
+
+### WF-Util — Force Re-optimize Post: `BF - WF-Util - Force Re-optimize Post`
+- **ID n8n:** `gu2XtRkhfEVDsyai`
+- **Nodos totales:** 22
+- **Estado:** ✅ Activo — primera ejecución exitosa 2026-05-05 sobre post DPL (233): score 100/120
+- **Trigger:** Webhook POST `/force-reopt-post` con body `{"post_id": <num>, "keyword": "<override opcional>"}`
+- **Propósito:** Re-optimizar UN post específico a demanda con el stack AEO completo (mismo prompt + parser + Linker + Quality Gate de WF3), saltando los filtros GSC y el bloqueo de 90d. Útil cuando un post está cerca de top 10 y queremos empujarlo manualmente, o cuando WF3 dejó de tomarlo por bloqueo de fecha_reoptimizado.
+- **Diferencia con WF3:** WF3 procesa N posts elegidos por GSC (pos 6-50, ≥5 imp, sin bloqueo 90d). WF-Util procesa 1 post arbitrario por ID, sin filtros.
+- **Concertación con WF3:** Al actualizar `fecha_reoptimizado` en Blog!M, WF-Util "consume" el bloqueo de 90d. Si el post sigue mal posicionado después, WF3 lo retomará en 90 días.
+- **Keyword override:** El Master Sheet a veces tiene títulos completos como "keyword" en posts viejos del catálogo (ej: "Raza DPL en gatos: Características, origen y cuidados clave"). El parámetro `keyword` del webhook permite forzar la keyword SEO real (ej: "raza dpl en gatos") sin tener que editar el Sheet.
+
+| ID | Nodo | Función | Estado |
+|----|------|---------|--------|
+| fwf-001 | Webhook Force Reopt | POST `/force-reopt-post` con `{post_id, keyword?}` | ✅ |
+| fwf-002 | Validate Input | Code: valida post_id numérico + extrae keyword_override opcional | ✅ |
+| fwf-003 | WP GET Post | HTTP GET `/wp-json/wp/v2/posts/{id}?context=edit` con cred `wordpressApi` | ✅ |
+| fwf-004 | Read Master Sheet | HTTP GET `Blog!A:M` con cred `googleSheetsOAuth2Api` (70heM3IFsNK9Cyak) — NO con `googleOAuth2Api` (esa es para GSC) | ✅ |
+| fwf-005 | Leer Posts Publicados | Code: parsea Sheet response, emite 1 item por fila Publicado para contexto de enlaces internos. **Nombre obligatorio** porque fd-006 reutilizado lo referencia con `$('Leer Posts Publicados').all()` | ✅ |
+| fwf-006 | Build Single Candidate | Code: cruza WP post con Sheet para encontrar la fila por url match (link o slug), aplica keyword_override si fue provisto, emite 1 candidato con shape esperado por fd-006 | ✅ |
+| fwf-007 | Construir Prompt GPT Refresh | Code (verbatim de fd-006 WF3): mismo prompt completo Vet-Friend + AEO + tabla + question-first + entities + fuentes 7-whitelist | ✅ |
+| fwf-008 | GPT-4o Optimizar Artículo | HTTP POST OpenAI gpt-4o (sin batching — 1 item) | ✅ |
+| fwf-009 | Parsear Respuesta GPT | Code (verbatim de fd-008 WF3): scrubAIWatermarks + strip4Byte + FAQ HTML + JSON-LD + Speakable + HowTo condicional + headings sentence case + question marks auto | ✅ |
+| fwf-010 | Internal Linker WF3 | Code (verbatim de fd-008b): valida URLs alucinadas + inyecta hasta 2 enlaces internos reales | ✅ |
+| fwf-011 | Quality Gate WF3 | Code (verbatim de fd-008c): 18 checks /120, threshold 70, HARD GATE para tabla | ✅ |
+| fwf-012 | WordPress PATCH Post | HTTP PATCH `/wp-json/wp/v2/posts/{id}` con content + meta Yoast | ✅ |
+| fwf-013 | Sheet Update fecha_reoptimizado | HTTP `values:batchUpdate` Blog!J + Blog!M con cred `googleSheetsOAuth2Api` | ✅ |
+| fwf-014..017 | Tags chain | Split → POST tag → Collect IDs → Asignar (mismo patrón de WF3) | ✅ |
+| fwf-018 | Build Telegram Message | Code: arma resumen con score + Δ links + GSC inspection deeplink | ✅ |
+| fwf-019 | Telegram Notificar Éxito | Mensaje Markdown al chat | ✅ |
+| fwf-020 | Respond Success | Devuelve `summary` JSON al webhook caller | ✅ |
+| fwf-021 | Error Trigger | Captura excepciones | ✅ |
+| fwf-022 | Telegram Notificar Error | Notifica fase + detalle al chat | ✅ |
+
+**Cómo invocarlo:**
+
+```bash
+curl -X POST "https://n8n.srv1398596.hstgr.cloud/webhook/force-reopt-post" \
+  -H "Content-Type: application/json" \
+  -d '{"post_id": 233, "keyword": "raza dpl en gatos"}'
+```
+
+Respuesta: `{"post_id":"233","keyword":"raza dpl en gatos","score":100,"url":"..."}`. Telegram también notifica.
+
+**Costo:** ~1× GPT-4o request (~$0.05 por ejecución). Sin batching porque procesa 1 item.
+
 ---
 
 ### Flujo de priorización estacional
@@ -631,6 +873,37 @@ Aplicado a `body_html` (post-ensamblaje con FAQ + JSON-LD), `seo_title`, `meta_d
 
 **fd-008 / fd-010 — fecha_reoptimizado ahora en columna M (hoja Blog):**
 La columna `fecha_reoptimizado` se movió de la antigua Pipeline!Q a Blog!M al reestructurar las hojas. El batchUpdate de fd-010 escribe en Blog!J (posicion_gsc) y Blog!M (fecha_reoptimizado).
+
+**Bug regex U+2028/U+2029 en `scrubAIWatermarks` (resuelto 4 may):**
+La función tenía un regex literal `const invisible = /[chars]/g;` con caracteres U+2028 (Line Separator) y U+2029 (Paragraph Separator) en su clase de caracteres. Estos chars son tratados por JS como saltos de línea inside regex literals → `SyntaxError: Invalid regular expression: missing /`. Bug latente desde inicio del proyecto, surfaceó cuando Sprint 1 expandió el camino de ejecución llevándolo finalmente al regex. Fix: regex literal eliminado de bf-node-006 y fd-008; la línea siguiente `/\p{Cf}/gu` ya cubre los watermarks Cf que importan (zero-widths, BOM, soft-hyphen, word-joiner). Detectado por error en Telegram a las 6am Colombia + recovery manual de la keyword "gato persa precio Colombia".
+
+**SerpAPI credential type — `serpApi`, NO `httpQueryAuth` (resuelto 4 may):**
+La credencial `BF - SerpAPI` (ID `44hTDtjkVRDKJOeU`) es de tipo `serpApi`, no `httpQueryAuth`. HTTP Request nodes que usan SerpAPI deben configurarse con:
+```json
+"authentication": "predefinedCredentialType",
+"nodeCredentialType": "serpApi",
+"credentials": { "serpApi": { "id": "44hTDtjkVRDKJOeU" } }
+```
+Bug latente desde abr 29 en WF5/w5-004 (silenciado por `continueOnFail: true` — el workflow no fallaba pero SerpAPI nunca era invocado realmente, solo PAA/autocomplete vacíos). Detectado al construir WF7 y arreglado en ambos workflows.
+
+**SerpAPI Async pattern para Google AI Overview:**
+SerpAPI devuelve AI Overview en 2 pasos: (1) primer call `engine=google&q={kw}` retorna `ai_overview.page_token`; (2) segundo call `engine=google_ai_overview&page_token={...}` retorna el contenido real (`references[]`, `text_blocks[]`). WF7 hace ambos secuencialmente. Detectar `search_information.ai_overview_state="Fully empty"` para distinguir "Google no generó AIO" (estado válido, no error) de errores reales.
+
+**Cron + timezone — gotcha del 4 may:**
+Cuando un workflow tiene `settings.timezone: America/Bogota` (configuración común para BF), las expresiones cron se interpretan en hora local de Bogotá, NO en UTC. Ejemplo: `0 9 * * 1` con timezone Bogota = lunes 9am Colombia (no 9am UTC = 4am Colombia). Confusión inicial al setear WF7 con `0 14 * * 1` esperando 9am Colombia (UTC math) cuando en realidad disparó a las 2pm Colombia (interpretación local). Regla: si `timezone` está configurado, escribir el cron en hora local del timezone.
+
+**Refinamientos Sprint 1+2 del 4 may (post-validación primer artículo AEO):**
+- bf-node-023 / fd-006 (prompt fuentes): whitelist exclusiva de 7 organizaciones (WSAVA, AVMA, ICatCare, AAFP, MSD, Cornell, PubMed). Rechaza acrónimos inventados (AFIP, ASOCFEL, etc.).
+- bf-node-006b / fd-008c (Quality Gate H2 ratio): `bodyH2` filter excluye H2 estructurales fijos ("Conclusión", "Preguntas frecuentes", "Fuentes consultadas") del cálculo del ratio question-first. Antes el gato persa marcaba 5/8=62%; ahora marcaría 5/5=100%.
+
+**`$execution.mode === 'test'` — gotcha del 5 may:**
+Cuando se ejecuta un workflow vía "Execute Workflow" desde la UI de n8n con un Schedule Trigger, dentro de un Code node `$execution.mode === 'test'` (NO `'manual'` como muestra `executions/list` en la API). Modos posibles en runtime: `'trigger'` (cron), `'test'` (UI Execute), `'manual'`, `'webhook'`, `'integrated'`, `'retry'`, `'error'`. Para distinguir cron real vs cualquier ejecución manual, usar `$execution.mode !== 'trigger'` (más robusto que `=== 'manual'`). Bug detectado al implementar bypass del filtro L/M/V en bf-node-003b — la condición `=== 'manual'` nunca se cumplía.
+
+**HTTP Request con response array vacío — gotcha del 5 may:**
+Cuando un HTTP Request recibe `[]` como respuesta JSON válida (caso del slug pre-check WP cuando NO hay conflicto), n8n NO emite items y el flujo se corta silenciosamente. Solución: configurar `alwaysOutputData: true` en el HTTP Request. Aplicado a bf-node-006sg (Slug Pre-Check WP). Sin este flag, todos los posts nuevos sin conflicto fallaban silenciosamente al pasar por el slug check.
+
+**Gemini `finishReason: NO_IMAGE` — gotcha del 5 may:**
+Gemini puede responder HTTP 200 OK pero con `candidates[0].finishReason: "NO_IMAGE"` y SIN `content.parts` cuando rechaza generar imagen (filtros de seguridad, glitch del modelo). El Code node Preparar Imagen debe detectar esto explícitamente: chequear `finishReason !== 'STOP'` y `content?.parts` antes de acceder a `parts[0].inlineData.data`. El `retryOnFail` del HTTP Request NO ayuda porque la respuesta es 200 OK; solo ayuda con 5xx/timeouts.
 
 ---
 
@@ -719,7 +992,8 @@ _aeo/
 | Google Sheets | `Google Sheets account` | `70heM3IFsNK9Cyak` | ✅ |
 | Gemini (imágenes) | `nano banana` | `ysOycTrtxEO3BRcW` | ✅ |
 | Telegram | `Telegram BF Bot` | `7iBygAb1uGxktnFH` | ✅ |
-| Google Search Console | `Google Sheets account` (OAuth2 reutilizada) | `XWbfIBmitmx1uByl` | ✅ |
+| Google Search Console | `BF - Google OAuth` (OAuth2 reutilizada para GSC + Sheets API HTTP) | `XWbfIBmitmx1uByl` | ✅ |
+| SerpAPI | `BF - SerpAPI` (tipo `serpApi`, NO `httpQueryAuth`) | `44hTDtjkVRDKJOeU` | ✅ |
 **Nota:** Todas las claves viven en el sistema cifrado de n8n. El `.env` del proyecto es solo documentación de referencia.
 
 ---
@@ -728,6 +1002,29 @@ _aeo/
 
 | Tarea | Prioridad | Detalle |
 |-------|-----------|---------|
+| **WF1 anti-canibalismo v2 — Capa 1: bf-node-017 reforzado** | ✅ 2026-05-05 | Threshold kw bajado 50% → 35%; nuevo Jaccard sobre slugs ≥60% (extraídos de URL); stem básico (`replace(/it([oa])s?$/, '$1')` para diminutivos + quita 's' final si len>4 para plurales). Stop words extendidas con "guia", "completa". Nuevo campo `match_reason` (kw_NNpct/slug_NNpct) en output. Validado con dry-run sobre 121 publicados: 6/8 casos test detectan correctamente. |
+| **WF1 anti-canibalismo v2 — Capa 2: Slug Pre-Check WP (3 nodos)** | ✅ 2026-05-05 | Insertados entre bf-node-006 (Parsear) y bf-node-006a (Internal Linker): `bf-node-006sg` HTTP GET `/wp-json/wp/v2/posts?slug={slug}` con `alwaysOutputData: true`; `bf-node-006sgc` Code que detecta match exacto y emite `cannibalism: true` con datos del post conflictivo; `bf-node-006sgi` IF que bif a Marcar Canibalismo o Internal Linker. bf-node-019 modificado para usar `$json.similar_url` (sirve para ambos paths). bf-node-006 ahora emite `slug` en root del json. WF1 pasó de 33 → 36 nodos. Validado E2E en producción. |
+| **WF1 — bypass de filtro L/M/V en ejecuciones manuales** | ✅ 2026-05-05 | bf-node-003b: `if ($execution?.mode !== 'trigger') return [items[0]];` antes del filtro de día. Permite testing/manual desde la UI cualquier día. Cron real (`mode === 'trigger'`) sigue respetando L/M/V. Hallazgo importante: la UI "Execute Workflow" expone `mode === 'test'` (no 'manual') en runtime. |
+| **WF1 — robustez de imagen y retry** | ✅ 2026-05-05 | Llamar nano banana ahora `retryOnFail: true, maxTries: 3, waitBetweenTries: 5000` para fallos HTTP transitorios. Preparar Imagen ahora detecta `finishReason !== 'STOP'` y `content?.parts` ausente → throw Error claro pidiendo re-aprobar la kw (caso NO_IMAGE de Gemini). |
+| **Limpieza canibalismo histórico (Sheet + WP)** | ✅ 2026-05-05 | Audit de la hoja Blog reveló: 26 filas Pendientes que duplicaban Aprobadas/Publicadas/Pendientes (basura de carga inicial); 8 pares con doble URL publicada (suplementos `-2`, guardera typo, vacunas, comida húmeda, bañar, embarazo, nombres, razas-de-gatos genérico). GSC audit de los 8 perdedores: 1 click en 90 días entre todos → no justificaba fusión. Acciones: borradas las 26 filas Pendientes; 7 posts perdedores movidos a papelera WP via DELETE REST API; 8 filas correspondientes borradas del Sheet; redirect 301 en `.htaccess` para `razas-de-gatos/razas-de-gatos/` → categoría `/razas-de-gatos/` (corrige el `redirect_canonical` automático de WP que apuntaba mal). Sheet pasó de 188 → 154 filas. |
+| **Edición preventiva 2 keywords razas-Colombia** | ✅ 2026-05-05 | `gato bengalí precio Colombia` → `cuánto cuesta un Bengalí en Colombia 2026` (Jaccard contra "gato persa precio Colombia": 60% → 13%); `gato Maine Coon precio Colombia` → `cuánto cuesta un Maine Coon en Colombia 2026` (50% → 12%). Evita falsos positivos del nuevo threshold 35% al procesar el backlog. |
+| **Validación E2E en producción del WF1 fortificado** | ✅ 2026-05-05 | Disparé manual desde UI varias veces: confirmó cada fix iterativamente. Run final 4667 (51s) pasó los 31 nodos: cannibalism=false, slug_check_passed=true, Quality Score 82/120 con tabla incluida, post publicado en `/alimentacion-del-gato/comida-para-gatos-colombia-marcas/`, 5 tags asignados, Telegram con deeplink GSC enviado. Primer post publicado oficialmente con la nueva arquitectura. |
+| **WF11 — GSC Weekly Dashboard** | ✅ 2026-05-05 | Workflow `luUL1h3EVmzeUFCQ` (10 nodos). Schedule lunes 9am Colombia. 6 queries a GSC (last_7d/prior_7d/last_28d totales + top_pages_7d/prior + top_queries_7d). Computa WoW deltas, top 3 ganadores/perdedores por Δ pos, top queries semana, alerta concentración (>25% imp en 1 página). Append a hojas nuevas `GSC_Tracking` (snapshot semanal) y `GSC_Pages_Tracking` (top 30 páginas con Δ). Telegram Markdown. **Primer reporte:** sem 27 abr-3 may → impresiones 523→393 (-25%), pos 62.4→58.7 (+3.7), DPL 27% concentración. Costo $0 (sin GPT). |
+| **WF-Util — Force Re-optimize Post** | ✅ 2026-05-05 | Workflow `gu2XtRkhfEVDsyai` (22 nodos). Webhook POST `/force-reopt-post` con `{post_id, keyword?}`. Reusa fd-006/fd-008/fd-008b/fd-008c de WF3 verbatim para mantener consistencia AEO. Salta filtros GSC + bloqueo 90d para forzar re-optimización on-demand. **Primera ejecución:** post DPL (233) con keyword override "raza dpl en gatos" → score 100/120, 1966 palabras, tabla + respuesta_directa + key_takeaways + fuentes + Speakable + FAQPage JSON-LD inyectados. Costo ~$0.05 por ejecución. |
+| **Re-optimización del post DPL (pos 6.5)** | ✅ 2026-05-05 | Post id 233 (`/razas-de-gatos/raza-dpl-en-gatos/`) re-optimizado vía WF-Util. Era el único post en top 10 (430 imp/28d, 21% del total del site). Estrategia: empujar de pos 6 → pos 3 multiplica clicks 5-10×. AEO stack completo aplicado. Pendiente: solicitar indexación en GSC (deeplink en Telegram), verificar Δ pos en próximo reporte semanal. |
+| **WF7 enriquecido — country split + top dominios + insight rotativo** | ✅ 2026-05-04 (PM) | aeo-006 reescrito: detecta keywords colombianas (regex modificadores), cuenta competidores top en `competitors_top3`, genera mensaje Telegram con `🇨🇴 Colombianas: X/Y` + `🌎 Generales: X/Y` + Top 3 dominios + insight contextual (4 ramas: 3+ citas colombianas → bajar cuota; 0 citas + video domina → tip video; 0 citas + blogs SEO domina → tip diferenciación; primera cita → celebración). Testeado live. |
+| **WF1 Telegram con GSC deeplink** | ✅ 2026-05-04 (PM) | bf-node-020: nueva línea `⚡ [Solicitar indexación en Google](https://search.google.com/search-console/inspect?resource_id=...&id={{ encodeURIComponent(url) }})`. Click directo a GSC URL Inspection prerellenado. Reduce indexación de días a horas. |
+| **WF3 Telegram error fix** | ✅ 2026-05-04 (PM) | fd-014 text faltaba `=` prefijo → expresiones `{{ ... }}` se mostraban literales. Corregido con `=❌ *Fase D Error (WF3)*\n\nNodo: {{ $json.execution?.lastNodeExecuted }}\n...` + parse_mode Markdown. |
+| **WF3 manual run — descubrimiento sin candidatos** | ⚠️ 2026-05-04 (PM) | Disparé WF3 manual: devolvió "Sin candidatos" porque filtros estrictos (pos 6-50 + ≥5 imp + bloqueo 90d). Los 9 posts del 28 abril están bloqueados, los demás no cumplen filtros GSC. **Conclusión:** WF3 no es para migrar AEO masivamente al catálogo, es para mejorar SEO de lo que ya rankea. → motivó la creación de WF8. |
+| **`/equipo-editorial/` con links a 7 fuentes** | ✅ 2026-05-04 (PM) | PATCH a page ID 2673: cada fuente científica ahora es `<a href rel="nofollow noopener" target="_blank">`. WSAVA, AVMA, MSD Vet Manual, PubMed/NCBI, iCatCare, AAFP, Cornell. Verificado live. Archivo local actualizado. |
+| **Análisis competitivo AEO realizado** | ✅ 2026-05-04 (PM) | Lectura de hoja `AEO_Tracking`. Findings: ~50% de citaciones AIO en español-LATAM son video (YouTube + TikTok + Instagram); marcas de pet-food (Purina, Hill's) dominan informacionales; AniCura España + Mayo Clinic dominan queries de salud (con sesgo humano vs felino); queries colombianos locales (Compensar, SURA, Mercado Libre) sin competencia editorial felina — gap de oportunidad. |
+| **WF8 Bulk AEO Migrator** | ✅ 2026-05-04 (PM) | Workflow `vB8ya9OSUyLsQuLg` (23 nodos) en producción. Primera batch de 10 posts migrada exitosamente tras 3 iteraciones de batchInterval (8s ❌ → 12s ❌ → 25s ✅). Cuello: ~9.300 tokens/request × Tier 1 (30K TPM) = máx 3.2 reqs/min → interval mínimo 20s, usado 25s con 26% margen. Runtime ~4 min para 10 items. ~120 posts pendientes (~12 runs más, manual cuando el usuario quiera). |
+| **WF8/WF3 rate limit batching OpenAI Tier 1** | ✅ 2026-05-04 (PM) | `GPT-4o Optimizar Artículo`: `batching: { batch: { batchSize: 1, batchInterval: 25000 } }`. Razón: prompt enorme (lista de 130 posts publicados + system prompt AEO) consume ~9.300 tokens/request. 30K TPM ÷ 9.300 = 3.2 items/min máx → 60/3 = 20s mínimo entre items. 25s da 26% margen. Aplicado a WF8 (`vB8ya9OSUyLsQuLg`) y WF3 (`T46531TOrPeT6VmS`) por consistencia. |
+| **AEO Sprint 4 — AEO Monitor (WF7)** | ✅ 2026-05-04 | Workflow nuevo `73UFpj4m2vke6IPk` (12 nodos). Schedule lunes 9am Colombia. Hace 2 calls a SerpAPI por keyword (regular search + async AI Overview fetch via page_token). Filtra top 20 keywords naturales (length ≤55, sin `:`/"guía completa"). Detecta `bigotesfelinos.com` en `references[]` del AIO. Append a hoja `AEO_Tracking`. Telegram resumen semanal. **Baseline 4 may: 0/14 citados.** |
+| **Hotfix bug regex U+2028/U+2029** | ✅ 2026-05-04 | Latente desde inicio del proyecto. Resuelto removiendo `const invisible = /[...]/g;` de bf-node-006 y fd-008 — `/\p{Cf}/gu` ya cubre los watermarks típicos. Recovery manual de keyword "gato persa precio Colombia" (post 2667 → 2670). |
+| **Refinamientos AEO** | ✅ 2026-05-04 | (1) Whitelist estricta de 7 fuentes en bf-node-023/fd-006 (rechaza AFIP, ASOCFEL); (2) Quality Gate `bodyH2` excluye H2 estructurales del cálculo question-first ratio en bf-node-006b/fd-008c. |
+| **Fix latente SerpAPI credential WF5** | ✅ 2026-05-04 | w5-004 usaba `httpQueryAuth` cuando la credencial es tipo `serpApi`. Silenciado por `continueOnFail`. Arreglado a `predefinedCredentialType`/`serpApi`. |
+| **WF5 COLOMBIA-FIRST QUOTA** | ✅ 2026-05-04 | w5-007 (Construir Prompt GPT): mínimo 6 de 15 ideas blog deben tener modificador colombiano (Colombia, Bogotá, Medellín, Cali, COP). Razón estratégica: en queries colombianos los competidores AIO son marketplaces/aseguradoras (Mercado Libre, Compensar, SURA), no blogs felinos. Cuota fija hasta nueva indicación; subir/bajar editando el `MÍNIMO 6` en el prompt. |
 | **AEO Sprint 1 — Cimientos AEO** | ✅ 2026-05-03 | `llms.txt` desplegado en raíz + página `/equipo-editorial/` (page ID 2673) con Yoast meta optimizado vía PATCH. Bloque `<section class="fuentes-consultadas">` en cada artículo (3-5 fuentes científicas). Schema upgrade: WebPage+Speakable+mentions, HowTo condicional. Tabla obligatoria con HARD GATE en Quality Gate. WF1 (33 nodos) + WF3 (26 nodos) replicados. |
 | **AEO Sprint 2 — Question-first + Entidades** | ✅ 2026-05-03 | Prompt obliga H2/H3 question-first (≥70%). `aplicarInterrogacion()` aplicado en `capitalizarHeadings()` para auto-`¿?`. GPT genera `entities[]` con Wikipedia URLs → WebPage `mentions[]` con `sameAs` (Knowledge Graph signal). Quality Gate check #18 H2 question-first ratio. Threshold ahora /120 con 18 checks. WF1 + WF3 replicados. |
 | **OAuth2 Google — Publicar app en producción** | ✅ 2026-05-01 | App OAuth2 publicada en producción en Google Cloud Console — tokens ya no expiran cada 7 días |
@@ -773,3 +1070,4 @@ _aeo/
 | 2026-04-25 | 2591 | pulgas en gatos tratamiento | /salud-del-gato/pulgas-en-gatos-tratamiento/ | Manual pendiente 🔴 | — |
 | 2026-04-25 | 2602 | adoptar un gato qué necesito | /el-mundo-del-gato/adoptar-un-gato-que-necesito/ | Auto ✅ | — |
 | 2026-04-25 | — | gato siamés características y temperamento | /razas-de-gatos/gato-siames-caracteristicas-y-temperamento/ | Auto ✅ | — |
+| 2026-05-05 | — | comida para gatos Colombia marcas | /alimentacion-del-gato/comida-para-gatos-colombia-marcas/ | Auto ✅ (5 tags) | — |

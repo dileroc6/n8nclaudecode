@@ -1,6 +1,6 @@
 # Bigotes Felinos — ContentOps Engine: Resumen del Proyecto
 
-**Última actualización:** 2026-05-04
+**Última actualización:** 2026-05-05 (WF1 anti-canibalismo v2 desplegado + limpieza Sheet/WP)
 
 > Este documento es el **overview ejecutivo** del proyecto. Para ver Master Sheet, credenciales, nodos y pendientes, abrir [`../CLAUDE.md`](../CLAUDE.md). Para el detalle paso a paso del flujo y el historial de cambios, abrir [`FLUJO_COMPLETO.md`](FLUJO_COMPLETO.md). Para costos y APIs, abrir [`CREDENCIALES_Y_COSTOS.md`](CREDENCIALES_Y_COSTOS.md).
 
@@ -14,6 +14,8 @@ El equipo decide qué keywords trabajar. El sistema se encarga de escribir, gene
 
 **Stack AEO desde 2026-05-03:** Cada artículo publica con respuesta directa citable por IA, key takeaways, tabla obligatoria, bloque de fuentes científicas, schemas JSON-LD múltiples (FAQPage + WebPage con Speakable + mentions Wikipedia + HowTo condicional), H2 question-first y entidades canónicas — visibilidad en ChatGPT, Perplexity, Google AI Overviews, Alexa, Google Home y Siri además del SEO clásico.
 
+**Anti-canibalismo v2 desde 2026-05-05:** WF1 protege contra duplicados con doble capa: (1) Jaccard kw≥35% + Jaccard slug≥60% con stem básico antes de gastar GPT; (2) consulta WP REST API por slug propuesto antes de publicar para detectar conflictos que generarían `-2` en WordPress. Sheet limpiada de 188→154 filas, 7 posts perdedores movidos a papelera tras audit GSC (1 click acumulado en 90 días entre todos).
+
 ---
 
 ## El problema que resuelve
@@ -25,7 +27,7 @@ El sitio tiene **106 posts existentes** con historial en Google, pero estuvo má
 
 ---
 
-## Los 5 workflows
+## Los 9 workflows
 
 ### 1. WF1 — Blog SEO: Keyword → Publicar en WordPress
 **Qué hace:** toma una keyword aprobada en el Sheet y publica un artículo completo en WordPress de forma automática.
@@ -48,9 +50,31 @@ El sitio tiene **106 posts existentes** con historial en Google, pero estuvo má
 **Resultado:** actualiza fila existente (si había idea) o inserta fila nueva en la hoja `Redes Sociales` con scripts listos para publicar manualmente.
 
 ### 5. WF5 — Generador de Ideas: Blog + Entretenimiento
-**Qué hace:** consulta GSC (queries reales con ≥3 impresiones), SerpAPI (PAA + autocomplete) y GPT-4o para generar ideas nuevas y enriquecidas. Descarta duplicados con Jaccard ≥50%.
+**Qué hace:** consulta GSC (queries reales con ≥3 impresiones), SerpAPI (PAA + autocomplete) y GPT-4o para generar ideas nuevas y enriquecidas. Descarta duplicados con Jaccard ≥50%. Desde 2026-05-04: cuota mínima de 6 de 15 ideas blog deben tener modificador colombiano.
 **Cuándo corre:** manual — ejecutar cuando se quieran nuevas ideas para el pipeline.
 **Resultado:** inserta keywords nuevas en la hoja `Blog` (estado=Pendiente, con metadatos completos) e ideas de entretenimiento en `Redes Sociales` (tipo=Entretenimiento, estado=Idea) listas para ser procesadas por WF4.
+
+### 6. WF7 — AEO Monitor: Detectar citas en Google AI Overview
+**Qué hace:** consulta SerpAPI con 2-step async fetch para detectar si bigotesfelinos.com aparece como fuente citada en Google AI Overview de 20 keywords clave. Registra resultados en hoja `AEO_Tracking` con país, top dominios competidores, snippet citado.
+**Cuándo corre:** automático cada lunes 9am Colombia.
+**Resultado:** Telegram con resumen semanal: split país (🇨🇴 Colombianas vs 🌎 Generales), top 3 dominios que dominan tu nicho, insight contextual rotativo.
+
+### 7. WF8 — Bulk AEO Migrator (pendiente importación)
+**Qué hace:** procesa los 130 posts existentes cronológicamente para aplicar el stack AEO completo (respuesta directa, key takeaways, fuentes, schemas, etc.) sin filtro GSC. Reusa la lógica de WF3 pero ignora el ranking — útil para "migrar AEO al catálogo histórico".
+**Cuándo corre:** Manual — el usuario lo ejecuta cuando quiere procesar el siguiente batch de 10 posts.
+**Resultado:** 10 posts re-optimizados con AEO completo + Sheet Blog!M actualizado para no reprocesar. Catálogo completo en ~13 runs (~$30 GPT total).
+**Importación:** `_aeo/sprint-4/WF8_Bulk_AEO_Migrator.json` → n8n UI → "+" → "Import from file".
+
+### 8. WF6 — Pillar Generator: Crear Página Pilar por Hub
+**Qué hace:** genera una **página pilar** completa (3.500-4.000 palabras) para uno de los 4 hubs temáticos: Salud, Alimentación, Razas o Mundo. Aplica el stack AEO completo (respuesta directa, key takeaways, tabla obligatoria, fuentes, schemas CollectionPage + Speakable + mentions Wikipedia). Publica como **page** (no post) en WordPress, sin categoría, sin fecha visible.
+**Cuándo corre:** Manual — solo se ejecuta cuando se quiere crear un pilar nuevo o regenerar uno existente.
+**Resultado:** página pilar publicada en `bigotesfelinos.com/{slug}` con imagen destacada, schemas y enlaces internos a clusters publicados del hub.
+**Estado actual:** los 4 pilares ya están publicados ([Salud](https://bigotesfelinos.com/guia-salud-felina/), [Alimentación](https://bigotesfelinos.com/guia-alimentacion-gatos/), [Razas](https://bigotesfelinos.com/guia-razas-gatos/), [Mundo](https://bigotesfelinos.com/guia-comportamiento-felino/)).
+
+### 9. WF9 — Pilares Auto-Sync: Inyectar clusters en pilares
+**Qué hace:** lee la hoja `Blog`, agrupa los posts publicados por hub (columna R), y refresca la sección "Más artículos sobre..." en cada uno de los 4 pilares con la lista actualizada de clusters. Idempotente: re-ejecutar 100 veces da el mismo resultado.
+**Cuándo corre:** automático todos los días a las 8:30am Colombia (30 min después de WF1) + manual para refresh inmediato.
+**Resultado:** los 4 pilares siempre tienen enlaces internos al día con todos los clusters publicados de su hub. Cada cluster nuevo aparece en su pilar máximo 25 horas después de ser publicado por WF1.
 
 ---
 
@@ -69,7 +93,27 @@ El equipo escribe la keyword (col A) y los metadatos básicos (nicho, audiencia,
 
 El equipo solo marca `estado = Publicado` en cada fila cuando publica manualmente en cada plataforma.
 
-> Todo lo demás — escribir, generar imagen, publicar, generar copies de redes, generar ideas — lo hacen los workflows sin intervención humana. El detalle de columnas A-M (Blog) y A-I (Redes Sociales) está en [`../CLAUDE.md`](../CLAUDE.md).
+> Todo lo demás — escribir, generar imagen, publicar, generar copies de redes, generar ideas — lo hacen los workflows sin intervención humana. El detalle de columnas (Blog A-S incluyendo R=hub y S=cluster_parent, Redes Sociales A-I) está en [`../CLAUDE.md`](../CLAUDE.md).
+
+---
+
+## Estructura de Hubs y Pilares (Sprint 3 — desplegado 2026-05-04)
+
+El catálogo de 188 keywords está organizado en **4 hubs temáticos**, cada uno con su **página pilar** maestra (3.500-4.000 palabras). Los clusters (artículos de blog) enlazan al pilar; el pilar lista a los clusters.
+
+| Hub | Pilar (URL) | Page ID | Clusters publicados | Slug |
+|-----|------------|---------|---------------------|------|
+| Salud | [`/guia-salud-felina/`](https://bigotesfelinos.com/guia-salud-felina/) | 2700 | ~50 | `guia-salud-felina` |
+| Alimentación | [`/guia-alimentacion-gatos/`](https://bigotesfelinos.com/guia-alimentacion-gatos/) | 2702 | ~12 | `guia-alimentacion-gatos` |
+| Razas | [`/guia-razas-gatos/`](https://bigotesfelinos.com/guia-razas-gatos/) | 2704 | ~22 | `guia-razas-gatos` |
+| Mundo | [`/guia-comportamiento-felino/`](https://bigotesfelinos.com/guia-comportamiento-felino/) | 2706 | ~45 | `guia-comportamiento-felino` |
+
+**Beneficio:** los pilares acumulan autoridad de todos sus clusters, son citados por IAs (ChatGPT, Perplexity) por su exhaustividad, y crean estructura de site claramente temática para Google.
+
+**Ciclo de vida de un cluster:**
+1. WF1 publica un cluster nuevo a las 8am L/M/V → categoría WP correcta + slug + AEO completo
+2. WF9 corre a las 8:30am del día siguiente → refresca la sección "Más artículos sobre..." del pilar correspondiente con el cluster nuevo enlazado
+3. Resultado: el cluster aparece automáticamente listado en su pilar máximo 25 horas después
 
 ---
 
@@ -128,8 +172,25 @@ El equipo solo marca `estado = Publicado` en cada fila cuando publica manualment
   └────────────────────────┘          │  WP PATCH → actualiza     │
                                       └───────────────────────────┘
 
+  ┌────────────────────────────────────────────────────────────────┐
+  │  WF9 — Pilares Auto-Sync · Diario 8:30am                       │
+  │                                                                │
+  │  Lee Blog (col R = hub) → agrupa publicados por hub            │
+  │  → GET cada uno de los 4 pilares (WP pages)                    │
+  │  → Regenera sección "Más artículos sobre..." en cada pilar     │
+  │  → PATCH WP pages (idempotente)                                │
+  │                                                                │
+  │  Resultado: enlaces internos cluster ↔ pilar siempre al día    │
+  └────────────────────────────────────────────────────────────────┘
+
   ┌──────────────────────────────────────────────────────────────┐
-  │  TELEGRAM — notifica éxito y error en los 5 workflows        │
+  │  WF6 — Pillar Generator · Manual                             │
+  │  Crea/regenera UNA página pilar (3.500-4.000 palabras)       │
+  │  con stack AEO completo. Ejecutado 4 veces (1 por hub).      │
+  └──────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │  TELEGRAM — notifica éxito y error en los 9 workflows        │
   └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -152,6 +213,10 @@ El equipo solo marca `estado = Publicado` en cada fila cuando publica manualment
 | Copies redes sociales | Diario | ✅ Generación automática, publicación manual |
 | Contenido entretenimiento | 1/semana (sábado) | ✅ Generación automática, publicación manual |
 | Re-optimización posts | ~10/mes (1° de cada mes) | ✅ Ejecución automática mensual + manual disponible |
+| Sincronización pilares | Diario 8:30am | ✅ WF9 refresca enlaces cluster ↔ pilar automáticamente |
+| AEO Monitor | Lunes 9am | ✅ WF7 detecta citas en Google AI Overview |
+| Bulk AEO Migrator | A demanda | ⚪ Manual — procesa 10 posts viejos por run para añadir AEO |
+| Crear pilar nuevo | A demanda | ⚪ Manual — solo si se decide añadir un 5to hub |
 
 ---
 
@@ -182,3 +247,19 @@ Solo genera los scripts — no publica nada. La publicación es 100% manual. El 
 **WF5 — Ideas · Manual**
 
 Sin schedule intencionalmente. Si corriera automático cada semana generaría más ideas de las que el pipeline puede ejecutar (WF1 publica 3/semana). La dinámica correcta: cuando el equipo ve que el Sheet tiene pocas keywords `Pendiente` (menos de 2-3 semanas de backlog), ejecuta WF5 para rellenarlo.
+
+**WF6 — Pillar Generator · Manual**
+
+Sin schedule. Solo se usa para crear o regenerar pilares. El uso típico es: al inicio del proyecto se ejecuta 4 veces (una por hub) para crear los 4 pilares. Después puede quedar dormido por meses. Se reactiva si: (a) se decide añadir un 5to hub temático, (b) un pilar quedó muy desactualizado y se quiere regenerar desde cero, o (c) se cambió el prompt de generación y se quiere ver el efecto en un pilar específico.
+
+**WF7 — AEO Monitor · Lunes 9am**
+
+Corre semanal porque medir citas en Google AI Overview tiene volatilidad alta — más frecuente generaría ruido sin valor. El lunes da una visión de la semana anterior. Si bigotesfelinos.com aparece como fuente citada por la IA de Google para alguna de las 20 keywords clave, lo registra en hoja `AEO_Tracking` y avisa por Telegram con dominios competidores.
+
+**WF8 — Bulk AEO Migrator · Manual**
+
+Sin schedule. Procesa los posts viejos del catálogo para añadirles el stack AEO completo (respuesta directa, key takeaways, fuentes, schemas). El usuario lo ejecuta cuando tiene presupuesto GPT y quiere avanzar 10 posts más. A ritmo de 1 run por semana, los 130 posts existentes quedan migrados en ~13 semanas.
+
+**WF9 — Pilares Auto-Sync · Diario 8:30am**
+
+Corre 30 min después de WF1 para que si un cluster nuevo se publicó hoy, ya esté reflejado en su pilar correspondiente esa misma mañana. Idempotente: re-ejecutar 100 veces da el mismo resultado, así que no importa si corre cuando no hay cambios. Solo hace 4 GET + 4 PATCH al WP por día (sin GPT, costo cero).

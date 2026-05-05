@@ -1,6 +1,44 @@
 # Bigotes Felinos — ContentOps Engine: Documentación del Flujo
 
-**Última actualización:** 2026-05-04
+**Última actualización:** 2026-05-05 (sesión 12 — WF1 anti-canibalismo v2 + limpieza Sheet/WP)
+
+## Cambios sesión 12 (2026-05-05)
+
+**Limpieza estructural:**
+- Sheet pasó de 188 → 154 filas. Eliminadas 26 filas Pendientes que duplicaban Aprobadas/Publicadas/Pendientes (basura de carga inicial), y 8 filas correspondientes a posts "perdedores" en pares de canibalismo activo
+- 7 posts WP movidos a papelera (tras audit GSC: 1 click acumulado en 90 días → no justificaba fusión completa); recuperables 30 días
+- Redirect 301 en `.htaccess` para `/razas-de-gatos/razas-de-gatos/` → `/razas-de-gatos/` (categoría WP). Corrige el `redirect_canonical()` automático de WP que apuntaba a un post arbitrario
+- 2 keywords del backlog razas-Colombia reescritas para evitar falsos positivos del nuevo threshold: `gato bengalí precio Colombia` → `cuánto cuesta un Bengalí en Colombia 2026`; mismo con Maine Coon
+
+**WF1 Anti-canibalismo v2 (33 → 36 nodos):**
+
+*Capa 1 — bf-node-017 reforzado:*
+- Jaccard sobre keywords: threshold bajado 50% → 35%
+- NUEVO Jaccard sobre slugs (extraídos de URL del post publicado): ≥60%
+- Stemming básico: `gatos`→`gato`, `gatito`→`gato`, `gatitos`→`gato` (regex `it([oa])s?$` y quita `s` final si len>4)
+- Stop words extendidas con "guia", "completa" (genéricos que sesgaban Jaccard)
+- Output incluye nuevo campo `match_reason` (`kw_NNpct` o `slug_NNpct`)
+
+*Capa 2 — Slug Pre-Check WP (3 nodos nuevos entre bf-node-006 y bf-node-006a):*
+- `bf-node-006sg` HTTP GET `/wp-json/wp/v2/posts?slug={slug}&_fields=id,slug,title,link,status&context=edit`. Configurado con `alwaysOutputData: true` (CRÍTICO: WP devuelve `[]` cuando no hay match, sin ese flag el flujo se cortaría silenciosamente)
+- `bf-node-006sgc` Code: si la respuesta WP contiene un post con slug exactamente igual al propuesto, emite `cannibalism: true` con `similar_keyword`, `similar_url`, `similarity_pct: 100`, `match_reason: 'slug_wp_conflict'`. Si no, propaga el item original con `slug_check_passed: true`
+- `bf-node-006sgi` IF: `cannibalism === true` → bf-node-019 (Marcar Canibalismo); FALSE → bf-node-006a (Internal Linker)
+- bf-node-019 modificado para usar `$json.similar_url` directamente (antes referenciaba cross-node a `Formatear Posts Publicados`). Sirve ahora para ambos paths de canibalismo
+
+*Cambios complementarios:*
+- bf-node-006 ahora emite `slug` en root del json (además de dentro de `wp_body_json`) para que bf-node-006sg lo pueda usar como query param
+- bf-node-003b: nuevo bypass `if ($execution?.mode !== 'trigger') return [items[0]];` antes del filtro L/M/V. Permite testing/manual desde la UI cualquier día (cron real sigue respetando L/M/V)
+- Llamar nano banana: `retryOnFail: 3 tries, 5s` para fallos HTTP transitorios 5xx/timeouts
+- Preparar Imagen: nuevo guard explícito para `finishReason !== 'STOP'` (NO_IMAGE de Gemini) y `content?.parts` ausente. Throw error claro pidiendo re-aprobar la kw
+
+**Hallazgos técnicos importantes (gotchas n8n):**
+- `$execution.mode === 'test'` cuando se ejecuta vía "Execute Workflow" desde la UI con un Schedule Trigger (no `'manual'` como muestra `executions/list`). Para distinguir cron real, usar `mode !== 'trigger'`
+- HTTP Request con response array vacío (`[]`) NO emite items por defecto → flujo se corta. Solución: `alwaysOutputData: true`
+- Gemini puede devolver HTTP 200 OK con `finishReason: NO_IMAGE` y sin `content.parts` (rechazo de generación). El `retryOnFail` HTTP no ayuda — hay que detectar explícitamente en Code
+
+**Validación E2E en producción:** post `comida-para-gatos-colombia-marcas` publicado el 2026-05-05 con flujo completo (cannibalism=false, slug_check_passed=true, Quality Score 82/120, 5 tags asignados, Telegram con deeplink GSC).
+
+---
 
 > Este documento es la **explicación narrativa paso-a-paso del flujo** de cada workflow + el historial de cambios. Para Master Sheet, estados, nodos y pendientes, abrir [`../CLAUDE.md`](../CLAUDE.md). Para credenciales y costos, abrir [`CREDENCIALES_Y_COSTOS.md`](CREDENCIALES_Y_COSTOS.md). Para overview ejecutivo, abrir [`RESUMEN_PROYECTO.md`](RESUMEN_PROYECTO.md).
 
@@ -591,6 +629,154 @@ Telegram → resumen: N ideas blog + M ideas entretenimiento
 
 ---
 
+## WF6 — Pillar Generator (Sprint 3)
+
+**Workflow:** `BF - WF6 - Pillar Generator: Crear Página Pilar por Hub` (ID: `cE3mJkzcKmJrWg4z`) · **17 nodos** · ✅ Activo (manual)
+
+### ¿Qué hace?
+
+Genera una **página pilar** completa (3.500-4.000 palabras) para uno de los 4 hubs temáticos. Aplica el stack AEO completo y publica como **page** (no post) en WordPress, sin categoría y sin fecha visible.
+
+Los 4 pilares ya están publicados:
+- 🏛️ Salud → https://bigotesfelinos.com/guia-salud-felina/ (page ID 2700)
+- 🏛️ Alimentación → https://bigotesfelinos.com/guia-alimentacion-gatos/ (page ID 2702)
+- 🏛️ Razas → https://bigotesfelinos.com/guia-razas-gatos/ (page ID 2704)
+- 🏛️ Mundo → https://bigotesfelinos.com/guia-comportamiento-felino/ (page ID 2706)
+
+### ¿Cuándo se ejecuta?
+
+Manual ÚNICAMENTE. Casos de uso:
+1. **Setup inicial** (ya completado): 4 ejecuciones, una por hub
+2. **Crear un 5to hub temático nuevo** (futuro)
+3. **Regenerar un pilar específico** si quedó desactualizado o si se cambió el prompt
+4. **Pruebas A/B** del prompt con un hub específico
+
+Para cambiar el hub: editar la constante `HUB_SELECCIONADO` en el Code node `wf6-002 Definir Hub`. Valores válidos: `'Salud'`, `'Alimentación'`, `'Razas'`, `'Mundo'`.
+
+### Estructura del HTML generado
+
+```html
+<p class="respuesta-directa">[1-2 oraciones citables por IA]</p>
+[intro_html: 2 párrafos contextuales]
+<blockquote class="key-takeaways">[5-7 conclusiones del hub]</blockquote>
+[secciones_html: 6-8 H2 question-first con sus H3]
+<table>[tabla obligatoria con datos estructurados]</table>
+<h2>Preguntas frecuentes</h2>[6-8 FAQ items amplios del hub]
+<section class="fuentes-consultadas">[5-7 fuentes científicas]</section>
+<script>[FAQPage JSON-LD]</script>
+<script>[CollectionPage + Speakable + mentions Wikipedia JSON-LD]</script>
+```
+
+### Salvaguardas técnicas
+
+- **Imagen falla → publicación continúa sin imagen.** Nodo `wf6-008` con `retryOnFail: 3, waitBetweenTries: 2000ms` + `onError: continueRegularOutput`. Si Gemini falla 3 veces, el pilar se publica sin featured_media y Telegram avisa "⚠️ sin imagen — añadir manualmente". El contenido GPT NUNCA se pierde.
+- **Filename con prefijo `pilar-img-{slug}.webp`** para evitar conflicto del slug del attachment con el slug de la page (lección aprendida con los 4 pilares iniciales que se publicaron como `/guia-X-2/` por colisión).
+- **Sentence case en H2/H3.** Prompt obliga + parser tiene `headingsToSentenceCase()` que normaliza si GPT genera Title Case (preserva nombres propios: Colombia, Bogotá, WSAVA, Royal Canin, Bigotes Felinos).
+- **Validaciones obligatorias** (Quality Gate inline): tabla `<table>` o `<dl>` (HARD GATE), FAQ ≥5 items, fuentes ≥3, respuesta_directa no vacía. Sin estos, el pilar NO se publica.
+
+### Flujo
+
+```
+Manual Trigger
+        ↓
+Definir Hub (editas HUB_SELECCIONADO) → mapea a {slug, titulo, seo_title, prompt_imagen}
+        ↓
+Leer Blog!A:S → filtrar clusters del hub seleccionado
+        ↓
+Construir Prompt GPT (3.500-4.000 palabras, sentence case, tabla obligatoria, vocabulario Vet-Friend)
+        ↓
+GPT-4o (max_tokens: 12000, timeout: 180s) → JSON con respuesta_directa, key_takeaways, secciones, tabla, FAQ, fuentes, entities, prompt_imagen
+        ↓
+Parsear y Construir HTML → scrubAIWatermarks + headingsToSentenceCase + ensamblaje + schemas
+        ↓
+Llamar nano banana (16:9 cinematic, retry 3x, continueOnFail)
+        ↓
+[IF Imagen Disponible]
+   TRUE → Subir a WP Media → Set Alt Text → wp_body con featured_media
+   FALSE → wp_body sin featured_media
+        ↓
+Publicar Pilar como Page WP (POST /wp-json/wp/v2/pages)
+        ↓
+Telegram resumen con stats: palabras, FAQ, fuentes, entities, internal links, status imagen
+```
+
+---
+
+## WF9 — Pilares Auto-Sync (Sprint 3)
+
+**Workflow:** `BF - WF9 - Pilares Auto-Sync (cluster injection diaria)` (ID: `XvMhI97WVqj49U9f`) · **11 nodos** · ✅ Activo (auto + manual)
+
+### ¿Qué hace?
+
+Mantiene actualizada la sección "Más artículos sobre..." de cada uno de los 4 pilares. Cada vez que WF1 publica un cluster nuevo, WF9 lo refleja en el pilar correspondiente al día siguiente.
+
+### ¿Cuándo se ejecuta?
+
+- **Automático:** todos los días a las 8:30am Colombia (cron `30 13 * * *` con `timezone: America/Bogota`)
+- **Manual:** disponible para refresh inmediato
+
+Las 8:30am es 30 min después de WF1 (que publica clusters a las 8am L/M/V), garantizando que todo cluster nuevo aparece en su pilar máximo 25 horas después de ser publicado.
+
+### Idempotencia
+
+El workflow strippea cualquier `<section class="cluster-list">` previa antes de regenerar. Re-ejecutarlo 100 veces da el mismo resultado. Sin riesgo de duplicar clusters.
+
+### Estructura HTML inyectada
+
+```html
+<section class="cluster-list" data-pillar="guia-salud-felina">
+  <h2>Más artículos sobre salud felina</h2>
+  <p>Nuestra biblioteca creciente de contenidos del hub. 50 artículos disponibles.</p>
+  <ul class="cluster-items">
+    <li><a href="https://bigotesfelinos.com/.../">síntomas de gato enfermo</a></li>
+    <li><a href="https://bigotesfelinos.com/.../">toxoplasmosis embarazo gatos</a></li>
+    ... (todos los clusters publicados del hub)
+  </ul>
+</section>
+```
+
+Inserta antes del primer `<script type="application/ld+json">` para preservar los schemas al final del HTML.
+
+### Costo
+
+**$0** — no usa GPT. Solo 4 GET + 4 PATCH al WP por ejecución diaria.
+
+### Flujo
+
+```
+[Trigger: Schedule 8:30am OR Manual]
+        ↓
+Leer Blog!A:S
+        ↓
+Agrupar Clusters por Hub (Code runOnceForAllItems)
+   → 4 items: {hub, pilar_slug, titulo_seccion, clusters: [{keyword, url}, ...]}
+        ↓
+GET Pilar por Slug (HTTP GET /pages?slug={slug}&context=edit) — por item
+        ↓
+Construir HTML Inyectado (Code runOnceForEachItem):
+   - Strippea <section class="cluster-list"> previa (idempotente)
+   - Construye nueva sección con todos los clusters
+   - Inserta antes del primer <script> JSON-LD
+        ↓
+PATCH Pilar (HTTP POST /pages/{id}) — por item
+        ↓
+Resumen Final (Code) → mensaje Markdown con cluster_count por hub
+        ↓
+Telegram Notificar
+```
+
+### Backfill inicial (ya ejecutado 2026-05-04)
+
+| Hub | Clusters distribuidos |
+|-----|----------------------|
+| Salud | ~50 |
+| Mundo | ~45 |
+| Razas | ~22 |
+| Alimentación | ~12 |
+| **Total** | **~129 clusters** |
+
+---
+
 ## Historial de cambios
 
 | Fecha | Cambio |
@@ -643,3 +829,18 @@ Telegram → resumen: N ideas blog + M ideas entretenimiento
 | 2026-05-03 | WF2: rate limit Sheets 429 (re-fix definitivo) — `bf2-002` y `bf2-002b` convertidos a HTTP GET a Sheets API. 11 nodos total |
 | 2026-05-03 | **AEO Sprint 1 desplegado** — Cimientos de Answer Engine Optimization. (D1) `llms.txt` en raíz + página `/equipo-editorial/` con Yoast meta. (D2) Bloque `<section class="fuentes-consultadas">` con 3-5 referencias científicas. (D3-4) Schema upgrade: `WebPage` con `Speakable` + `HowTo` condicional. (D5) Tabla `<table>` o `<dl>` obligatoria con HARD GATE. WF1 (33 nodos) y WF3 (26 nodos) replicados |
 | 2026-05-03 | **AEO Sprint 2 desplegado** — Question-first + capa de entidades. Prompt obliga ≥70% de H2/H3 como preguntas. `aplicarInterrogacion()` en `capitalizarHeadings()`. GPT genera `entities[]` con Wikipedia URLs → WebPage `mentions[]` con `sameAs`. Quality Gate check #18. Threshold ahora 70/120 |
+| 2026-05-04 | **AEO Sprint 4 desplegado (WF7 AEO Monitor)** — workflow nuevo `73UFpj4m2vke6IPk` (12 nodos). Schedule lunes 9am Colombia. SerpAPI 2-step async fetch para AI Overview. Detecta `bigotesfelinos.com` en references[]. Append a `AEO_Tracking`. Telegram resumen semanal. **Baseline 0/14 citas** |
+| 2026-05-04 | **Hotfix regex U+2028/U+2029** — Latente desde inicio. Removido de bf-node-006 + fd-008. Recovery manual de "gato persa precio Colombia" (post 2670) |
+| 2026-05-04 | **Refinamientos AEO** — Whitelist 7 fuentes. Quality Gate `bodyH2` excluye estructurales. WF5 SerpAPI credential type fix |
+| 2026-05-04 | **WF5 COLOMBIA-FIRST QUOTA** — mínimo 6 de 15 ideas blog deben tener modificador colombiano (Colombia, Bogotá, Medellín, Cali, COP) |
+| 2026-05-04 (PM) | **WF7 enriquecido** — country split 🇨🇴/🌎 + top 3 dominios + insight rotativo (4 ramas según data). Cron timezone gotcha resuelto: `0 9 * * 1` Bogota = 9am hora local |
+| 2026-05-04 (PM) | **WF1 Telegram con GSC deeplink** — `[Solicitar indexación en Google](deeplink GSC URL Inspector)` con `encodeURIComponent`. Click directo a GSC prerellenado |
+| 2026-05-04 (PM) | **WF3 Telegram error fix** — fd-014 faltaba `=` prefijo. Corregido + parse_mode Markdown |
+| 2026-05-04 (PM) | **`/equipo-editorial/` con hyperlinks** — PATCH page 2673. Las 7 fuentes ahora son `<a>` con rel/target |
+| 2026-05-04 (PM) | **Análisis competitivo AEO** — 17 keywords AIO analizadas. ~50% video (YouTube/TikTok), Purina/Hill's domina alimentación, AniCura+Mayo en salud, queries colombianas locales sin competencia editorial felina |
+| 2026-05-04 (noche) | **AEO Sprint 3 desplegado: Clusters + Pilares** — 4 hubs temáticos (Salud/Alimentación/Razas/Mundo). 188 keywords clasificadas con cols R (`hub`) y S (`cluster_parent`) en hoja Blog (workflow utility one-shot, ya eliminado tras cumplir su rol). |
+| 2026-05-04 (noche) | **WF6 Pillar Generator creado** — `cE3mJkzcKmJrWg4z` (17 nodos). Manual. Genera page WP con stack AEO completo (3.500-4.000 palabras, tabla obligatoria, FAQ, fuentes whitelist, CollectionPage+Speakable+mentions JSON-LD). Sentence case rule en wf6-005 prompt + wf6-007 parser defensive. Salvaguarda imagen: retry 3x + `onError: continueRegularOutput` para no perder GPT si Gemini falla. Filename `pilar-img-{slug}.webp` para evitar conflicto attachment vs page. |
+| 2026-05-04 (noche) | **4 pilares publicados** — Salud (page 2700), Alimentación (2702), Razas (2704), Mundo (2706). URLs limpias `/guia-{hub}/`. Títulos en sentence case. Bug aspectRatio Gemini detectado: NO existe en `generationConfig`, debe ir en el prompt de texto. |
+| 2026-05-04 (noche) | **WF9 Pilares Auto-Sync creado** — `XvMhI97WVqj49U9f` (11 nodos). Schedule diario 8:30am Colombia (cron `30 13 * * *` con timezone Bogota) + Manual. Idempotente: regenera la sección `<section class="cluster-list">` de cada pilar con todos los clusters publicados del hub. Strippea cualquier sección previa antes de inyectar. Inserta antes del primer `<script>` JSON-LD para preservar schemas. **Costo $0 GPT** (solo WP REST). Backfill inicial: ~129 clusters distribuidos en los 4 pilares. |
+| 2026-05-04 (noche) | **Workflows utility eliminados** — `BF - WF-AUX - Clasificador Hubs (one-shot)` y `BF - WF-AUX - Fix Titulos Pilares (sentence case)`. Cumplieron su rol y se borraron del n8n para mantener inventario limpio. |
+| 2026-05-04 (PM) | **WF8 — Bulk AEO Migrator** (JSON listo, pendiente import) — Workflow de 23 nodos. Procesa 130 posts cronológicamente sin filtro GSC. 10 posts/run, ~$30 total catálogo. Manual Trigger. JSON en `_aeo/sprint-4/WF8_Bulk_AEO_Migrator.json` |
