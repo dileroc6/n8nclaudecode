@@ -2,14 +2,14 @@
   "permissions": {
     "allow": [],
     "additionalDirectories": [
-      "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/LuxeSmile"
+      "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/LuxeSmile"
     ]
   },
   "extraKnownMarketplaces": {
     "n8n-skills-local": {
       "source": {
         "source": "directory",
-        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-skills"
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-skills"
       }
     }
   },

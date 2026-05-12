@@ -405,7 +405,7 @@ Intentar reservar el 25 de diciembre (festivo). El cliente debe recibir "no hay 
 
 1. Inspecciona la última ejecución del workflow correspondiente:
    ```bash
-   API_KEY=$(cat /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/Zoe/.env | grep N8N_API_KEY | cut -d= -f2)
+   API_KEY=$(cat /home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/Zoe/.env | grep N8N_API_KEY | cut -d= -f2)
    curl -s -H "X-N8N-API-KEY: $API_KEY" "https://n8n.srv1398596.hstgr.cloud/api/v1/executions?workflowId=<WF_ID>&limit=3"
    ```
 

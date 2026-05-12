@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Read(//home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/**)",
+      "Read(//home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/**)",
       "Bash(python3)"
     ]
   }

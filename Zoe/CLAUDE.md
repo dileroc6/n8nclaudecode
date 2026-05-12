@@ -329,7 +329,7 @@ Paleta Zoe: púrpura `#7B1FA2` (Bogotá) + teal `#00ACC1` (Cajicá) + ámbar/ros
 
 ## 13. Memoria de Claude Code
 
-Este proyecto tiene memoria activa en `~/.claude/projects/-home-dileroc-Documentos-Chango-Proyectos-N8N-CloudeCode/memory/`. Entradas relevantes:
+Este proyecto tiene memoria activa en `~/.claude/projects/-home-dileroc-Documentos-Chango-Proyectos-N8N-ClaudeCode/memory/`. Entradas relevantes:
 
 - `zoe_spa_project.md` — contexto principal Zoe (catálogo, políticas, decisiones).
 - `nano_banana_credencial_transversal.md` — credenciales Gemini compartidas BF/BC (no aplica a Zoe que usa OpenAI).

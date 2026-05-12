@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(node scripts/validate_workflow.js workflows/WF-C_sesiones.json)"
-    ]
-  }
-}

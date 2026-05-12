@@ -1,6 +1,6 @@
 # Zoe Tantric SPA — Bot WhatsApp + Backend de reservas
 
-Cliente del proyecto **N8N-CloudeCode**. Bot conversacional WhatsApp para reservas de masaje tántrico, integrado con n8n + Evolution API + Postgres + GPT-4o-mini en el VPS Hostinger compartido.
+Cliente del proyecto **N8N-ClaudeCode**. Bot conversacional WhatsApp para reservas de masaje tántrico, integrado con n8n + Evolution API + Postgres + GPT-4o-mini en el VPS Hostinger compartido.
 
 ## Documentación
 

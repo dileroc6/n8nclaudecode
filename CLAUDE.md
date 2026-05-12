@@ -1,4 +1,4 @@
-# N8N-CloudeCode
+# N8N-ClaudeCode
 
 ## Objetivo
 
@@ -9,7 +9,7 @@ Crear workflows profesionales en n8n para múltiples clientes, usando el servido
 ## Estructura del proyecto
 
 ```
-N8N-CloudeCode/
+N8N-ClaudeCode/
 ├── n8n-mcp/          # Servidor MCP — herramienta compartida (Node 20)
 ├── n8n-skills/       # Skills de Claude Code para n8n
 ├── LuxeSmile/        # Cliente: clínica dental Luxe Smile

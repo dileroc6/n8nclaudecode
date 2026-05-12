@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta Comercial — Zoe Tantric SPA</title>
+<style>
+:root {
+  --zoe-purple: #7B1FA2;
+  --zoe-teal:   #00ACC1;
+  --zoe-dark:   #2c1338;
+  --zoe-bg:     #fafafa;
+  --zoe-card:   #ffffff;
+  --zoe-text:   #1f1f1f;
+  --zoe-muted:  #6b6b6b;
+  --zoe-border: #e6e0ea;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--zoe-bg);
+  color: var(--zoe-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+}
+.container {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 60px 56px 80px 56px;
+  background: var(--zoe-card);
+  box-shadow: 0 4px 24px rgba(123, 31, 162, 0.08);
+}
+h1, h2, h3, h4 {
+  color: var(--zoe-dark);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1.8em;
+  margin-bottom: 0.6em;
+}
+h1 {
+  font-size: 2.1rem;
+  border-bottom: 3px solid var(--zoe-purple);
+  padding-bottom: 0.4em;
+  margin-top: 0.4em;
+}
+h2 {
+  font-size: 1.55rem;
+  color: var(--zoe-purple);
+  border-bottom: 1px solid var(--zoe-border);
+  padding-bottom: 0.3em;
+}
+h3 {
+  font-size: 1.2rem;
+  color: var(--zoe-teal);
+}
+h4 { font-size: 1.05rem; }
+
+p { margin: 0.7em 0; }
+strong { color: var(--zoe-dark); }
+em { color: var(--zoe-muted); }
+
+a {
+  color: var(--zoe-teal);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--zoe-teal);
+}
+a:hover { color: var(--zoe-purple); border-bottom-color: var(--zoe-purple); }
+
+ul, ol { padding-left: 1.6em; }
+li { margin: 0.25em 0; }
+
+code {
+  background: #f4eef7;
+  color: var(--zoe-purple);
+  padding: 0.12em 0.4em;
+  border-radius: 4px;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+pre {
+  background: #1f1230;
+  color: #e8d9f5;
+  padding: 18px 22px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.55;
+  border-left: 4px solid var(--zoe-teal);
+}
+pre code { background: transparent; color: inherit; padding: 0; }
+
+blockquote {
+  border-left: 4px solid var(--zoe-purple);
+  background: #f8f0fb;
+  margin: 1.2em 0;
+  padding: 0.8em 1.2em;
+  color: var(--zoe-dark);
+  border-radius: 0 6px 6px 0;
+}
+blockquote p { margin: 0.3em 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: 0.95em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  border-radius: 6px;
+  overflow: hidden;
+}
+thead {
+  background: linear-gradient(90deg, var(--zoe-purple) 0%, #9c27b0 100%);
+  color: white;
+}
+th {
+  text-align: left;
+  padding: 12px 14px;
+  font-weight: 600;
+  font-size: 0.92em;
+  letter-spacing: 0.02em;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--zoe-border);
+  vertical-align: top;
+}
+tbody tr:nth-child(even) { background: #fbf7fd; }
+tbody tr:hover { background: #f0e4f5; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--zoe-border);
+  margin: 2em 0;
+}
+
+.page-break {
+  height: 0;
+  border-top: 1px dashed var(--zoe-border);
+  margin: 2.4em 0;
+  page-break-after: always;
+}
+
+/* Title block (first lines before content) */
+.container > h1:first-of-type {
+  text-align: center;
+  font-size: 2.4rem;
+  border: none;
+  padding: 0;
+  margin-bottom: 0.4em;
+}
+
+/* Print-friendly */
+@media print {
+  body { background: white; font-size: 11pt; }
+  .container { box-shadow: none; padding: 0; max-width: 100%; }
+  .page-break { page-break-after: always; border: none; height: 0; }
+  h1, h2, h3 { page-break-after: avoid; }
+  table, pre, blockquote { page-break-inside: avoid; }
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .container { padding: 24px 18px; }
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.25rem; }
+  table { font-size: 0.85em; }
+  th, td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header style="text-align:center; padding-bottom:24px; border-bottom:1px solid var(--zoe-border); margin-bottom:24px;">
+  <div style="font-size:0.85rem; letter-spacing:0.15em; color:var(--zoe-teal); text-transform:uppercase; font-weight:600;">Propuesta Comercial</div>
+  <div style="font-size:2.2rem; font-weight:700; color:var(--zoe-dark); margin-top:6px;">Sistema de Reservas Automatizado</div>
+  <div style="font-size:1.1rem; color:var(--zoe-muted); margin-top:6px;">Zoe Tantric SPA · Bogotá + Cajicá</div>
+  <div style="font-size:0.9rem; color:var(--zoe-muted); margin-top:14px;">Diego Rojas · Mayo 2026</div>
+</header>
+<div class="page-break"></div>
+<h1>Resumen Ejecutivo</h1>
+<p><strong>Zoe Tantric SPA</strong> recibe consultas y reservas por WhatsApp las 24 horas, pero solo se responde durante horario laboral. Cada mensaje no atendido a tiempo es una reserva potencial que se pierde — y cada no-show es un slot vendible que se desperdicia.</p>
+<p>Esta propuesta describe la implementación de un <strong>sistema integral de gestión de reservas vía WhatsApp</strong>, completamente operativo y probado, diseñado específicamente para Zoe. El sistema:</p>
+<ul>
+<li><strong>Atiende, califica y agenda clientes 24/7</strong> sin intervención humana.</li>
+<li><strong>Reduce no-shows</strong> mediante un sistema de check-in con código de verificación (OTP).</li>
+<li><strong>Da al admin un panel de control conversacional</strong> por WhatsApp para operar el negocio sin abrir aplicaciones.</li>
+<li><strong>Provee 6 dashboards de inteligencia de negocio</strong> (financiero, operativo, retención, comparativo entre sedes, performance de terapeutas).</li>
+<li><strong>Cumple estrictamente las políticas del negocio</strong> (no servicios sexuales, no tocar a la terapeuta, escalamiento al admin).</li>
+</ul>
+<p><strong>Inversión — modelo modular:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Plan Base</th>
+<th>Plan Premium <em>(recomendado)</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Instalación llave en mano</td>
+<td><strong>$4.200.000 COP</strong></td>
+<td><strong>$5.500.000 COP</strong></td>
+</tr>
+<tr>
+<td>Operación y soporte</td>
+<td><strong>$550.000 COP / mes</strong></td>
+<td><strong>$700.000 COP / mes</strong></td>
+</tr>
+<tr>
+<td>Dashboards de inteligencia</td>
+<td>1 (Operativo Diario)</td>
+<td>6 (todos)</td>
+</tr>
+<tr>
+<td>Add-ons opcionales</td>
+<td>Activables después</td>
+<td>Activables después</td>
+</tr>
+</tbody>
+</table>
+<p>El <strong>Plan Base</strong> incluye el sistema completo de reservas, admin conversacional, OTP anti no-show, recordatorios 24h y un dashboard operativo — todo lo necesario para que el spa opere desde el día 1. Los dashboards adicionales y funcionalidades avanzadas (pago previo, multi-sede, etc.) están disponibles como <strong>add-ons</strong> que pueden activarse en cualquier momento (detalle en sección 8).</p>
+<p><strong>ROI esperado (Plan Premium):</strong> entre <strong>4x y 17x</strong> sobre la mensualidad, dependiendo del volumen de reservas (detalle en sección 7).</p>
+<div class="page-break"></div>
+<h1>1. El problema que resolvemos</h1>
+<p>Un spa de masaje tántrico opera en un mercado con tres fricciones particulares que castigan los ingresos:</p>
+<h3>1.1 Consultas fuera de horario que no se convierten</h3>
+<p>La mayoría de los mensajes a un spa llegan <strong>entre 7 PM y 1 AM</strong>, cuando el equipo administrativo ya no responde. Para cuando se contesta al día siguiente, el cliente ya buscó otra alternativa o perdió el impulso.</p>
+<h3>1.2 Tiempo administrativo desperdiciado en preguntas repetitivas</h3>
+<p>&quot;¿Cuánto cuesta?&quot;, &quot;¿qué incluye?&quot;, &quot;¿hay jacuzzi?&quot;, &quot;¿dónde quedan?&quot; — el 70% de las conversaciones son <strong>preguntas que se responden idénticas</strong> cada día. Una persona contestando esto es tiempo que no se dedica a la operación del spa.</p>
+<h3>1.3 No-shows y reprogramaciones sin control</h3>
+<p>Sin un sistema, no hay manera de:</p>
+<ul>
+<li>Confirmar asistencia con anticipación.</li>
+<li>Limitar reprogramaciones abusivas.</li>
+<li>Identificar clientes problemáticos antes de que afecten la agenda.</li>
+<li>Tener números reales del negocio para tomar decisiones.</li>
+</ul>
+<blockquote>
+<p><em><strong>Nota:</strong> Los números exactos de volumen actual y estructura administrativa se completarán en una sesión de descubrimiento de 30 minutos antes de firmar. El ROI estimado de la sección 7 cubre 3 escenarios para que ustedes identifiquen el suyo.</em></p>
+</blockquote>
+<div class="page-break"></div>
+<h1>2. La solución: Zoe Bot</h1>
+<p>Un sistema en producción, listo para operar desde el día 1, con tres componentes:</p>
+<h3>2.1 Bot cliente (atención automática 24/7)</h3>
+<p>Atiende a cualquier persona que escriba al WhatsApp <code>+57 305 342 1597</code>. Sabe:</p>
+<ul>
+<li>Saludar de forma cálida y consultiva (no spammea precios al primer mensaje).</li>
+<li>Explicar el catálogo completo: <strong>Reflejo, Memorable, Espectador</strong> — individual, pareja y add-on jacuzzi.</li>
+<li>Verificar disponibilidad real contra la agenda de las 5 terapeutas en ambas sedes.</li>
+<li><strong>Agendar la cita</strong> dejándola registrada en base de datos.</li>
+<li>Cancelar y reprogramar (con límite duro de 3 reprogramaciones antes de escalar al admin).</li>
+<li>Responder FAQ del PDF &quot;Parejas en Zoe&quot;: políticas, métodos de pago, ubicaciones.</li>
+<li><strong>Cumplir reglas duras de compliance:</strong> nunca ofrecer servicios sexuales, nunca insinuar contacto físico con la terapeuta, escalar inmediatamente al admin si el cliente insiste.</li>
+</ul>
+<p><strong>Tolerancia natural al lenguaje:</strong> entiende typos, frases incompletas, conjugaciones colombianas. El cliente no necesita aprender comandos.</p>
+<h3>2.2 Bot admin (operación conversacional)</h3>
+<p>El admin (<code>+57 301 266 1158</code>) opera el negocio <strong>escribiendo en lenguaje natural por WhatsApp</strong>:</p>
+<pre><code>Admin:  bloquea a maría mañana 2 a 5 está enferma
+
+Bot:    Voy a registrar este bloqueo:
+        • Terapeuta: María García (Bogotá)
+        • Inicio:    viernes 8 mayo, 2:00 PM
+        • Fin:       viernes 8 mayo, 5:00 PM
+        • Motivo:    enferma
+
+        ¿Confirmas? sí o no
+
+Admin:  si
+
+Bot:    Listo. Bloqueo registrado. 2 citas afectadas:
+        • Juan P., 3 PM Reflejo  → coordina cancelación manual
+        • Laura M., 4 PM Memorable → coordina cancelación manual
+</code></pre>
+<p><strong>Acciones soportadas hoy:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Categoría</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Consultar</td>
+<td>Agenda del día, bloqueos vigentes, disponibilidad de terapeuta, ficha completa de un cliente (historial + alertas)</td>
+</tr>
+<tr>
+<td>Operar</td>
+<td>Crear/eliminar bloqueos, cancelar cita, bloquear/desbloquear cliente, resetear contador de reprogramaciones</td>
+</tr>
+<tr>
+<td>Seguridad</td>
+<td>Toda acción de escritura pide <strong>confirmación previa con preview</strong> (TTL 5 min); el admin puede decir &quot;no&quot; para cancelar</td>
+</tr>
+</tbody>
+</table>
+<h3>2.3 Sistema de check-in con OTP (anti no-show)</h3>
+<p>30 minutos después de la hora de la cita, el bot envía un código de 6 dígitos al cliente. El cliente lo entrega en recepción, lo escribe en WhatsApp, y la cita pasa a <strong>ejecutada</strong>. Si no se valida en 1 hora, <strong>automáticamente queda como <code>no_show</code></strong> en el sistema — sin trabajo manual.</p>
+<p>Esto da, por primera vez, <strong>número real de no-shows</strong> medible y comparable mes a mes.</p>
+<h3>2.4 Recordatorio automático 24h antes</h3>
+<p>Cada mañana a las 9 AM Bogotá el sistema envía recordatorio a todos los clientes con cita del día siguiente. Reduce no-shows típicamente entre 20% y 35%.</p>
+<h3>2.5 Festivos colombianos auto-bloqueados</h3>
+<p>El sistema computa los festivos del año siguiente automáticamente cada año (algoritmo Gauss + Ley Emiliani) y los marca como días bloqueados — sin que el admin tenga que hacerlo manual.</p>
+<div class="page-break"></div>
+<h1>3. Dashboards de inteligencia de negocio</h1>
+<p>Los 6 dashboards están construidos y operativos. El <strong>Operativo Diario</strong> está incluido en el Plan Base (resuelve el día a día). Los otros 5 se ofrecen como un add-on bundle llamado <strong>Analytics Pro</strong> que puede activarse al inicio (Plan Premium) o cuando Zoe lo decida.</p>
+<table>
+<thead>
+<tr>
+<th>Dashboard</th>
+<th>Para qué sirve</th>
+<th>Plan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Operativo Diario</strong></td>
+<td>Lo que pasa <strong>hoy</strong>: citas, OTP pendientes, agenda con colores por estado, alertas</td>
+<td style="color:var(--zoe-purple); font-weight:600; white-space:nowrap;">Base ✓</td>
+</tr>
+<tr>
+<td><strong>Visión General</strong></td>
+<td>Pulso del negocio en una pantalla: KPIs, ingresos, top terapeutas, top clientes</td>
+<td style="color:var(--zoe-teal); font-weight:600; white-space:nowrap;">Analytics Pro</td>
+</tr>
+<tr>
+<td><strong>Financiero</strong></td>
+<td>Ingresos diarios, mensuales 12 meses, ticket promedio, mix por servicio y por sede</td>
+<td style="color:var(--zoe-teal); font-weight:600; white-space:nowrap;">Analytics Pro</td>
+</tr>
+<tr>
+<td><strong>Bogotá vs Cajicá</strong></td>
+<td>Comparativo lado a lado: cuál sede rinde más, hora pico de cada una, tendencia</td>
+<td style="color:var(--zoe-teal); font-weight:600; white-space:nowrap;">Analytics Pro</td>
+</tr>
+<tr>
+<td><strong>Clientes / Retención</strong></td>
+<td>LTV, % recurrentes, clientes VIP, clientes en riesgo de churn, cohortes 30/60/90 días</td>
+<td style="color:var(--zoe-teal); font-weight:600; white-space:nowrap;">Analytics Pro</td>
+</tr>
+<tr>
+<td><strong>Performance Terapeutas</strong></td>
+<td>Quién factura más, quién tiene más no-shows, ticket promedio por terapeuta</td>
+<td style="color:var(--zoe-teal); font-weight:600; white-space:nowrap;">Analytics Pro</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Por qué importa:</strong> decidir con números, no con intuición. Saber objetivamente qué terapeuta agendar primero, qué servicio promover, qué sede necesita marketing. Los dashboards <strong>Financiero</strong>, <strong>Retención</strong> y <strong>Performance Terapeutas</strong> son los que típicamente disparan decisiones estratégicas — por eso el Plan Premium los incluye de entrada.</p>
+</blockquote>
+<div class="page-break"></div>
+<h1>4. Arquitectura técnica (resumen)</h1>
+<p>Sistema profesional, no un &quot;bot armado en una tarde&quot;:</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnología</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Canal de mensajería</td>
+<td>WhatsApp Business vía Evolution API v2</td>
+</tr>
+<tr>
+<td>Orquestación</td>
+<td>n8n self-hosted (VPS dedicado)</td>
+</tr>
+<tr>
+<td>Inteligencia</td>
+<td>OpenAI GPT-4o-mini con modo JSON estructurado</td>
+</tr>
+<tr>
+<td>Base de datos</td>
+<td>PostgreSQL — schema dedicado con 11 tablas, 7 funciones, triggers y constraints</td>
+</tr>
+<tr>
+<td>Dashboards</td>
+<td>Metabase self-hosted con 6 dashboards y 48 visualizaciones</td>
+</tr>
+<tr>
+<td>Zona horaria</td>
+<td>America/Bogotá en todo el sistema</td>
+</tr>
+</tbody>
+</table>
+<p><strong>7 workflows operativos en producción:</strong></p>
+<ol>
+<li><strong>Orquestador</strong> — recepción, idempotencia, ruteo cliente/admin, memoria conversacional de 6 turnos.</li>
+<li><strong>Agendar</strong> — validación de disponibilidad + INSERT atómico anti-race-condition.</li>
+<li><strong>Reprogramar / Cancelar / OTP</strong> — control de límites y estados.</li>
+<li><strong>Recordatorio 24h</strong> — cron diario 9 AM Bogotá.</li>
+<li><strong>OTP cron</strong> — cron cada 5 minutos para generar y expirar códigos.</li>
+<li><strong>Admin GPT</strong> — bot administrativo conversacional con preview/confirmación.</li>
+<li><strong>Festivos cron anual</strong> — auto-poblar calendario colombiano.</li>
+</ol>
+<p><strong>Garantías técnicas incluidas:</strong></p>
+<ul>
+<li>Idempotencia en el webhook (no se duplican reservas si WhatsApp reenvía).</li>
+<li>Race conditions cubiertas por <code>EXCLUDE constraint</code> en Postgres.</li>
+<li>Memoria conversacional persistente (el bot recuerda 6 turnos atrás).</li>
+<li>Backups diarios de Postgres.</li>
+<li>Anti-canibalismo (el sistema nunca agenda dos clientes al mismo slot).</li>
+</ul>
+<div class="page-break"></div>
+<h1>5. Lo que ya está construido y validado</h1>
+<blockquote>
+<p><strong>Importante:</strong> esto <strong>no es una propuesta de desarrollo desde cero</strong>. El sistema ya está implementado, en producción, y probado funcionalmente. Lo que se contrata es la <strong>operación, soporte y mejora continua</strong>.</p>
+</blockquote>
+<h3>5.1 Funcionalidades del bot cliente — validadas</h3>
+<ul>
+<li>[x] Saludo consultivo (no bombardea precios).</li>
+<li>[x] Catálogo on-demand bien explicado.</li>
+<li>[x] Agendamiento con datos completos (servicio + fecha + hora + sede).</li>
+<li>[x] Memoria conversacional (información en partes).</li>
+<li>[x] Cancelación de cita.</li>
+<li>[x] Reprogramación con contador 1-3 + escalamiento al 4° intento.</li>
+<li>[x] FAQ del PDF (no sexual, no tocar terapeuta, sedes, métodos de pago).</li>
+<li>[x] Tolerancia a typos y conjugaciones colombianas.</li>
+<li>[x] Privacidad inviolable: nunca revela información de otros clientes ni datos internos.</li>
+<li>[x] Rechaza temas fuera del scope.</li>
+</ul>
+<h3>5.2 Funcionalidades admin — validadas</h3>
+<ul>
+<li>[x] Saludo y ayuda conversacionales.</li>
+<li>[x] Listar agenda, bloqueos y disponibilidad de terapeutas.</li>
+<li>[x] Crear/eliminar bloqueos con preview + confirmación + anti-duplicado.</li>
+<li>[x] Cancelar cita / bloquear cliente / desbloquear / reset reprog.</li>
+<li>[x] Cancelación de operación pendiente (&quot;no, mejor no&quot;).</li>
+<li>[x] Fechas relativas pre-calculadas (mañana, próximo lunes, etc.).</li>
+</ul>
+<h3>5.3 Infraestructura desplegada</h3>
+<ul>
+<li>[x] Schema Postgres completo aplicado.</li>
+<li>[x] Instancia Evolution <code>zoe</code> enlazada al <code>+57 305 342 1597</code>.</li>
+<li>[x] 7 workflows desplegados en n8n.</li>
+<li>[x] 6 dashboards Metabase con paleta púrpura/teal Zoe.</li>
+<li>[x] Calendario de festivos 2026-2027 cargado.</li>
+</ul>
+<div class="page-break"></div>
+<h1>6. Pendientes antes de salir a producción</h1>
+<p>Para que el sistema sea <strong>fiel a la operación real de Zoe</strong>, necesitamos completar (en sesiones cortas con la administración):</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Pendiente</th>
+<th>Tiempo estimado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Nombres reales de las 5 terapeutas y sus horarios base</td>
+<td>20 min</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Direcciones exactas de ambas sedes</td>
+<td>5 min</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Matriz &quot;qué terapeuta hace qué servicio&quot; (si no es 100% cruzada)</td>
+<td>15 min</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Prueba E2E del ciclo OTP completo con un cliente real</td>
+<td>30 min</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Validación final del tono y vocabulario del bot por la administración</td>
+<td>30 min</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total estimado: 1 sesión de 2 horas</strong> para tener el sistema listo para producción.</p>
+<div class="page-break"></div>
+<h1>7. Retorno de inversión (ROI)</h1>
+<p>Tres escenarios. Identifiquen el suyo:</p>
+<h2>7.1 Escenario A — Spa en crecimiento (≈50 reservas/mes)</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Valor estimado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ticket promedio</td>
+<td>$350.000</td>
+</tr>
+<tr>
+<td>Ingreso mensual actual</td>
+<td>≈ $17.500.000</td>
+</tr>
+<tr>
+<td><strong>Reservas recuperadas</strong> (atención 24/7 captura ~15% perdidas hoy fuera de horario)</td>
+<td>+7 reservas/mes</td>
+</tr>
+<tr>
+<td><strong>Ingreso adicional/mes</strong></td>
+<td><strong>+$2.450.000</strong></td>
+</tr>
+<tr>
+<td>Reducción no-shows con OTP+recordatorio (~25%)</td>
+<td>+2 reservas efectivas</td>
+</tr>
+<tr>
+<td><strong>Total beneficio/mes</strong></td>
+<td><strong>≈ $3.150.000</strong></td>
+</tr>
+<tr>
+<td>Inversión mensual</td>
+<td>$700.000</td>
+</tr>
+<tr>
+<td><strong>ROI</strong></td>
+<td><strong>4.5x</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>7.2 Escenario B — Operación consolidada (≈120 reservas/mes)</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Valor estimado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingreso mensual actual</td>
+<td>≈ $42.000.000</td>
+</tr>
+<tr>
+<td>Reservas recuperadas</td>
+<td>+15 reservas/mes</td>
+</tr>
+<tr>
+<td>Ingreso adicional</td>
+<td>+$5.250.000</td>
+</tr>
+<tr>
+<td>Reducción no-shows</td>
+<td>+5 reservas efectivas (+$1.750.000)</td>
+</tr>
+<tr>
+<td>Ahorro tiempo admin (~30 horas/mes liberadas)</td>
+<td>+$900.000 (costo de oportunidad)</td>
+</tr>
+<tr>
+<td><strong>Total beneficio/mes</strong></td>
+<td><strong>≈ $7.900.000</strong></td>
+</tr>
+<tr>
+<td>Inversión mensual</td>
+<td>$700.000</td>
+</tr>
+<tr>
+<td><strong>ROI</strong></td>
+<td><strong>11x</strong></td>
+</tr>
+</tbody>
+</table>
+<h2>7.3 Escenario C — Alto volumen (≈250+ reservas/mes)</h2>
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Valor estimado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingreso mensual actual</td>
+<td>≈ $87.500.000</td>
+</tr>
+<tr>
+<td>Reservas recuperadas + no-shows evitados</td>
+<td>+35 reservas/mes</td>
+</tr>
+<tr>
+<td><strong>Total beneficio/mes</strong></td>
+<td><strong>≈ $12.250.000</strong></td>
+</tr>
+<tr>
+<td>Inversión mensual</td>
+<td>$700.000</td>
+</tr>
+<tr>
+<td><strong>ROI</strong></td>
+<td><strong>17x</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Importante:</strong> estos números son <strong>estimados con benchmarks de industria de servicios en Colombia</strong>. Los reales se medirán mes a mes con los dashboards y se ajustarán en la primera revisión trimestral.</p>
+</blockquote>
+<div class="page-break"></div>
+<h1>8. Inversión — modelo modular</h1>
+<p>El sistema está diseñado para que Zoe arranque con <strong>todo lo esencial</strong> y vaya activando funcionalidades adicionales <strong>cuando las necesite</strong>, sin pagar de entrada por capacidades que tal vez nunca use.</p>
+
+<h2>8.1 Plan Base — el sistema funcionando de extremo a extremo</h2>
+<p><strong>Instalación:</strong> $4.200.000 COP &nbsp;·&nbsp; <strong>Operación:</strong> $550.000 COP / mes</p>
+<p><strong>Incluye:</strong></p>
+<ul>
+<li>Bot cliente 24/7 con catálogo completo: agendar, cancelar, reprogramar.</li>
+<li>Bot admin conversacional para operar el spa por WhatsApp (consultar agenda, crear bloqueos, gestionar clientes, etc.).</li>
+<li>Sistema OTP de check-in (anti no-show automático).</li>
+<li>Recordatorios automáticos 24 horas antes de cada cita.</li>
+<li>Auto-bloqueo de festivos colombianos cada año (cron anual).</li>
+<li><strong>1 dashboard: Operativo Diario</strong> (agenda del día, OTP pendientes, alertas).</li>
+<li>Hosting completo (VPS, n8n, Postgres, Metabase, Evolution).</li>
+<li>OpenAI API hasta 5.000 mensajes/mes (cubre operación normal de un spa).</li>
+<li>Soporte WhatsApp en horario hábil (respuesta &lt; 4 horas).</li>
+<li>Backups diarios automáticos de la base de datos.</li>
+<li>2 ajustes pequeños/mes sobre el bot (texto, tono, variantes).</li>
+<li>Capacitación inicial al admin (1 hora) + manual PDF.</li>
+</ul>
+
+<h2>8.2 Add-ons disponibles</h2>
+<p>Funcionalidades adicionales activables en cualquier momento — sea al inicio o más adelante cuando el negocio lo requiera:</p>
+
+<table>
+<thead>
+<tr>
+<th>Add-on</th>
+<th>Qué hace</th>
+<th>Instalación</th>
+<th>Mensual</th>
+<th>Disponibilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Analytics Pro</strong></td>
+<td>Los otros 5 dashboards: Visión General, Financiero, Bogotá vs Cajicá, Retención, Performance Terapeutas</td>
+<td>$1.500.000</td>
+<td>+$150.000</td>
+<td style="color:#2e7d32; font-weight:600; white-space:nowrap;">Listo ✓</td>
+</tr>
+<tr>
+<td><strong>SLA Premium</strong></td>
+<td>Soporte 7/7 con respuesta &lt; 2 horas (vs. &lt; 4h horario hábil del Base)</td>
+<td>—</td>
+<td>+$250.000</td>
+<td style="color:#2e7d32; font-weight:600; white-space:nowrap;">Listo ✓</td>
+</tr>
+<tr>
+<td><strong>Reportes ejecutivos automáticos</strong></td>
+<td>Resumen semanal/mensual con KPIs enviado por WhatsApp o email al admin</td>
+<td>$500.000</td>
+<td>+$60.000</td>
+<td>2 semanas</td>
+</tr>
+<tr>
+<td><strong>Notificación al acompañante (parejas)</strong></td>
+<td>En reservas de pareja, captura el WhatsApp del segundo cliente y le envía recordatorios + OTP</td>
+<td>$600.000</td>
+<td>+$50.000</td>
+<td>2 semanas</td>
+</tr>
+<tr>
+<td><strong>Multi-sede Evolution</strong></td>
+<td>Segundo número WhatsApp dedicado a Cajicá (independiente del de Bogotá)</td>
+<td>$1.200.000</td>
+<td>+$150.000</td>
+<td>4 semanas</td>
+</tr>
+<tr>
+<td><strong>Depósito anti no-show</strong></td>
+<td>Integración con pasarela de pago para reserva con depósito previo (PSE, tarjeta, link de pago)</td>
+<td>$1.800.000</td>
+<td>+$100.000</td>
+<td>6 semanas</td>
+</tr>
+</tbody>
+</table>
+
+<h2>8.3 Plan Premium (recomendado) — bundle con descuento</h2>
+<p><strong>Instalación:</strong> $5.500.000 COP &nbsp;·&nbsp; <strong>Operación:</strong> $700.000 COP / mes</p>
+<p>Equivale a <strong>Plan Base + Analytics Pro</strong> activados de entrada, con un ahorro de <strong>$200.000 en instalación</strong> frente a comprarlos por separado. Es la opción recomendada porque:</p>
+<ul>
+<li>Los 6 dashboards <strong>ya están construidos</strong> — activarlos cuesta lo mismo en infraestructura que activar uno solo.</li>
+<li>Las decisiones de negocio importantes (qué terapeuta agendar primero, qué sede impulsar, qué cliente recuperar) se toman desde <strong>Financiero</strong>, <strong>Retención</strong> y <strong>Performance Terapeutas</strong> — no desde el Operativo Diario.</li>
+<li>El ROI estimado de la sección 7 asume el Plan Premium.</li>
+</ul>
+
+<h2>8.4 Comparativo</h2>
+<table>
+<thead>
+<tr>
+<th>Característica</th>
+<th>Plan Base</th>
+<th>Plan Premium</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bot cliente 24/7 + admin conversacional</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>OTP anti no-show + recordatorios 24h</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Auto-bloqueo de festivos</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Hosting + monitoreo + backups</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Dashboards de inteligencia</td>
+<td>1 (Operativo)</td>
+<td><strong>6 (todos)</strong></td>
+</tr>
+<tr>
+<td>Ajustes pequeños incluidos / mes</td>
+<td>2</td>
+<td><strong>3</strong></td>
+</tr>
+<tr>
+<td>Reporte mensual ejecutivo</td>
+<td>Add-on</td>
+<td><strong>Incluido</strong></td>
+</tr>
+<tr>
+<td>Capacitación dashboards</td>
+<td>—</td>
+<td><strong>1 hora incluida</strong></td>
+</tr>
+<tr>
+<td><strong>Instalación</strong></td>
+<td>$4.200.000</td>
+<td><strong>$5.500.000</strong></td>
+</tr>
+<tr>
+<td><strong>Mensualidad</strong></td>
+<td>$550.000</td>
+<td><strong>$700.000</strong></td>
+</tr>
+</tbody>
+</table>
+
+<h2>8.5 Forma de pago</h2>
+<table>
+<thead>
+<tr>
+<th>Hito</th>
+<th>%</th>
+<th>Plan Base</th>
+<th>Plan Premium</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firma del contrato</td>
+<td>50%</td>
+<td>$2.100.000</td>
+<td>$2.750.000</td>
+</tr>
+<tr>
+<td>Salida a producción</td>
+<td>50%</td>
+<td>$2.100.000</td>
+<td>$2.750.000</td>
+</tr>
+</tbody>
+</table>
+<p>Los add-ons que se activen <strong>después</strong> de la salida a producción se facturan 100% al momento de activación + mensualidad incremental desde ese mes en adelante.</p>
+
+<h2>8.6 Operación mensual — qué cubre</h2>
+<p>Independientemente del plan, la mensualidad cubre:</p>
+<ul>
+<li>Hosting completo del sistema (VPS, n8n, Postgres, Evolution, Metabase).</li>
+<li>Costos de API de OpenAI dentro del límite del plan.</li>
+<li>Costos de Evolution API.</li>
+<li>Monitoreo proactivo: detectamos fallas antes que ustedes.</li>
+<li>Backups diarios automáticos.</li>
+<li>Actualizaciones de seguridad de la infraestructura.</li>
+<li>Ajustes pequeños mes a mes (textos, tono, variantes).</li>
+</ul>
+<p><strong>No incluye</strong> (cotización aparte):</p>
+<ul>
+<li>Nuevas funcionalidades fuera del scope de los add-ons listados.</li>
+<li>Migración de datos históricos extensos (más de 6 meses de citas).</li>
+<li>Integración con sistemas externos nuevos (ERP, CRM, contabilidad).</li>
+</ul>
+<div class="page-break"></div>
+<h1>9. Cronograma</h1>
+<table>
+<thead>
+<tr>
+<th>Semana</th>
+<th>Hito</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Firma + sesión de descubrimiento (2h) + carga de datos reales</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Pruebas E2E + ajuste de tono + capacitación admin</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Salida a producción</strong> + monitoreo intensivo</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Primer reporte ejecutivo + ajustes finos</td>
+</tr>
+</tbody>
+</table>
+<div class="page-break"></div>
+<h1>10. Por qué nosotros</h1>
+<ul>
+<li><strong>Sistema construido específicamente para spa tántrico</strong> — no es un bot genérico al que se le pegan parches. Las reglas de compliance del nicho están en el ADN del sistema.</li>
+<li><strong>Stack profesional</strong> que escala — no es Zapier de juguete. Es la misma tecnología que usan empresas medianas (n8n, Postgres, Metabase) en producción real.</li>
+<li><strong>Sin lock-in</strong> — todo el código y los datos viven en infraestructura controlable. Si en el futuro Zoe quiere mover el sistema, se entrega.</li>
+<li><strong>Caso de uso enfocado</strong>: este es el sistema enfocado en spa Premium en Colombia con dos sedes. No hay un compromiso genérico.</li>
+</ul>
+<div class="page-break"></div>
+<h1>11. Próximos pasos</h1>
+<ol>
+<li><strong>Hoy:</strong> Revisión de esta propuesta con la administración de Zoe.</li>
+<li><strong>Esta semana:</strong> Sesión de 30 minutos para resolver preguntas y validar escenario de ROI aplicable.</li>
+<li><strong>Próxima semana:</strong> Firma + sesión de descubrimiento + inicio de implementación.</li>
+</ol>
+<hr />
+<p><strong>Contacto:</strong></p>
+<p>Diego Rojas
+WhatsApp: [completar]
+Email: [completar]</p>
+<hr />
+<p><em>Propuesta válida por 30 días desde su emisión.</em>
+<em>Precio de lanzamiento por ser el primer cliente del nicho spa en Colombia.</em></p>
+
+</div>
+</body>
+</html>

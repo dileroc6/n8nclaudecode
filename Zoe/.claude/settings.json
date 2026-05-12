@@ -1,8 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/Zoe/*)",
-      "Bash(find /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/Zoe/* -type f)",
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/Zoe/*)",
+      "Bash(find /home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/Zoe/* -type f)",
       "Bash(psql -h * -U * -d * -f *)",
       "Bash(psql -h * -U * -d * -c *)",
       "mcp__n8n__n8n_create_workflow",
@@ -34,7 +34,7 @@
     "n8n-skills-local": {
       "source": {
         "source": "directory",
-        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-skills"
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-skills"
       }
     }
   }

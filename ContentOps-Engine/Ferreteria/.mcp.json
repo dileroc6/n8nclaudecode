@@ -3,7 +3,7 @@
     "n8n": {
       "command": "/home/dileroc/.nvm/versions/node/v20.20.2/bin/node",
       "args": [
-        "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-mcp/dist/mcp/index.js"
+        "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-mcp/dist/mcp/index.js"
       ],
       "env": {
         "N8N_API_URL": "https://n8n.srv1398596.hstgr.cloud/api/v1",
