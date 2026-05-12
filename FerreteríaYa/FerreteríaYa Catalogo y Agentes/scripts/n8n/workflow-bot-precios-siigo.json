@@ -1,0 +1,312 @@
+{
+  "name": "FerreteríaYa - Bot Precios Siigo",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "node-01",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "webhookId": "ferreteriaya-bot-precios-siigo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.message.text || '';\nreturn [{\n  json: {\n    model: 'claude-haiku-4-5-20251001',\n    max_tokens: 300,\n    messages: [{\n      role: 'user',\n      content: 'Eres un asistente de una ferretería colombiana. Del siguiente mensaje extrae el código del producto y el nuevo precio. Responde ÚNICAMENTE con JSON válido sin markdown ni texto adicional. Formato exacto: {\"codigo\": \"12345\", \"precio\": 50000}. El precio debe ser un número entero sin puntos ni comas ni símbolo $. Si no puedes extraer la información, responde: {\"error\": \"no entendido\"}. Mensaje del usuario: ' + text\n    }]\n  }\n}];"
+      },
+      "id": "node-02",
+      "name": "Preparar Request Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "TU_CLAUDE_API_KEY_AQUI"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json) }}"
+      },
+      "id": "node-03",
+      "name": "Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.content[0].text.trim();\ntry {\n  const data = JSON.parse(text);\n  return [{ json: data }];\n} catch(e) {\n  return [{ json: { error: 'Parse fallido: ' + text } }];\n}"
+      },
+      "id": "node-04",
+      "name": "Parsear Respuesta Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-no-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-05",
+      "name": "Mensaje Entendido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.siigo.com/auth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Partner-Id",
+              "value": "ferreteriayasiigo"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "{\"username\":\"ferreteriayacom@gmail.com\",\"access_key\":\"MGJkNGY1N2MtNDgyNC00NjI1LWIyY2MtZmMwMDMzNTcwNWE5Oj1xKDg4Nj1mclQ=\"}"
+      },
+      "id": "node-06",
+      "name": "Siigo - Autenticar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.siigo.com/v1/products?code=' + $('Parsear Respuesta Claude').item.json.codigo }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.access_token }}"
+            },
+            {
+              "name": "Partner-Id",
+              "value": "ferreteriayasiigo"
+            }
+          ]
+        }
+      },
+      "id": "node-07",
+      "name": "Siigo - Buscar Producto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-found",
+              "leftValue": "={{ $json.pagination.total_results }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-08",
+      "name": "Producto Encontrado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1680, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const product = $('Siigo - Buscar Producto').first().json.results[0];\nconst token = $('Siigo - Autenticar').first().json.access_token;\nconst newPrice = Number($('Parsear Respuesta Claude').first().json.precio);\n\nconst prices = product.prices.map(priceGroup => ({\n  ...priceGroup,\n  price_list: priceGroup.price_list.map((p, idx) =>\n    idx === 0 ? { ...p, value: newPrice } : p\n  )\n}));\n\nreturn [{\n  json: {\n    token,\n    productId: product.id,\n    productCode: product.code,\n    productName: product.name,\n    newPrice,\n    updateBody: {\n      code: product.code,\n      name: product.name,\n      account_group: product.account_group,\n      type: product.type,\n      stock_control: product.stock_control,\n      active: product.active,\n      tax_classification: product.tax_classification,\n      tax_included: product.tax_included,\n      taxes: product.taxes,\n      prices,\n      unit: product.unit\n    }\n  }\n}];"
+      },
+      "id": "node-09",
+      "name": "Preparar Actualización",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 100]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ 'https://api.siigo.com/v1/products/' + $json.productId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $json.token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Partner-Id",
+              "value": "ferreteriayasiigo"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.updateBody) }}"
+      },
+      "id": "node-10",
+      "name": "Siigo - Actualizar Precio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2160, 100]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ '✅ Precio actualizado\\n\\n📦 ' + $('Preparar Actualización').item.json.productName + '\\n🏷️ Código: ' + $('Preparar Actualización').item.json.productCode + '\\n💰 Nuevo precio: $' + $('Preparar Actualización').item.json.newPrice.toLocaleString('es-CO') }}",
+        "additionalFields": {}
+      },
+      "id": "node-11",
+      "name": "Telegram - Éxito",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2400, 100]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ '❌ Producto no encontrado\\n\\nNo encontré el código ' + $('Parsear Respuesta Claude').item.json.codigo + ' en Siigo.\\nVerifica el código e intenta nuevamente.' }}",
+        "additionalFields": {}
+      },
+      "id": "node-12",
+      "name": "Telegram - No Encontrado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1920, 320]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "❓ No entendí el mensaje.\n\nUsa este formato:\n\"actualiza precio código 50862 a 3500\"\n\"cambia el 40870 a 45000\"\n\nIndica el código del producto y el nuevo precio.",
+        "additionalFields": {}
+      },
+      "id": "node-13",
+      "name": "Telegram - No Entendido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1200, 420]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [{"node": "Preparar Request Claude", "type": "main", "index": 0}]
+      ]
+    },
+    "Preparar Request Claude": {
+      "main": [
+        [{"node": "Claude API", "type": "main", "index": 0}]
+      ]
+    },
+    "Claude API": {
+      "main": [
+        [{"node": "Parsear Respuesta Claude", "type": "main", "index": 0}]
+      ]
+    },
+    "Parsear Respuesta Claude": {
+      "main": [
+        [{"node": "Mensaje Entendido?", "type": "main", "index": 0}]
+      ]
+    },
+    "Mensaje Entendido?": {
+      "main": [
+        [{"node": "Siigo - Autenticar", "type": "main", "index": 0}],
+        [{"node": "Telegram - No Entendido", "type": "main", "index": 0}]
+      ]
+    },
+    "Siigo - Autenticar": {
+      "main": [
+        [{"node": "Siigo - Buscar Producto", "type": "main", "index": 0}]
+      ]
+    },
+    "Siigo - Buscar Producto": {
+      "main": [
+        [{"node": "Producto Encontrado?", "type": "main", "index": 0}]
+      ]
+    },
+    "Producto Encontrado?": {
+      "main": [
+        [{"node": "Preparar Actualización", "type": "main", "index": 0}],
+        [{"node": "Telegram - No Encontrado", "type": "main", "index": 0}]
+      ]
+    },
+    "Preparar Actualización": {
+      "main": [
+        [{"node": "Siigo - Actualizar Precio", "type": "main", "index": 0}]
+      ]
+    },
+    "Siigo - Actualizar Precio": {
+      "main": [
+        [{"node": "Telegram - Éxito", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
