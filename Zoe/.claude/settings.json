@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/Zoe/*)",
+      "Bash(find /home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/Zoe/* -type f)",
+      "Bash(psql -h * -U * -d * -f *)",
+      "Bash(psql -h * -U * -d * -c *)",
+      "mcp__n8n__n8n_create_workflow",
+      "mcp__n8n__n8n_get_workflow",
+      "mcp__n8n__n8n_list_workflows",
+      "mcp__n8n__n8n_update_workflow",
+      "mcp__n8n__n8n_activate_workflow",
+      "mcp__n8n__n8n_deactivate_workflow",
+      "mcp__n8n__n8n_search_nodes",
+      "mcp__n8n__n8n_get_node",
+      "mcp__n8n__n8n_validate_workflow",
+      "Bash(curl -s https://n8n.srv1398596.hstgr.cloud/api/v1/* -H *)",
+      "Bash(curl -s -X POST https://n8n.srv1398596.hstgr.cloud/api/v1/workflows -H * -d *)",
+      "Bash(curl -s -X PUT https://n8n.srv1398596.hstgr.cloud/api/v1/workflows/* -H * -d *)",
+      "Bash(curl -s -X POST https://evolution.srv1398596.hstgr.cloud/* -H *)",
+      "Bash(curl -s https://evolution.srv1398596.hstgr.cloud/* -H *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(jq *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "n8n-mcp-skills@n8n-skills-local": true
+  },
+  "extraKnownMarketplaces": {
+    "n8n-skills-local": {
+      "source": {
+        "source": "directory",
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-CloudeCode/n8n-skills"
+      }
+    }
+  }
+}

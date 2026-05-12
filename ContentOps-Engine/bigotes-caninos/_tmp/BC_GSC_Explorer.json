@@ -1,0 +1,118 @@
+{
+  "name": "BC - GSC Explorer (temporal)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "bc-gsc-explorer-temp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f0e1d2c3-b4a5-6789-0123-456789abcdef",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent('https://bigotescaninos.com/') }}/searchAnalytics/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startDate\": \"2025-01-06\",\n  \"endDate\": \"2026-05-06\",\n  \"dimensions\": [\"query\"],\n  \"rowLimit\": 1000,\n  \"startRow\": 0\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      "name": "GSC: Top 1000 Queries (16m)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "XWbfIBmitmx1uByl",
+          "name": "Google Search Console OAuth2 (BF reusable)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/webmasters/v3/sites/{{ encodeURIComponent('https://bigotescaninos.com/') }}/searchAnalytics/query",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"startDate\": \"2025-01-06\",\n  \"endDate\": \"2026-05-06\",\n  \"dimensions\": [\"page\"],\n  \"rowLimit\": 200,\n  \"startRow\": 0\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+      "name": "GSC: Top 200 Pages (16m)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "XWbfIBmitmx1uByl",
+          "name": "Google Search Console OAuth2 (BF reusable)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const queriesNode = $('GSC: Top 1000 Queries (16m)').first().json;\nconst pagesNode = $('GSC: Top 200 Pages (16m)').first().json;\n\nconst queries = queriesNode.rows || [];\nconst pages = pagesNode.rows || [];\n\nconst totals = (rows) => rows.reduce((acc, r) => {\n  acc.clicks += r.clicks || 0;\n  acc.impressions += r.impressions || 0;\n  return acc;\n}, { clicks: 0, impressions: 0 });\n\nreturn [{\n  json: {\n    site: 'sc-domain:bigotescaninos.com',\n    period: { start: '2025-01-06', end: '2026-05-06', months: 16 },\n    queries_count: queries.length,\n    pages_count: pages.length,\n    queries_totals: totals(queries),\n    pages_totals: totals(pages),\n    queries: queries.map(r => ({\n      query: r.keys[0],\n      clicks: r.clicks,\n      impressions: r.impressions,\n      ctr: Math.round((r.ctr || 0) * 10000) / 10000,\n      position: Math.round((r.position || 0) * 100) / 100\n    })),\n    pages: pages.map(r => ({\n      page: r.keys[0],\n      clicks: r.clicks,\n      impressions: r.impressions,\n      ctr: Math.round((r.ctr || 0) * 10000) / 10000,\n      position: Math.round((r.position || 0) * 100) / 100\n    }))\n  }\n}];"
+      },
+      "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef01",
+      "name": "Merge & Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "d4e5f6a7-b8c9-0123-4567-890abcdef012",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [[{ "node": "GSC: Top 1000 Queries (16m)", "type": "main", "index": 0 }]]
+    },
+    "GSC: Top 1000 Queries (16m)": {
+      "main": [[{ "node": "GSC: Top 200 Pages (16m)", "type": "main", "index": 0 }]]
+    },
+    "GSC: Top 200 Pages (16m)": {
+      "main": [[{ "node": "Merge & Format", "type": "main", "index": 0 }]]
+    },
+    "Merge & Format": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  }
+}

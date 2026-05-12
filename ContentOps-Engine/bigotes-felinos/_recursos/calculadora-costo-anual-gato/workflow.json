@@ -1,0 +1,309 @@
+{
+  "name": "BF - WF-Util - Publish Interactive Page (Calculadora)",
+  "nodes": [
+    {
+      "id": "wfp-001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        360
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "publish-calc-bf",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "wfp-002",
+      "name": "Generate Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.body.image_prompt }] }] }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ysOycTrtxEO3BRcW",
+          "name": "BF - BC - nano banana"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "id": "wfp-003",
+      "name": "Process Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const data = $input.first().json;\nconst candidate = data?.candidates?.[0];\nconst finishReason = candidate?.finishReason;\nif (finishReason && finishReason !== 'STOP') {\n  throw new Error('Gemini rejected the image generation: finishReason=' + finishReason);\n}\nconst part = candidate?.content?.parts?.find(p => p.inlineData);\nif (!part?.inlineData?.data) {\n  throw new Error('Gemini did not return image data. Response: ' + JSON.stringify(data).slice(0, 500));\n}\nconst base64 = part.inlineData.data;\nconst mimeType = part.inlineData.mimeType || 'image/png';\nconst fileName = $('Webhook').first().json.body.image_filename || 'cover.png';\nconst buffer = Buffer.from(base64, 'base64');\nconst binaryData = await this.helpers.prepareBinaryData(buffer, fileName, mimeType);\nreturn [{\n  json: { fileName, mimeType, size: buffer.length },\n  binary: { data: binaryData }\n}];"
+      }
+    },
+    {
+      "id": "wfp-004",
+      "name": "Upload to WP Media",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bigotesfelinos.com/wp-json/wp/v2/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Disposition",
+              "value": "=attachment; filename=\"{{ $('Process Image').first().json.fileName }}\""
+            },
+            {
+              "name": "Content-Type",
+              "value": "={{ $('Process Image').first().json.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "r90z9yKyuuNlhBLy",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "id": "wfp-005",
+      "name": "Set Alt Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://bigotesfelinos.com/wp-json/wp/v2/media/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ alt_text: 'Calculadora del costo anual de tener un gato en Colombia 2026 — flatlay con elementos de cuidado felino', caption: 'Calculadora interactiva del costo anual de un gato en Colombia 2026 — Bigotes Felinos' }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "r90z9yKyuuNlhBLy",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "id": "wfp-006",
+      "name": "Build wp_body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const w = $('Webhook').first().json.body;\nconst altResp = $input.first().json;\nconst mediaId = altResp.id;\nif (!mediaId) {\n  throw new Error('No media_id available from Set Alt Text response');\n}\n\nconst payload = {\n  title: w.title,\n  slug: w.slug,\n  status: 'publish',\n  content: w.content,\n  excerpt: w.excerpt || '',\n  featured_media: mediaId,\n  meta: {\n    _yoast_wpseo_title: w.yoast_title,\n    _yoast_wpseo_metadesc: w.yoast_metadesc,\n    _yoast_wpseo_focuskw: w.yoast_focuskw\n  }\n};\n\nreturn [{ json: { wp_body_json: JSON.stringify(payload), media_id: mediaId } }];"
+      }
+    },
+    {
+      "id": "wfp-007",
+      "name": "Create WP Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        360
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://bigotesfelinos.com/wp-json/wp/v2/pages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.wp_body_json }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "r90z9yKyuuNlhBLy",
+          "name": "Wordpress account"
+        }
+      }
+    },
+    {
+      "id": "wfp-008",
+      "name": "Telegram Notify",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1760,
+        360
+      ],
+      "parameters": {
+        "chatId": "1591872862",
+        "text": "=📊 *Calculadora publicada en producción*\n\n*Página:* {{ $json.title.rendered || $json.title }}\n*URL:* {{ $json.link }}\n*Page ID:* {{ $json.id }}\n*Estado:* {{ $json.status }}\n\n[Ver en GSC →](https://search.google.com/search-console/inspect?resource_id=https://bigotesfelinos.com/&id={{ encodeURIComponent($json.link) }})",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "7iBygAb1uGxktnFH",
+          "name": "Telegram BF Bot"
+        }
+      }
+    },
+    {
+      "id": "wfp-009",
+      "name": "Build Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const pageResp = $('Create WP Page').first().json;\nconst mediaId = $('Build wp_body').first().json.media_id;\nreturn [{\n  json: {\n    success: true,\n    page_id: pageResp.id,\n    page_url: pageResp.link,\n    page_status: pageResp.status,\n    slug: pageResp.slug,\n    media_id: mediaId,\n    title: pageResp?.title?.rendered || pageResp?.title\n  }\n}];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Process Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Image": {
+      "main": [
+        [
+          {
+            "node": "Upload to WP Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to WP Media": {
+      "main": [
+        [
+          {
+            "node": "Set Alt Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Alt Text": {
+      "main": [
+        [
+          {
+            "node": "Build wp_body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build wp_body": {
+      "main": [
+        [
+          {
+            "node": "Create WP Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create WP Page": {
+      "main": [
+        [
+          {
+            "node": "Telegram Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Notify": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  }
+}

@@ -1,0 +1,226 @@
+# Blueprints y Skills de Producción — Bigotes Caninos
+
+> Paridad estructural con [`BLUEPRINTS_CONTENIDO.txt`](../../bigotes-felinos/_plantillas/BLUEPRINTS_CONTENIDO.txt) del felino. Diferencias intencionales:
+> 1. SIN sección "Guiones y Redes" (proyecto sin canales sociales)
+> 2. SIN Skill Comedia (no aplica)
+> 3. SIN Skill Engagement / Interactivity Asset (no aplica)
+> 4. Skill Visual adaptado al universo canino
+> 5. Skill SEO ampliado con stack AEO completo
+
+---
+
+## 1. Estructura Blog (SEO + AEO Master)
+
+### Esqueleto del artículo
+
+* **H1:** Keyword + Beneficio. Sentence case. Sin numeración.
+* **Respuesta directa** (`<p class="respuesta-directa">`): bloque citable de 40-60 palabras al inicio del cuerpo, antes del primer H2. Responde la query de forma directa para AEO + Google AI Overview.
+* **Key takeaways** (`<blockquote class="key-takeaways">`): 3-5 viñetas con los puntos accionables principales.
+* **Cuerpo:** H2 y H3 con consejos accionables, LSI keywords integradas naturalmente. **Headings en formato pregunta cuando aplique** (question-first).
+* **Tabla obligatoria:** mínimo 1 tabla por artículo (HARD GATE en Quality Gate). Comparativas, listas de síntomas, dosificaciones, edades, etc.
+* **FAQ:** 5-6 Q/A basadas en Google Autocomplete + PAA. Devueltas como `faq_items[]` (array estructurado), NO embebido en body_html.
+* **Bloque "Fuentes consultadas":** 3-5 referencias de la whitelist de 7 organizaciones (WSAVA, AVMA, AAHA, Merck Vet Manual, Cornell Vet Med, RVC, PubMed). Listadas al final del artículo con enlace `rel="nofollow" target="_blank"`.
+* **Schemas JSON-LD:** FAQPage + WebPage con Speakable + WebPage.mentions con sameAs Wikipedia + HowTo (condicional). Generados por el parser, no por GPT.
+* **Meta description:** ≤155 caracteres. Incluir keyword principal y CTA implícito.
+* **Alt-text de imagen:** descriptivo, con keyword. Nomenclatura `keyword-principal.webp`.
+
+### Densidad obligatoria
+
+* Cada H2: mínimo 4 párrafos de 4 oraciones
+* Cada H3: mínimo 3 párrafos de 4 oraciones
+* Extensión total: mínimo 1.800 palabras (objetivo 2.000)
+
+### Enlaces
+
+* **Internos:** 2-3 links reales a posts existentes del blog (GPT recibe la lista del Master Sheet). El Internal Linker valida URLs alucinadas y suplementa hasta 2 enlaces reales si GPT generó menos.
+* **Externo:** 1 por artículo a fuente autoritativa de la whitelist con `rel="nofollow" target="_blank"`.
+
+### Slug
+
+Generado desde la keyword:
+- Sin acentos
+- Sin caracteres especiales
+- Sin palabras genéricas del título ("guia", "completa")
+- Validado contra WP `/posts?slug=` antes de publicar (anti-canibalismo Capa 2)
+
+### Categoría WordPress
+
+Asignada automáticamente con sistema de mapeo Hub → Categoría:
+- Hub "Salud canina" → categoría `Salud` (ID 41)
+- Hub "Alimentación canina" → categoría `Alimentación` (ID 42)
+- Hub "Razas de perros" → categoría `Razas` (ID 45)
+- Hub "Comportamiento y Adiestramiento" → categoría `Educación y Comportamiento` (ID 43, renombrar)
+- Transversal → categoría `Noticias` (ID 157)
+
+Fallback: inferencia por keyword si no hay hub asignado.
+
+---
+
+## 2. Skill SEO — Artículos de Blog
+
+### Técnica obligatoria
+
+* **Pirámide invertida:** la información más valiosa va primero. La respuesta directa antes que el contexto.
+* **Párrafos de máximo 4 líneas.** Sin bloques de texto denso.
+* **LSI keywords** integradas en H2, H3 y cuerpo de forma natural.
+* **Cuota Colombia:** cuando la keyword acepte modificador local, incluir precios COP, marcas locales (Falabella, Mercado Libre, Tiendanimal Colombia), veterinarias de Bogotá/Medellín, ejemplos de razas populares en LATAM.
+* **Vet-Friend canino reforzado:**
+   - Tono enérgico + cercano + rigor científico
+   - Mini-historias breves (2-3 oraciones) para humanizar el contenido
+   - Frases prohibidas (filtradas en Quality Gate): "como modelo de IA…", "es importante consultar a un profesional…" (cliché vacío), "tu mascota", "el dueño"
+   - Frases preferidas: "los veterinarios coinciden en que…", "tres pasos concretos para…", "lo que tu compañero canino realmente necesita es…"
+
+### Diccionario obligatorio (de [`../_brandkit/IDENTIDAD_VOZ.md`](../_brandkit/IDENTIDAD_VOZ.md))
+
+* ✅ **SÍ usar:** perritos, peluditos, compañeros caninos, familias caninas, bienestar perruno
+* ❌ **NUNCA usar:** mascota (→ perro/compañero), dueño (→ padre perruno/familia/compañero humano), tono clínico frío, alarmismo, "perrito chiquito", "guau-guau"
+
+---
+
+## 3. Skill Visual — Prompts nano banana
+
+### Estructura del prompt obligatoria
+
+Cada prompt de imagen debe incluir todos estos elementos:
+
+* **Lente:** `85mm portrait lens`
+* **Luz:** `warm golden hour lighting` o `cozy indoor natural light`
+* **Sujeto:** perro real, sano, alegre, en situación cotidiana
+* **Razas:** mix realista LATAM — criollos, golden retriever, labrador, schnauzer, french bulldog, husky, pastor alemán, etc. Evitar siempre las mismas razas pop.
+* **Escenario:** mix 50/50 exterior (parque, caminata, playa, jardín) e interior (cocina, sala, dormitorio)
+* **Familia humana:** presente con frecuencia (a diferencia del felino donde el sujeto suele estar solo)
+* **Textura:** `visible fur detail, sharp focus on coat`
+* **Estilo:** `realistic photography, not illustration`
+* **Composición:** dinámica, en movimiento (perros vs gatos: extrovertidos vs contemplativos)
+* **Restricción crítica:** `16:9 horizontal cinematic widescreen aspect ratio` reforzado en el texto del prompt (NO usar `generationConfig.aspectRatio` — Gemini 2.5 Flash Image lo rechaza con HTTP 400)
+
+### Restricciones absolutas (rechazar si aparecen en el prompt)
+
+* ❌ NO humanizar: sin ropa antropomórfica, sin gafas de sol, sin sombreros, sin posar como humano
+* ❌ NO perros tristes, abandonados o en situaciones angustiantes (a menos que el artículo lo requiera explícitamente)
+* ❌ NO razas mezcladas que no correspondan al artículo
+* ❌ NO collares de pinchos, NO bozales (a menos que el tema sea específicamente sobre adiestramiento responsable)
+
+### Formato de entrega
+
+* Nomenclatura archivo: `keyword-principal.webp`
+* Alt-text: descriptivo con keyword integrada naturalmente
+
+---
+
+## 4. Skill AEO — Stack completo por artículo
+
+### Componentes obligatorios
+
+| Componente | Selector / Notas |
+|------------|-----------------|
+| Respuesta directa | `<p class="respuesta-directa">` 40-60 palabras al inicio del body |
+| Key takeaways | `<blockquote class="key-takeaways">` con 3-5 viñetas |
+| Tabla | mínimo 1 (HARD GATE en WF1/WF6, recomendada en WF8) |
+| Fuentes consultadas | bloque al final con 3-5 referencias whitelist |
+| FAQPage JSON-LD | desde `faq_items[]` (5-6 Q/A) |
+| WebPage.speakable JSON-LD | apunta a `.respuesta-directa` y `.key-takeaways` |
+| WebPage.mentions JSON-LD | con `sameAs` Wikipedia para entities canónicas |
+| HowTo JSON-LD | condicional — solo si keyword es procedural y hay ≥4 steps |
+| H2/H3 question-first | cuando aplique al tema |
+| Sentence case en headings | normalizado por parser |
+
+### Quality Gate (15 checks ponderados / 120 puntos / threshold 70)
+
+Aplicado en WF1, WF3, WF6. WF8 usa threshold 60 sin HARD GATE de tabla.
+
+**Checks principales** (ponderaciones aproximadas):
+1. Respuesta directa presente y de longitud correcta (15 pts)
+2. Key takeaways presente con 3-5 viñetas (10 pts)
+3. **Tabla presente (HARD GATE en WF1/WF6 — sin tabla = fail)** (15 pts)
+4. FAQ con 5-6 items (10 pts)
+5. Fuentes consultadas con 3-5 refs whitelist (10 pts)
+6. Wordcount ≥ 1800 (10 pts)
+7. Densidad de H2/H3 cumplida (10 pts)
+8. Internal links válidos ≥ 2 (5 pts)
+9. External link a whitelist (5 pts)
+10. Schemas JSON-LD presentes (10 pts)
+11. Meta description ≤ 155 chars (5 pts)
+12. Sin frases prohibidas (5 pts)
+13. Sin marcas IA (`scrubAIWatermarks` aplicado) (5 pts)
+14. Slug limpio (3 pts)
+15. Sentence case en headings (2 pts)
+
+Si Quality Score < 70 → throw Error con breakdown completo, no se publica.
+
+---
+
+## 5. Master Sheet — Estructura de columnas
+
+### Hoja `Blog`
+
+```
+[ keyword | estado | prioridad | nicho | país | audiencia | intencion | url_post | wordcount | posicion_gsc | fecha_objetivo | fecha_social | fecha_reoptimizado | (N-Q vacías) | hub | cluster_parent ]
+```
+
+* **`hub`** (col R): `Salud` / `Alimentación` / `Razas` / `Comportamiento`
+* **`cluster_parent`** (col S): slug del pilar correspondiente:
+  - `guia-salud-canina`
+  - `guia-alimentacion-perros`
+  - `guia-razas-perros`
+  - `guia-comportamiento-canino`
+
+### Hojas adicionales
+
+* `AEO_Tracking` (escrita por WF7) — A-H
+* `GSC_Tracking` (escrita por WF11) — A-I
+* `GSC_Pages_Tracking` (escrita por WF11) — A-H
+
+> **Diferencia vs felino:** SIN hoja `Redes Sociales`. SIN columnas N-Q huérfanas (vienen vacías por convención, mantienen offset compatible con scripts felinos).
+
+---
+
+## 6. Flujo simplificado de WF1
+
+```
+Sheet (Aprobado)
+   ↓
+Anti-canibalismo Capa 1 (Jaccard kw 35% + slug 60% + stem)
+   ↓
+Marcar En Proceso
+   ↓
+Construir Body GPT (JSON.stringify)
+   ↓
+GPT-4o → artículo AEO completo
+   ↓
+Parsear + enriquecer (slug, FAQ, schemas, strip4Byte, scrubAIWatermarks)
+   ↓
+Anti-canibalismo Capa 2 (Slug Pre-Check WP)
+   ↓
+Internal Linker (valida URLs alucinadas)
+   ↓
+Quality Gate (15 checks / threshold 70)
+   ↓
+nano banana → imagen 16:9 (retry 3x + guard NO_IMAGE)
+   ↓
+WP Media (upload + alt text)
+   ↓
+WP REST → publicar post
+   ↓
+Sheet → Publicado + url_post + fecha_reoptimizado
+   ↓
+Tags pipeline (Split → POST → Collect IDs → PATCH)
+   ↓
+Telegram → éxito con deeplink GSC
+```
+
+---
+
+## 7. Lista de chequeo previa a "Aprobar" una keyword
+
+Cuando el equipo va a marcar una keyword como `Aprobado` en el Sheet:
+
+- [ ] Keyword bien escrita y normalizada (sin acentos en exceso)
+- [ ] Hub correcto en col R (Salud / Alimentación / Razas / Comportamiento)
+- [ ] cluster_parent en col S (slug del pilar)
+- [ ] País en col E (Colombia para cuota local; LATAM o España para keywords genéricas)
+- [ ] Audiencia en col F (padres perrunos primerizos / experimentados / criadores / etc.)
+- [ ] Intención en col G (Informacional / Comercial / Transaccional / Local)
+- [ ] Si es estacional: `fecha_objetivo` en col K (2 semanas antes del evento)
+- [ ] Validar que NO existe ya un post sobre el mismo tema (anti-canibalismo manual)
+- [ ] Si es alta prioridad, marcarla en col C (`Alta`/`Media`/`Baja`)

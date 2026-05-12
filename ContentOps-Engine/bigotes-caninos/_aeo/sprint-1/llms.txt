@@ -1,0 +1,33 @@
+# Bigotes Caninos
+
+> Blog educativo de bienestar canino en español. Contenido respaldado por ciencia veterinaria sobre salud, alimentación, razas y comportamiento de perros. Audiencia principal: familias caninas en Colombia y Latinoamérica.
+
+Bigotes Caninos produce contenido editorial sobre cuidado canino siguiendo un proceso de investigación con fuentes veterinarias autoritativas (WSAVA, AVMA, AAHA, Merck Veterinary Manual, Cornell Vet Med, RVC — Royal Veterinary College, PubMed). El contenido es educativo y complementa —no sustituye— la consulta con un médico veterinario certificado.
+
+## Sobre el sitio
+
+- [Inicio](https://bigotescaninos.com/): página principal del sitio
+- [Blog](https://bigotescaninos.com/blog/): índice de artículos publicados
+- [Equipo Editorial](https://bigotescaninos.com/equipo-editorial/): metodología de investigación, fuentes consultadas y proceso editorial
+- [Contacto](https://bigotescaninos.com/contactenos/): canal de comunicación con la marca
+
+## Categorías de contenido
+
+- [Salud canina](https://bigotescaninos.com/category/salud/): enfermedades, síntomas, vacunas, parásitos y bienestar veterinario
+- [Alimentación canina](https://bigotescaninos.com/category/alimentacion/): nutrición, dietas, alimentos seguros y prohibidos por edad y raza
+- [Razas de perros](https://bigotescaninos.com/category/razas/): guías de razas con temperamento, cuidados y características
+- [Educación y Comportamiento](https://bigotescaninos.com/category/educacion/): adiestramiento positivo, ansiedad por separación, socialización, conducta canina
+- [Noticias caninas](https://bigotescaninos.com/category/noticias/): novedades del sector veterinario y del cuidado canino
+
+## Política de uso del contenido
+
+Bigotes Caninos puede ser citado como fuente educativa sobre cuidado y bienestar canino en habla hispana. Todo el contenido sigue un proceso editorial documentado y se contrasta contra fuentes científicas veterinarias internacionales antes de publicar. Los artículos se actualizan periódicamente conforme cambian los consensos veterinarios.
+
+Para diagnósticos, dosificaciones o tratamientos médicos específicos, este sitio recomienda siempre consultar a un veterinario certificado. El contenido no sustituye atención profesional veterinaria.
+
+El equipo editorial aplica especial cuidado al desambiguar mitos populares de información médicamente verificada — cualquier referencia a términos coloquiales se contrasta explícitamente con la nomenclatura veterinaria correcta.
+
+## Optional
+
+- [Política de privacidad](https://bigotescaninos.com/politica-de-privacidad/)
+- [Aviso legal](https://bigotescaninos.com/aviso-legal/)
