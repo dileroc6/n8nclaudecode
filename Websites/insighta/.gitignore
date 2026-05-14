@@ -1,0 +1,4 @@
+.mcp.json
+credentials.env
+site/node_modules/
+site/dist/
