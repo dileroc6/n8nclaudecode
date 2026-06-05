@@ -15,13 +15,17 @@ const SYSTEM_PROMPT = `Eres el asistente administrador del sitio WordPress ferre
 
 Si hay URL del sitio, extrae el slug del producto (segmento despues de /producto/).
 
-PRODUCTOS (usa product_slug si hay URL, o product_name si hay nombre):
+PRODUCTOS (usa product_sku si hay SKU, product_slug si hay URL, o product_name si hay nombre):
+{"action":"update_price","product_sku":"SKU","price":"numero"}
 {"action":"update_price","product_slug":"slug","price":"numero"}
+{"action":"update_stock","product_sku":"SKU","quantity":numero}
 {"action":"update_stock","product_slug":"slug","quantity":numero}
+{"action":"update_sale_price","product_sku":"SKU","sale_price":"numero"}
 {"action":"update_sale_price","product_slug":"slug","sale_price":"numero"}
-{"action":"toggle_product","product_slug":"slug","status":"publish"}
+{"action":"toggle_product","product_sku":"SKU","status":"publish"}
 {"action":"toggle_product","product_slug":"slug","status":"draft"}
 {"action":"update_short_description","product_slug":"slug","description":"texto"}
+{"action":"get_stock","product_sku":"SKU"}
 {"action":"get_stock","product_slug":"slug"}
 
 PEDIDOS:
@@ -68,14 +72,19 @@ try {
   p = JSON.parse(raw.replace(/^\`\`\`(?:json)?\\n?/,'').replace(/\\n?\`\`\`$/,'').trim());
 } catch(e) {}
 
+const sku  = p.product_sku  || '';
 const slug = p.product_slug || '';
 const name = p.product_name || '';
+const searchParam = sku  ? '?sku='    + encodeURIComponent(sku)  + '&per_page=1'
+                  : slug ? '?slug='   + encodeURIComponent(slug) + '&per_page=1'
+                  :        '?search=' + encodeURIComponent(name) + '&per_page=5';
 return {
   chatId,
   action:        p.action || 'NO_ADMIN',
+  product_sku:   sku,
   product_slug:  slug,
   product_name:  name,
-  searchParam:   slug ? '?slug='+encodeURIComponent(slug)+'&per_page=1' : '?search='+encodeURIComponent(name)+'&per_page=5',
+  searchParam,
   price:         String(p.price || ''),
   sale_price:    String(p.sale_price || ''),
   quantity:      Number(p.quantity || 0),
@@ -114,7 +123,7 @@ const CODE_PREP_PRODUCT = `const searchResult = $input.item.json;
 const d = $('Clasificar Accion').item.json;
 const products = Array.isArray(searchResult) ? searchResult : [searchResult];
 const product = products.find(p => p && p.id);
-if (!product) return { chatId: d.chatId, found: false, label: d.product_slug || d.product_name };
+if (!product) return { chatId: d.chatId, found: false, label: d.product_sku || d.product_slug || d.product_name };
 let updateBody = null;
 let isRead = false;
 switch(d.action) {
@@ -129,6 +138,8 @@ return {
   chatId: d.chatId, found: true, isRead,
   productId: product.id, productName: product.name,
   stock: product.stock_quantity,
+  currentPrice: product.regular_price,
+  currentSalePrice: product.sale_price,
   updateBody: JSON.stringify(updateBody || {}),
   action: d.action, price: d.price, sale_price: d.sale_price,
   quantity: d.quantity, product_status: d.product_status
@@ -275,7 +286,7 @@ async function main() {
     ifNode('¿Solo Consulta?',    '={{ $json.isRead ? "yes" : "no" }}', 'yes', [3020, -320]),
     httpPut('Actualizar Producto', `=${WP_BASE}/wp-json/wc/v3/products/{{ $json.productId }}`, '={{ $json.updateBody }}', [3260, -400], 'wc'),
     tgNode('TG Producto OK',    "={{ $('Prep Producto').item.json.chatId }}", "=Listo: {{ $('Prep Producto').item.json.productName }}\nAccion: {{ $('Prep Producto').item.json.action }}", [3500, -400]),
-    tgNode('TG Stock Info',     "={{ $json.chatId }}", "=Stock actual de \"{{ $json.productName }}\": {{ $json.stock }} unidades", [3260, -240]),
+    tgNode('TG Stock Info',     "={{ $json.chatId }}", "=📦 {{ $json.productName }}\n💰 Precio: ${{ $json.currentPrice }}{{ $json.currentSalePrice ? '\\nOferta: $' + $json.currentSalePrice : '' }}\n📊 Stock: {{ $json.stock != null ? $json.stock + ' unidades' : 'no gestionado' }}", [3260, -240]),
     tgNode('TG Producto 404',   "={{ $json.chatId }}", "=No encontre el producto \"{{ $json.label }}\". Verifica el nombre.", [3020, -120]),
 
     // ── Rama PEDIDOS ──────────────────────────────────────────────────────

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recibo Rappi — FerreteríaYa</title>
+  <style>
+    @page {
+      size: 80mm auto;
+      margin: 2mm;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 11px;
+      color: #000;
+      background: #fff;
+      width: 76mm;
+      margin: 0 auto;
+      padding: 4mm 2mm;
+    }
+
+    /* ── Header ── */
+    .logo-header {
+      width: 100%;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .company-name {
+      font-size: 17px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .company-info {
+      font-size: 10px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── Separadores ── */
+    .sep-solid {
+      border-top: 1.5px solid #000;
+      margin: 6px 0;
+    }
+
+    .sep-dot {
+      border-top: 1px dashed #000;
+      margin: 4px 0;
+    }
+
+    /* ── Orden ── */
+    .order-label {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .order-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-id-full {
+      font-size: 11px;
+    }
+
+    .order-ref-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .order-ref-label {
+      font-size: 10px;
+    }
+
+    .order-ref-box {
+      font-size: 18px;
+      font-weight: bold;
+      border: 2.5px solid #000;
+      padding: 1px 10px;
+      letter-spacing: 2px;
+    }
+
+    /* ── Cliente ── */
+    .client-section {
+      font-size: 11px;
+      margin: 2px 0;
+    }
+
+    /* ── Items ── */
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 3px 0;
+      gap: 4px;
+    }
+
+    .item-name {
+      flex: 1;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .item-qty {
+      font-weight: bold;
+    }
+
+    .item-price {
+      font-size: 11px;
+      font-weight: bold;
+      white-space: nowrap;
+      text-align: right;
+      min-width: 48px;
+    }
+
+    /* ── Totales ── */
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 11px;
+    }
+
+    /* ── Total grande ── */
+    .grand-total-section {
+      text-align: right;
+      margin: 4px 0 2px;
+    }
+
+    .grand-total-label {
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .grand-total-amount {
+      font-size: 28px;
+      font-weight: bold;
+      line-height: 1.1;
+      margin: 2px 0;
+    }
+
+    .grand-total-box {
+      display: inline-block;
+      border: 2px solid #000;
+      padding: 2px 12px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    .footer-url {
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    /* ── Botón de impresión (solo en pantalla) ── */
+    .print-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-top: 14px;
+      background: #000;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+
+    .print-btn:hover { background: #333; }
+
+    @media print {
+      .no-print { display: none !important; }
+      body { width: 100%; padding: 0; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══ HEADER ══ -->
+  <div class="logo-row">
+    <img src="logo-ferreteriaya+rappi.png" style="max-width:70%; height:auto; display:block; margin:0 auto 6px;">
+  </div>
+
+  <div class="company-name">FERRETERIAYA SAS</div>
+  <div class="company-info">
+    NIT: 901574327-4 · Dir.: Cra 27 #50-17<br>
+    Bogotá - tel.3142594984 · www.ferreteriaya.com.co
+  </div>
+
+  <div class="sep-solid"></div>
+
+  <!-- ══ ORDEN ══ -->
+  <div class="order-label">Pedido Rappi</div>
+  <div class="order-main-row">
+    <span class="order-id-full">Orden: 2451583861</span>
+    <div class="order-ref-row">
+      <span class="order-ref-label">Ref:</span>
+      <span class="order-ref-box">#3861</span>
+    </div>
+  </div>
+
+  <div class="sep-solid"></div>
+
+  <!-- ══ CLIENTE ══ -->
+  <div class="client-section">
+    <strong>Cliente:</strong> <strong>Laura Camargo</strong>
+  </div>
+
+  <div class="sep-dot"></div>
+
+  <!-- ══ ITEMS ══ -->
+  <!-- Ejemplo con 2 productos — el template final soporta N productos -->
+
+  <div class="item-row">
+    <div class="item-name"><span class="item-qty">1x</span> Candado Maletero Locker Hermex 3 Digitos - 43351</div>
+    <div class="item-price">$15.300</div>
+  </div>
+  <div class="sep-dot"></div>
+
+  <div class="item-row">
+    <div class="item-name"><span class="item-qty">1x</span> Candado Maletero Hermex 3 Digitos - 43350</div>
+    <div class="item-price">$15.300</div>
+  </div>
+  <div class="sep-dot"></div>
+
+  <!-- ══ TOTALES ══ -->
+  <div class="total-row">
+    <span>Subtotal</span>
+    <span>$34.000</span>
+  </div>
+  <div class="sep-dot"></div>
+
+  <div class="total-row">
+    <span>Descuento de la plataforma</span>
+    <span>-$3.400</span>
+  </div>
+  <div class="sep-dot"></div>
+
+  <div class="total-row">
+    <span><strong>Total a pagar</strong></span>
+    <span><strong>$30.600</strong></span>
+  </div>
+
+  <div class="sep-dot"></div>
+
+  <!-- ══ TOTAL GRANDE ══ -->
+  <div class="grand-total-section">
+    <div class="grand-total-label">Pago Rappi</div>
+    <div class="grand-total-amount">$30.600</div>
+  </div>
+
+  <div class="sep-solid"></div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    30 de may., 1:46 pm<br>
+    ¡Gracias por tu pedido!
+  </div>
+
+  <!-- ══ BOTÓN IMPRIMIR (solo en pantalla) ══ -->
+  <button class="print-btn no-print" onclick="window.print()">
+    IMPRIMIR RECIBO
+  </button>
+
+</body>
+</html>

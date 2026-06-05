@@ -1,5 +1,5 @@
 {
-  "name": "FerreteríaYa WA — Agente Nico",
+  "name": "FERRE - Agente WA Nico",
   "nodes": [
     {
       "id": "node-webhook",
@@ -9,7 +9,7 @@
       "position": [-1200, 300],
       "parameters": {
         "httpMethod": "POST",
-        "path": "ferreteriaya-wa",
+        "path": "ferre/wa",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -20,8 +20,11 @@
       "name": "Respond 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [-1200, 500],
-      "parameters": { "respondWith": "text", "responseBody": "OK" }
+      "position": [-1200, 560],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK"
+      }
     },
     {
       "id": "node-normalizar",
@@ -30,7 +33,7 @@
       "typeVersion": 2,
       "position": [-960, 300],
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nif (!body?.data?.message) return [];\n\nconst data = body.data;\nif (data.key?.fromMe === true) return [];\n\nconst remoteJid = data.key?.remoteJid || '';\nif (remoteJid.includes('@g.us') || remoteJid.match(/\\d+-\\d+@/)) return [];\n\nconst mensaje = data.message?.conversation ||\n                data.message?.extendedTextMessage?.text ||\n                data.message?.imageMessage?.caption || '';\nif (!mensaje.trim()) return [];\n\nconst numero = remoteJid.replace('@s.whatsapp.net','').replace('@lid','');\nconst nombre  = data.pushName || 'Cliente';\nconst instancia = body.instance || data.owner || '';\nconst ciudad = instancia.includes('med') ? 'medellin' : 'bogota';\n\nreturn [{ json: { numero, mensaje: mensaje.trim(), nombre, instancia, ciudad } }];"
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nif (!body?.data?.message) return [];\n\nconst data = body.data;\nif (data.key?.fromMe === true) return [];\n\nconst remoteJid = data.key?.remoteJid || '';\nif (remoteJid.includes('@g.us') || remoteJid.match(/\\d+-\\d+@/)) return [];\n\nconst mensaje = data.message?.conversation ||\n                data.message?.extendedTextMessage?.text ||\n                data.message?.imageMessage?.caption || '';\nif (!mensaje.trim()) return [];\n\nconst numero = remoteJid.replace('@s.whatsapp.net','').replace('@lid','');\nconst nombre  = data.pushName || 'Cliente';\nconst instancia = body.instance || data.owner || '';\nconst ciudad = instancia.toLowerCase().includes('med') ? 'medellin' : 'bogota';\n\n// Detectar si viene de un anuncio de Meta (Click-to-WhatsApp)\nconst ctxInfo = data.message?.extendedTextMessage?.contextInfo;\nconst isFromAd = !!(ctxInfo?.externalAdReply || data.message?.advertisementReplyMessage || data.referral);\n\nreturn [{ json: { numero, mensaje: mensaje.trim(), nombre, instancia, ciudad, isFromAd } }];"
       }
     },
     {
@@ -40,7 +43,7 @@
       "typeVersion": 2,
       "position": [-720, 300],
       "parameters": {
-        "jsCode": "const { numero, mensaje, nombre, instancia, ciudad } = $input.first().json;\n\nconst now = new Date();\nconst col = new Date(now.toLocaleString('en-US', { timeZone: 'America/Bogota' }));\nconst day = col.getDay();\nconst t = col.getHours() * 60 + col.getMinutes();\nconst T = (h, m=0) => h*60+(m||0);\n\nlet botActivo = false;\n\nif (ciudad === 'bogota') {\n  // Lun-Jue 22:00-08:00 | Vie 18:00-Sab 08:00 | Sab 17:00-Dom 09:00 | Dom 16:00-Lun 08:00\n  if (day>=1 && day<=4) botActivo = t>=T(22) || t<T(8);\n  else if (day===5)     botActivo = t>=T(18) || t<T(8);\n  else if (day===6)     botActivo = t<T(8)   || t>=T(17);\n  else if (day===0)     botActivo = t<T(9)   || t>=T(16);\n} else {\n  // Medellin: Lun-Jue 18:00-08:00 | Vie 18:00-Sab 08:00 | Sab 17:00-Dom 09:00 | Dom 13:00-Lun 08:00\n  if (day>=1 && day<=4) botActivo = t>=T(18) || t<T(8);\n  else if (day===5)     botActivo = t>=T(18) || t<T(8);\n  else if (day===6)     botActivo = t<T(8)   || t>=T(17);\n  else if (day===0)     botActivo = t<T(9)   || t>=T(13);\n}\n\nreturn [{ json: { numero, mensaje, nombre, instancia, ciudad, botActivo } }];"
+        "jsCode": "const { numero, mensaje, nombre, instancia, ciudad, isFromAd } = $input.first().json;\n\n// ⚠️ MODO PRUEBA — botActivo siempre true. Restaurar horario real antes de producción.\nconst botActivo = true;\n\nreturn [{ json: { numero, mensaje, nombre, instancia, ciudad, isFromAd, botActivo } }];"
       }
     },
     {
@@ -52,7 +55,14 @@
       "parameters": {
         "conditions": {
           "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
-          "conditions": [{ "id": "c1", "leftValue": "={{ $json.botActivo }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }],
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.botActivo }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
           "combinator": "and"
         }
       }
@@ -62,16 +72,18 @@
       "name": "Fuera de Horario",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-240, 500],
+      "position": [-240, 560],
       "parameters": {
         "method": "POST",
-        "url": "=https://evolution.srv1398596.hstgr.cloud/message/sendText/{{ $json.instancia }}",
+        "url": "={{ 'https://evolution.srv1398596.hstgr.cloud/message/sendText/' + $json.instancia }}",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "apikey", "value": "leadai2024secreto" }] },
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "leadai2024secreto" }]
+        },
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={ \"number\": \"{{ $json.numero }}\", \"text\": \"Hola 👋 Gracias por contactarte con *Ferretería Ya*.\\n\\nEn este momento nuestros asesores no están disponibles. Te atenderemos a partir de las *8:00 a.m.*\\n\\nSi tu consulta es urgente escríbenos directamente:\\n• 🏙️ *Bogotá:* https://wa.link/8r8m9u\\n• 🏘️ *Medellín:* https://wa.link/28y376\" }"
+        "jsonBody": "={ \"number\": \"{{ $json.numero }}\", \"text\": \"Hola 👋 Gracias por escribirnos a *Ferretería Ya*.\\n\\nEn este momento nuestros asesores no están disponibles, te atendemos a partir de las *8:00 a.m.*\\n\\nPara consultas urgentes contáctanos directo:\\n🏙️ *Bogotá:* https://wa.link/8r8m9u\\n🏘️ *Medellín:* https://wa.link/28y376\" }"
       }
     },
     {
@@ -82,19 +94,28 @@
       "position": [-240, 300],
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.mensaje }}",
+        "text": "={{ ($('Chequeo Horario').item.json.isFromAd ? '[ANUNCIO META] ' : '') + '[CIUDAD:' + $('Chequeo Horario').item.json.ciudad + '] ' + $('Chequeo Horario').item.json.mensaje }}",
         "options": {
-          "systemMessage": "Eres Nico, asistente experto de Ferretería Ya atendiendo por WhatsApp. Ante cualquier consulta de producto, SIEMPRE busca primero en la tienda con BuscarProductos.\n\n### REGLAS DE BÚSQUEDA Y PRODUCTOS\n1. Usa BuscarProductos con una sola palabra clave.\n2. Filtro de tipo: Si el cliente busca una HERRAMIENTA (Taladro, Pulidora, Esmeril, Sierra, Rotomartillo), muestra SOLO los productos cuyo nombre EMPIECE por esa palabra.\n3. Filtro por conexión: SOLO aplica si el cliente menciona EXPLÍCITAMENTE el tipo (inalámbrico, alámbrico). Si no menciona, muestra TODOS.\n4. Stock: SOLO recomienda productos con stock_status 'instock'. Si ninguno cumple, ofrece los WhatsApp de ambas sedes.\n5. Formato WhatsApp: máximo 3 líneas por respuesta, *negrita* para producto y precio. Sin listas largas.\n\n### SEDES Y CONTACTOS\n- *BOGOTÁ:* Cra 27 #50-17 | https://wa.link/8r8m9u\n- *MEDELLÍN:* Cll 33b sur #43-57 | https://wa.link/28y376\n\n### CASOS ESPECIALES\n- Cotización al por mayor / distribuidor / PDF: enviar botones de ambas sedes.\n- Catálogo Truper: redirigir a ambas sedes.\n- Cerrajería / Facturación electrónica: confirmar servicio y enviar sedes.\n- Envío gratis: depende del peso, redirigir a WhatsApp.\n\nResponde siempre en español. Primer mensaje: saludo breve. Siguientes: directo al tema."
+          "systemMessage": "Eres *Nico*, asistente de ventas de *Ferretería Ya* en WhatsApp. Cubres el horario nocturno cuando los asesores no están disponibles. El cliente ya está en el número correcto de su ciudad — no lo redirijas a ningún otro número.\n\n### PRODUCTO ESTRELLA — HERRAMIENTA 5 EN 1\nPresenta este producto ÚNICAMENTE en estos dos casos:\n1. El mensaje empieza con [ANUNCIO META]\n2. El usuario pregunta explícitamente por herramienta multifuncional, 5 en 1, o combinación taladro+pulidora+sierra\n\nCuando aplique, responde con exactamente esto:\n⭐ Herramienta multifuncional *5 en 1 Inalámbrica* ✅\nTaladro + Pulidora + Pistola de Impacto + Sierra de Madera + Caladora + Estuche Plástico\nANTES $600.000 → ahora solo *$490.000* 🤩\n✅ Garantía 1 año | 💳 Pago contra entrega 🚚\nUn asesor te confirma el pedido cuando abramos a las *8 a.m.* 🕗\n\n### PARA CUALQUIER OTRO PRODUCTO\nCuando el cliente exprese una necesidad específica:\n1. Usa BuscarEnSiigo para verificar si tenemos el producto (USO INTERNO — no compartas sus datos al cliente)\n2. Usa BuscarEnWeb para obtener el precio de venta y el link de la tienda (este sí puedes compartirlo)\nSi encontraste el producto, cierra con: \"Un asesor te confirma disponibilidad cuando abramos a las *8 a.m.* 🕗\"\n\n### REGLAS DE INFORMACIÓN (CRÍTICO)\n1. BuscarEnSiigo es SOLO PARA USO INTERNO. NUNCA compartas sus datos directamente con el cliente.\n2. Los precios que muestres al cliente deben venir ÚNICAMENTE de BuscarEnWeb.\n3. NUNCA inventes precios ni disponibilidad.\n4. Solo recomienda productos con stock disponible (instock).\n5. Formato WhatsApp: *negrita* para precios y nombres. Máximo 4 líneas por respuesta.\n6. Mayor/distribuidores o catálogo Truper → indica que un asesor les atenderá a las 8 a.m.\n\n### DIRECCIÓN DE SEDES (solo si el cliente pregunta)\n- *Bogotá:* Cra 27 #50-17\n- *Medellín:* Cll 33b sur #43-57\n\nResponde siempre en español colombiano. Sé amable y directo."
         }
       }
     },
     {
-      "id": "node-openai",
-      "name": "OpenAI Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "id": "node-claude",
+      "name": "Claude Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.1,
-      "position": [-400, 480],
-      "parameters": { "model": "gpt-4o-mini", "options": {} }
+      "position": [-440, 480],
+      "parameters": {
+        "model": "claude-haiku-4-5-20251001",
+        "options": {}
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "jW1QbVsyLlLsDOGK",
+          "name": "AP - Anthropic API"
+        }
+      }
     },
     {
       "id": "node-memory",
@@ -103,29 +124,43 @@
       "typeVersion": 1.3,
       "position": [-240, 480],
       "parameters": {
+        "sessionIdType": "customKey",
         "sessionKey": "={{ $('Chequeo Horario').item.json.numero }}",
         "contextWindowLength": 10
       }
     },
     {
-      "id": "node-tool",
-      "name": "BuscarProductos",
+      "id": "node-tool-siigo",
+      "name": "BuscarEnSiigo",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [-40, 480],
+      "parameters": {
+        "name": "BuscarEnSiigo",
+        "description": "Busca productos en el catálogo Siigo de Ferretería Ya. Devuelve nombre, código de referencia y precio. Usar para consultas de productos específicos.",
+        "language": "javaScript",
+        "jsCode": "// INTERNO: solo confirmar existencia de productos. No devolver precios ni datos sensibles.\nconst searchTerm = query;\nlet token;\ntry {\n  const auth = await $helpers.httpRequest({\n    method: 'POST',\n    url: 'https://api.siigo.com/auth',\n    headers: { 'partner_id': 'ferreteriayasiigo' },\n    json: { username: 'ferreteriayacom@gmail.com', access_key: 'MGJkNGY1N2MtNDgyNC00NjI1LWIyY2MtZmMwMDMzNTcwNWE5Oj1xKDg4Nj1mclQ=' }\n  });\n  token = auth.access_token;\n} catch(e) {\n  return 'Catalogo no disponible. Usa BuscarEnWeb.';\n}\ntry {\n  const resp = await $helpers.httpRequest({\n    method: 'GET',\n    url: 'https://api.siigo.com/v1/products',\n    headers: { 'Authorization': 'Bearer ' + token },\n    searchParams: { page_size: 15, type: 'Product', search: searchTerm }\n  });\n  const results = (resp.results || []).filter(function(p) { return p.active; }).slice(0, 8);\n  if (!results.length) return 'Producto no encontrado en catalogo para: ' + searchTerm;\n  return 'Productos en catalogo (usa BuscarEnWeb para precio y link):\\n' +\n    results.map(function(p) { return '- ' + p.name; }).join('\\n');\n} catch(e) {\n  return 'Error al verificar catalogo.';\n}"
+      }
+    },
+    {
+      "id": "node-tool-web",
+      "name": "BuscarEnWeb",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1.1,
-      "position": [-80, 480],
+      "position": [160, 480],
       "parameters": {
-        "name": "BuscarProductos",
-        "description": "={{ $fromAI('search', 'Una sola palabra clave del producto a buscar') }}",
+        "name": "BuscarEnWeb",
+        "description": "={{ $fromAI('search', 'Palabra clave del producto a buscar en la tienda web de Ferretería Ya') }}",
         "url": "https://ferreteriaya.com.co/wp-json/wc/v3/products",
         "sendQuery": true,
         "parametersQuery": {
           "values": [
             { "name": "search", "valueProvider": "modelRequired" },
-            { "name": "per_page", "valueProvider": "fieldValue", "value": "12" },
+            { "name": "per_page", "valueProvider": "fieldValue", "value": "6" },
             { "name": "status", "valueProvider": "fieldValue", "value": "publish" },
-            { "name": "_fields", "valueProvider": "fieldValue", "value": "id,name,price,permalink,stock_status,short_description" },
-            { "name": "consumer_key", "valueProvider": "fieldValue", "value": "ck_4b14000670da3ccf34b917462a30b270bc23500e" },
-            { "name": "consumer_secret", "valueProvider": "fieldValue", "value": "cs_909bfb7df2995896e1c6d1ea3496b24d6bc39e2e" }
+            { "name": "_fields", "valueProvider": "fieldValue", "value": "id,name,price,permalink,stock_status" },
+            { "name": "consumer_key", "valueProvider": "fieldValue", "value": "ck_a23a12e53c973f92c7e4939726666ed74ece38c2" },
+            { "name": "consumer_secret", "valueProvider": "fieldValue", "value": "cs_9896d687c0dfc9eba8dbf4aa6ac475a34337939f" }
           ]
         }
       }
@@ -138,35 +173,62 @@
       "position": [60, 300],
       "parameters": {
         "method": "POST",
-        "url": "=https://evolution.srv1398596.hstgr.cloud/message/sendText/{{ $('Chequeo Horario').item.json.instancia }}",
+        "url": "={{ 'https://evolution.srv1398596.hstgr.cloud/message/sendText/' + $('Chequeo Horario').item.json.instancia }}",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "apikey", "value": "leadai2024secreto" }] },
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "leadai2024secreto" }]
+        },
         "sendBody": true,
-        "contentType": "json",
-        "specifyBody": "json",
-        "jsonBody": "={ \"number\": \"{{ $('Chequeo Horario').item.json.numero }}\", \"text\": \"{{ $json.output }}\" }"
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ number: $('Chequeo Horario').item.json.numero, text: $json.output }) }}"
       }
+    },
+    {
+      "id": "node-error",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [300, 560],
+      "parameters": {}
     }
   ],
   "connections": {
     "Webhook Evolution": {
-      "main": [[
-        { "node": "Respond 200", "type": "main", "index": 0 },
-        { "node": "Normalizar Mensaje", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          { "node": "Respond 200", "type": "main", "index": 0 },
+          { "node": "Normalizar Mensaje", "type": "main", "index": 0 }
+        ]
+      ]
     },
-    "Normalizar Mensaje": { "main": [[{ "node": "Chequeo Horario", "type": "main", "index": 0 }]] },
-    "Chequeo Horario": { "main": [[{ "node": "¿Bot activo?", "type": "main", "index": 0 }]] },
+    "Normalizar Mensaje": {
+      "main": [[{ "node": "Chequeo Horario", "type": "main", "index": 0 }]]
+    },
+    "Chequeo Horario": {
+      "main": [[{ "node": "¿Bot activo?", "type": "main", "index": 0 }]]
+    },
     "¿Bot activo?": {
       "main": [
         [{ "node": "Agente Nico", "type": "main", "index": 0 }],
-        [{ "node": "Fuera de Horario", "type": "main", "index": 0 }]
+        []
       ]
     },
-    "Agente Nico": { "main": [[{ "node": "Enviar Respuesta WA", "type": "main", "index": 0 }]] },
-    "OpenAI Chat Model": { "ai_languageModel": [[{ "node": "Agente Nico", "type": "ai_languageModel", "index": 0 }]] },
-    "Buffer Memory": { "ai_memory": [[{ "node": "Agente Nico", "type": "ai_memory", "index": 0 }]] },
-    "BuscarProductos": { "ai_tool": [[{ "node": "Agente Nico", "type": "ai_tool", "index": 0 }]] }
+    "Agente Nico": {
+      "main": [[{ "node": "Enviar Respuesta WA", "type": "main", "index": 0 }]]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [[{ "node": "Agente Nico", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Buffer Memory": {
+      "ai_memory": [[{ "node": "Agente Nico", "type": "ai_memory", "index": 0 }]]
+    },
+    "BuscarEnSiigo": {
+      "ai_tool": [[{ "node": "Agente Nico", "type": "ai_tool", "index": 0 }]]
+    },
+    "BuscarEnWeb": {
+      "ai_tool": [[{ "node": "Agente Nico", "type": "ai_tool", "index": 0 }]]
+    }
   },
   "settings": { "executionOrder": "v1" },
   "staticData": null

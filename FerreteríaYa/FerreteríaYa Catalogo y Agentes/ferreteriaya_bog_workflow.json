@@ -1,0 +1,216 @@
+{
+  "name": "FERRE - Agente WA Nico Bogotá",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Webhook Evolution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1200, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ferre-bog/wa",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "ferreteriaya-bog-wa-hook"
+    },
+    {
+      "id": "node-respond",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-1200, 560],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK"
+      }
+    },
+    {
+      "id": "node-normalizar",
+      "name": "Normalizar Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 300],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\nif (!body?.data?.message) return [];\n\nconst data = body.data;\nif (data.key?.fromMe === true) return [];\n\nconst remoteJid = data.key?.remoteJid || '';\nif (remoteJid.includes('@g.us') || remoteJid.match(/\\d+-\\d+@/)) return [];\n\nconst mensaje = data.message?.conversation ||\n                data.message?.extendedTextMessage?.text ||\n                data.message?.imageMessage?.caption || '';\nif (!mensaje.trim()) return [];\n\nconst numero = remoteJid.replace('@s.whatsapp.net','').replace('@lid','');\nconst nombre  = data.pushName || 'Cliente';\nconst instancia = body.instance || data.owner || '';\nconst ciudad = 'bogota';\n\nconst ctxInfo = data.message?.extendedTextMessage?.contextInfo;\nconst isFromAd = !!(ctxInfo?.externalAdReply || data.message?.advertisementReplyMessage || data.referral);\n\nreturn [{ json: { numero, mensaje: mensaje.trim(), nombre, instancia, ciudad, isFromAd } }];"
+      }
+    },
+    {
+      "id": "node-horario",
+      "name": "Chequeo Horario",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 300],
+      "parameters": {
+        "jsCode": "const { numero, mensaje, nombre, instancia, ciudad, isFromAd } = $input.first().json;\n\n// ⚠️ MODO PRUEBA — botActivo siempre true. Restaurar horario real antes de producción.\nconst botActivo = true;\n\n/* HORARIO PRODUCCIÓN BOGOTÁ — descomentar cuando salga a producción:\nconst now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' }));\nconst day = now.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab\nconst t = now.getHours() * 60 + now.getMinutes();\nconst T = (h) => h * 60;\nlet botActivo = false;\nif (day >= 1 && day <= 4) botActivo = t >= T(22) || t < 450;  // Lun-Jue: 22:00-07:30 (abre 7:30am)\nelse if (day === 5)        botActivo = t >= T(18) || t < 450;  // Vie: 18:00-07:30 (abre 7:30am)\nelse if (day === 6)        botActivo = t >= T(17) || t < T(8); // Sab: 17:00-08:00 (abre 8am)\nelse if (day === 0)        botActivo = t >= T(16) || t < T(9); // Dom/Fest: 16:00-09:00 (abre 9am)\n*/\n\nreturn [{ json: { numero, mensaje, nombre, instancia, ciudad, isFromAd, botActivo } }];"
+      }
+    },
+    {
+      "id": "node-if",
+      "name": "¿Bot activo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-480, 300],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.botActivo }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-agente",
+      "name": "Agente Nico",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [-240, 300],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ ($('Chequeo Horario').item.json.isFromAd ? '[ANUNCIO META] ' : '') + $('Chequeo Horario').item.json.mensaje }}",
+        "options": {
+          "systemMessage": "Eres *Nico*, asistente de ventas de *Ferretería Ya Bogotá* en WhatsApp. Cubres el horario nocturno cuando los asesores no están disponibles. El cliente ya está en el número de Bogotá.\n\n### PRODUCTO ESTRELLA — HERRAMIENTA 5 EN 1\nPresenta este producto ÚNICAMENTE en estos dos casos:\n1. El mensaje empieza con [ANUNCIO META]\n2. El usuario pregunta explícitamente por herramienta multifuncional, 5 en 1, o combinación taladro+pulidora+sierra\n\nCuando aplique, responde con exactamente esto:\n⭐ Herramienta multifuncional *5 en 1 Inalámbrica* ✅\nTaladro + Pulidora + Pistola de Impacto + Sierra de Madera + Caladora + Estuche Plástico\nANTES $600.000 → ahora solo *$490.000* 🤩\n✅ Garantía 1 año | 💳 Pago contra entrega 🚚\nUn asesor te confirma el pedido cuando abramos 🕗\n\n### PARA CUALQUIER OTRO PRODUCTO\nCuando el cliente exprese una necesidad específica:\n1. Usa BuscarEnSiigo para verificar si tenemos el producto (USO INTERNO — no compartas sus datos al cliente)\n2. Usa BuscarEnWeb para obtener el precio de venta y el link de la tienda (este sí puedes compartirlo)\nSi encontraste el producto, cierra con: \"Un asesor te confirma disponibilidad cuando abramos 🕗\"\n\n### ALQUILER DE ESCALERAS\nInforma estos precios cuando el cliente pregunte por alquiler de escaleras:\n\n*Escalera Codensa (2 Secciones)*\n• 0-2 horas: *$50.000* | 24 horas: *$80.000*\nDepósito reembolsable: *$250.000* (se devuelve presentando la factura física)\n\n*Escalera Tipo Tijera (Pequeña o Grande)*\n• 0-2 horas: *$30.000* | 24 horas: *$50.000*\nDepósito reembolsable: *$200.000* (se devuelve presentando la factura física)\n\n### ALQUILER DE ANDAMIOS\nInforma estos precios cuando el cliente pregunte por alquiler de andamios:\n\n• Sección de andamio (grande o pequeño) — Hora/Día/Semana: *$8.900*\n• Planchón para andamio — Hora/Día/Semana: *$6.900*\n• Ruedas para andamio — Hora/Día/Semana: *$22.000*\nDepósito: *$250.000* (hasta 4 secciones) o *$500.000* (5 secciones o más), reembolsable con factura física.\nSe cobra acarreo ida y vuelta según lugar; los andamios se descargan hasta donde llegue el vehículo.\n\n### REGLAS DE INFORMACIÓN (CRÍTICO)\n1. BuscarEnSiigo es SOLO PARA USO INTERNO. NUNCA compartas sus datos directamente con el cliente.\n2. Los precios que muestres al cliente deben venir ÚNICAMENTE de BuscarEnWeb (o de las tarifas de alquiler indicadas arriba).\n3. NUNCA inventes precios ni disponibilidad.\n4. Solo recomienda productos con stock disponible (instock).\n5. Formato WhatsApp: *negrita* para precios y nombres. Máximo 4 líneas por respuesta.\n6. Mayor/distribuidores o catálogo Truper → indica que un asesor les atenderá cuando abramos.\n\n### SEDE BOGOTÁ (solo si el cliente pregunta)\n- *Dirección:* Cra 27 #50-17 (Galerías)\n- *Horario:* Lun-Jue 7:30 a.m.–10:00 p.m. | Vie 7:30 a.m.–6:00 p.m. | Sáb 8:00 a.m.–5:00 p.m. | Dom y Fest. 9:00 a.m.–4:00 p.m.\n\nResponde siempre en español colombiano. Sé amable y directo."
+        }
+      }
+    },
+    {
+      "id": "node-claude",
+      "name": "Claude Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.1,
+      "position": [-440, 480],
+      "parameters": {
+        "model": "claude-haiku-4-5-20251001",
+        "options": {}
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "jW1QbVsyLlLsDOGK",
+          "name": "AP - Anthropic API"
+        }
+      }
+    },
+    {
+      "id": "node-memory",
+      "name": "Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [-240, 480],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Chequeo Horario').item.json.numero }}",
+        "contextWindowLength": 10
+      }
+    },
+    {
+      "id": "node-tool-siigo",
+      "name": "BuscarEnSiigo",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.1,
+      "position": [-40, 480],
+      "parameters": {
+        "name": "BuscarEnSiigo",
+        "description": "Busca productos en el catálogo Siigo de Ferretería Ya. Devuelve nombre del producto. Usar para confirmar si existe en inventario.",
+        "language": "javaScript",
+        "jsCode": "const searchTerm = query;\nlet token;\ntry {\n  const auth = await $helpers.httpRequest({\n    method: 'POST',\n    url: 'https://api.siigo.com/auth',\n    headers: { 'partner_id': 'ferreteriayasiigo' },\n    json: { username: 'ferreteriayacom@gmail.com', access_key: 'MGJkNGY1N2MtNDgyNC00NjI1LWIyY2MtZmMwMDMzNTcwNWE5Oj1xKDg4Nj1mclQ=' }\n  });\n  token = auth.access_token;\n} catch(e) {\n  return 'Catalogo no disponible. Usa BuscarEnWeb.';\n}\ntry {\n  const resp = await $helpers.httpRequest({\n    method: 'GET',\n    url: 'https://api.siigo.com/v1/products',\n    headers: { 'Authorization': 'Bearer ' + token },\n    searchParams: { page_size: 15, type: 'Product', search: searchTerm }\n  });\n  const results = (resp.results || []).filter(function(p) { return p.active; }).slice(0, 8);\n  if (!results.length) return 'Producto no encontrado en catalogo para: ' + searchTerm;\n  return 'Productos en catalogo (usa BuscarEnWeb para precio y link):\\n' +\n    results.map(function(p) { return '- ' + p.name; }).join('\\n');\n} catch(e) {\n  return 'Error al verificar catalogo.';\n}"
+      }
+    },
+    {
+      "id": "node-tool-web",
+      "name": "BuscarEnWeb",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [160, 480],
+      "parameters": {
+        "name": "BuscarEnWeb",
+        "description": "={{ $fromAI('search', 'Palabra clave del producto a buscar en la tienda web de Ferretería Ya') }}",
+        "url": "https://ferreteriaya.com.co/wp-json/wc/v3/products",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            { "name": "search", "valueProvider": "modelRequired" },
+            { "name": "per_page", "valueProvider": "fieldValue", "value": "6" },
+            { "name": "status", "valueProvider": "fieldValue", "value": "publish" },
+            { "name": "_fields", "valueProvider": "fieldValue", "value": "id,name,price,permalink,stock_status" },
+            { "name": "consumer_key", "valueProvider": "fieldValue", "value": "ck_a23a12e53c973f92c7e4939726666ed74ece38c2" },
+            { "name": "consumer_secret", "valueProvider": "fieldValue", "value": "cs_9896d687c0dfc9eba8dbf4aa6ac475a34337939f" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-enviar",
+      "name": "Enviar Respuesta WA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [60, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://evolution.srv1398596.hstgr.cloud/message/sendText/' + $('Chequeo Horario').item.json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "apikey", "value": "leadai2024secreto" }]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ number: $('Chequeo Horario').item.json.numero, text: $json.output }) }}"
+      }
+    },
+    {
+      "id": "node-error",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [300, 560],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Webhook Evolution": {
+      "main": [
+        [
+          { "node": "Respond 200", "type": "main", "index": 0 },
+          { "node": "Normalizar Mensaje", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Normalizar Mensaje": {
+      "main": [[{ "node": "Chequeo Horario", "type": "main", "index": 0 }]]
+    },
+    "Chequeo Horario": {
+      "main": [[{ "node": "¿Bot activo?", "type": "main", "index": 0 }]]
+    },
+    "¿Bot activo?": {
+      "main": [
+        [{ "node": "Agente Nico", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Agente Nico": {
+      "main": [[{ "node": "Enviar Respuesta WA", "type": "main", "index": 0 }]]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [[{ "node": "Agente Nico", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Buffer Memory": {
+      "ai_memory": [[{ "node": "Agente Nico", "type": "ai_memory", "index": 0 }]]
+    },
+    "BuscarEnSiigo": {
+      "ai_tool": [[{ "node": "Agente Nico", "type": "ai_tool", "index": 0 }]]
+    },
+    "BuscarEnWeb": {
+      "ai_tool": [[{ "node": "Agente Nico", "type": "ai_tool", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null
+}

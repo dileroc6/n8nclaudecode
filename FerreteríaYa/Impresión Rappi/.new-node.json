@@ -1,0 +1,60 @@
+,
+    {
+      "id": "guardar-sheets",
+      "name": "Guardar en Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [1340, 480],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "10GcC_7PMSiJnmfPEXfLw6-TbExZW7r7I1tlof_0eXKY",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10GcC_7PMSiJnmfPEXfLw6-TbExZW7r7I1tlof_0eXKY/edit",
+          "cachedResultName": "Backup Recibos Rappi"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10GcC_7PMSiJnmfPEXfLw6-TbExZW7r7I1tlof_0eXKY/edit#gid=0",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "FECHA HORA": "={{ new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'short', timeStyle: 'medium' }) }}",
+            "ID ORDEN": "={{ $('Parsear JSON').item.json.order_id }}",
+            "REF": "={{ String($('Parsear JSON').item.json.order_id || '').slice(-4) }}",
+            "CLIENTE": "={{ $('Parsear JSON').item.json.customer_name }}",
+            "CEDULA": "={{ $('Parsear JSON').item.json.customer_cedula || '' }}",
+            "ITEMS": "={{ ($('Parsear JSON').item.json.items || []).map(it => it.qty + 'x ' + it.name).join('; ') }}",
+            "SUBTOTAL": "={{ $('Parsear JSON').item.json.subtotal }}",
+            "DESCUENTO": "={{ $('Parsear JSON').item.json.discount }}",
+            "TOTAL": "={{ $('Parsear JSON').item.json.total }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {"id":"FECHA HORA","displayName":"FECHA HORA","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"ID ORDEN","displayName":"ID ORDEN","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"REF","displayName":"REF","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"CLIENTE","displayName":"CLIENTE","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"CEDULA","displayName":"CEDULA","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"ITEMS","displayName":"ITEMS","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"SUBTOTAL","displayName":"SUBTOTAL","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"DESCUENTO","displayName":"DESCUENTO","type":"string","canBeUsedToMatch":true,"required":false,"display":true},
+            {"id":"TOTAL","displayName":"TOTAL","type":"string","canBeUsedToMatch":true,"required":false,"display":true}
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pyZpr6oR7iwl8Gc5",
+          "name": "Google Sheets account"
+        }
+      }
+    }
