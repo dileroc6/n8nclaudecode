@@ -40,7 +40,7 @@ function ArticleFeaturedImage() {
     <div className="article-featured">
       <div className="container" style={{ maxWidth: 1080 }}>
         <div className="article-fig" data-reveal>
-          <img className="article-fig-photo" src={$('assets/img/wavy-pattern.jpg')} alt="" />
+          <img className="article-fig-photo" src={$('https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/wavy-pattern.jpg')} alt="" />
           <div className="article-fig-tint"></div>
           <span className="article-fig-caption">// fig 01 · el tono empieza en la primera línea</span>
         </div>
@@ -167,7 +167,7 @@ function RelatedPosts() {
             <div key={i} data-reveal data-reveal-delay={(i % 3) + 1}>
               <a href={$('blog-post.html')} className="post-card">
                 <div className="post-image" aria-hidden="true">
-                  <img className="post-image-photo" src={$('assets/img/' + p.img)} alt="" loading="lazy" />
+                  <img className="post-image-photo" src={$('https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/' + p.img)} alt="" loading="lazy" />
                   <div className="post-image-tint"></div>
                   <span className="post-image-cat">{p.cat}</span>
                 </div>

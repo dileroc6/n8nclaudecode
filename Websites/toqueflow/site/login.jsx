@@ -3,7 +3,7 @@
 function LoginBrandPanel() {
   return (
     <div className="login-brand">
-      <img className="login-brand-photo" src="assets/img/portrait-light.jpg" alt="" aria-hidden="true" />
+      <img className="login-brand-photo" src="https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/portrait-light.jpg" alt="" aria-hidden="true" />
       <div className="login-brand-tint"></div>
       <div className="bp-grid" style={{ opacity: .4 }}></div>
       <div className="glow" style={{ left: '-160px', bottom: '-180px', opacity: .4 }}></div>

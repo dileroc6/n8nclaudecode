@@ -24,8 +24,15 @@ Hoy **cada deploy re-sube ~77 MB**, pero el código real (HTML/JSX/CSS) pesa **~
 
 (Se guardarían en `credentials.env`: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_URL`.)
 
+## Hallazgos (2026-06-20)
+- **Llaves de R2**: están en `Bejauha/plataforma/.env.local` (`R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE`). Las leo desde ahí, no se copian a toqueflow.
+- **Método**: `@aws-sdk/client-s3` (ya instalado en `Bejauha/plataforma/node_modules` → se puede `require` por ruta absoluta sin instalar nada en toqueflow). Subida con `PutObjectCommand`.
+- **DECISIÓN PENDIENTE (del usuario):**
+  - **(A) Reusar el bucket de Bejauha** bajo un prefijo `toqueflow/` → funciona YA (ese bucket ya es público), pero las imágenes de ToqueFlow quedarían servidas desde el dominio/bucket de Bejauha (acopla los dos proyectos).
+  - **(B) Bucket dedicado `toqueflow-assets`** → más limpio, pero hay que **activar acceso público** una vez en el dashboard de Cloudflare R2 (eso NO se puede por la S3 API, lo haces tú o me pasas el dominio público).
+
 ## Estado
-🟡 **PENDIENTE** — falta que el usuario pase las llaves de R2. Una vez las tenga, hago la migración por partes y verifico cada imagen antes de quitar nada de `site/`.
+🟡 **Listo para migrar** en cuanto elijas (A) o (B). Plan: subir `assets/img/*` + `hero-bg.mp4` (+ logos) a R2 → cambiar las rutas en el código por la URL pública → **verificar que todas carguen desde R2** → recién ahí excluir las imágenes del deploy (deploy-safe) → deploy liviano. Nada se quita de `site/` hasta verificar.
 
 ## Alternativa a futuro (no urgente)
 Migrar TODO el sitio a **Cloudflare Pages** (gratis): `git push` → deploy atómico + CDN + cache-busting + rollback instantáneo. Es más limpio que el zip a Hostinger, pero es una migración mayor.

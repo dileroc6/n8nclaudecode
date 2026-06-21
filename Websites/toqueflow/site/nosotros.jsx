@@ -31,7 +31,7 @@ function Manifesto() {
       <div className="container">
         <div className="manifesto-grid">
           <div className="manifesto-fig" data-reveal>
-            <img src={$('assets/img/portrait-light.jpg')} alt="" loading="lazy" />
+            <img src={$('https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/portrait-light.jpg')} alt="" loading="lazy" />
             <div className="manifesto-fig-tint"></div>
             <span className="manifesto-fig-tag">// flow.invisible</span>
           </div>

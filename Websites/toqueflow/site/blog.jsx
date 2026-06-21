@@ -49,7 +49,7 @@ function PostCard({ post, featured }) {
     <a href={$('blog-post.html')} className={`post-card ${featured ? 'is-featured' : ''}`}>
       <div className="post-image" aria-hidden="true">
         {post.img
-          ? <img className="post-image-photo" src={$('assets/img/' + post.img)} alt="" loading="lazy" />
+          ? <img className="post-image-photo" src={$('https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/' + post.img)} alt="" loading="lazy" />
           : <><div className="post-image-grid"></div><div className="post-image-glow"></div></>}
         <div className="post-image-tint"></div>
         <span className="post-image-cat">{post.tag || post.cat}</span>

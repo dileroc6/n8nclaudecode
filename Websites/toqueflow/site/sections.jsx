@@ -248,7 +248,7 @@ function WhyUs() {
   ];
   return (
     <section className="section section-dark" style={{ position: 'relative', overflow: 'hidden' }}>
-      <img className="photo-bg" src="assets/img/tech-network.jpg" alt="" aria-hidden="true" />
+      <img className="photo-bg" src="https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/tech-network.jpg" alt="" aria-hidden="true" />
       <div className="bp-grid" style={{ opacity: .55 }}></div>
       <div className="glow" style={{ left: '-220px', bottom: '-200px', opacity: .35 }}></div>
       <div className="container" style={{ position: 'relative' }}>
@@ -317,7 +317,7 @@ function Testimonials() {
 function FinalCTA() {
   return (
     <section className="section section-dark final-cta">
-      <img className="photo-bg" src="assets/img/wavy-pattern.jpg" alt="" aria-hidden="true" />
+      <img className="photo-bg" src="https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/img/wavy-pattern.jpg" alt="" aria-hidden="true" />
       <div className="bp-grid" style={{ opacity: .35 }}></div>
       <div className="glow"></div>
       <div className="container" style={{ position: 'relative', zIndex: 2 }}>

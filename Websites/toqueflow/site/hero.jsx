@@ -178,7 +178,7 @@ function HeroParticles() {
     <section className="hero hero-particles">
       <video
         className="hero-video"
-        src="assets/hero-bg.mp4"
+        src="https://pub-0e0fe333e9d349258d55b3986cb8d38b.r2.dev/hero-bg.mp4"
         autoPlay muted loop playsInline
         aria-hidden="true"
       />

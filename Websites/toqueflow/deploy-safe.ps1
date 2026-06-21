@@ -31,8 +31,11 @@ function Should-Exclude($rel) {
   if ($rel -match '^(node_modules|dist|supabase)/') { return $true }
   if ($rel -eq '.thumbnail' -or $rel -eq 'STYLEGUIDE.md') { return $true }
   if ($rel -eq 'assets/responsive.css' -or $rel -eq 'assets/mobile-menu.js') { return $true }
-  # media pesada original directamente bajo assets/ (NO bajo assets/img/, que si se usa)
+  # media pesada original directamente bajo assets/ raiz
   if ($rel -match '^assets/[^/]+\.(mov|jpg|jpeg)$') { return $true }
+  # imagenes + video movidos a Cloudflare R2 (ver _docs/cloudflare-r2.md) -> ya no se despliegan
+  if ($rel -match '^assets/img/') { return $true }
+  if ($rel -eq 'assets/hero-bg.mp4') { return $true }
   return $false
 }
 
@@ -65,7 +68,7 @@ function Build-SiteZip($outZip) {
 function Test-Live {
   $urls = @(
     'index.html','dashboard.html','admin.html','login.html','nosotros.html',
-    'rappi-bogota.html','sm-grand/ocupacion.html','assets/toqueflow-logo.png','assets/img/cyborg-statue.jpg'
+    'rappi-bogota.html','sm-grand/ocupacion.html','assets/toqueflow-logo.png'
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()
