@@ -298,6 +298,32 @@ function AdminApp({ profile }) {
     setUsers((us) => us.map((x) => x.id === u.id ? { ...x, role } : x));
     await sb.from('profiles').update({ role }).eq('id', u.id);
   };
+  const updateName = async (u, full_name) => {
+    setUsers((us) => us.map((x) => x.id === u.id ? { ...x, full_name } : x));
+    await sb.from('profiles').update({ full_name }).eq('id', u.id);
+  };
+  // Acciones que necesitan service_role -> Edge Function admin-users (verifica super_admin).
+  const callAdminFn = async (action, payload) => {
+    const token = (await sb.auth.getSession()).data.session.access_token;
+    const r = await fetch((window.SUPABASE_URL || '').replace(/\/+$/, '') + '/functions/v1/admin-users', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, apikey: window.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+    });
+    return { ok: r.ok, body: await r.json().catch(() => ({})) };
+  };
+  const deleteUser = async (u) => {
+    if (!window.confirm('¿Eliminar a ' + u.email + '?\nBorra su cuenta de forma PERMANENTE.')) return;
+    const { ok, body } = await callAdminFn('delete', { userId: u.id });
+    if (!ok || body.error) { window.alert('No se pudo eliminar: ' + (body.error || 'error')); return; }
+    setUsers((us) => us.filter((x) => x.id !== u.id));
+  };
+  const resetLink = async (u) => {
+    const { ok, body } = await callAdminFn('reset-link', { email: u.email });
+    if (!ok || !body.link) { window.alert('No se pudo generar el enlace: ' + (body.error || 'error')); return; }
+    try { await navigator.clipboard.writeText(body.link); window.alert('Enlace de recuperación de ' + u.email + ' COPIADO al portapapeles. Envíaselo (caduca pronto).'); }
+    catch (e) { window.prompt('Enlace de recuperación de ' + u.email + ' (cópialo):', body.link); }
+  };
   const toggleUser = async (u) => {
     const status = u.status === 'active' ? 'disabled' : 'active';
     setUsers((us) => us.map((x) => x.id === u.id ? { ...x, status } : x));
@@ -426,7 +452,10 @@ function AdminApp({ profile }) {
                         <td className="admin-dim">{fmtDate(u.last_sign_in_at)}</td>
                         <td><span className={`flow-status ${u.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{u.status === 'active' ? 'activo' : 'inactivo'}</span></td>
                         <td className="admin-row-actions">
+                          <button type="button" className="admin-link" onClick={() => { const v = prompt('Nombre de ' + u.email, u.full_name || ''); if (v != null && v.trim()) updateName(u, v.trim()); }}>Editar</button>
+                          <button type="button" className="admin-link" onClick={() => resetLink(u)}>Recuperar</button>
                           {!me && <button type="button" className="admin-link" onClick={() => toggleUser(u)}>{u.status === 'active' ? 'Desactivar' : 'Activar'}</button>}
+                          {!me && <button type="button" className="admin-link danger" onClick={() => deleteUser(u)}>Eliminar</button>}
                           {me && <span className="admin-dim">tú</span>}
                         </td>
                       </tr>
