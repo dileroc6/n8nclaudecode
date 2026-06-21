@@ -3655,7 +3655,13 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .dash-avatar.sm { width: 30px; height: 30px; font-size: 11px; flex-shrink: 0; }
 .admin-dim { color: var(--mute); font-family: var(--mono); font-size: 12px; }
 .admin-table tr.admin-subtotal td { background: color-mix(in oklab, var(--orange-2) 7%, transparent); border-top: 1px solid color-mix(in oklab, var(--orange-2) 25%, var(--line)); }
-.admin-row-actions { white-space: nowrap; text-align: right; }
+.admin-row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.admin-icon-btn { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--mute); cursor: pointer; transition: all .15s; flex-shrink: 0; padding: 0; }
+.admin-icon-btn:hover { color: var(--ink); border-color: var(--ink); background: var(--light-1); }
+.admin-icon-btn.danger:hover { color: #c0392b; border-color: #c0392b; }
+.admin-toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--light-ink); color: #fff; padding: 11px 18px; border-radius: 10px; font-family: var(--mono); font-size: 13px; z-index: 3000; box-shadow: 0 8px 30px rgba(0,0,0,.25); cursor: pointer; max-width: 90vw; }
+.admin-toast.error { background: #c0392b; }
+.admin-toast.ok { background: #1f8a5b; }
 
 .admin-mini-select, .adm-form select {
   font-family: var(--sans); font-size: 13px; color: var(--ink);

@@ -83,6 +83,57 @@ function Modal({ title, onClose, children }) {
   );
 }
 
+// ── Modales de acciones de usuario (editar nombre, confirmar, enlace) ─────────
+function EditNameModal({ user, onClose, onSaved }) {
+  const [name, setName] = React.useState(user.full_name || '');
+  const [busy, setBusy] = React.useState(false);
+  const save = async (e) => { e.preventDefault(); const v = name.trim(); if (!v) return; setBusy(true); try { await onSaved(user, v); } finally { setBusy(false); onClose(); } };
+  return (
+    <Modal title="Editar nombre" onClose={onClose}>
+      <form className="adm-form" onSubmit={save}>
+        <div className="form-field"><label>nombre de {user.email}</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre y apellido" autoFocus /></div>
+        <div className="adm-form-foot">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar'}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+function ConfirmModal({ title, message, confirmLabel, danger, onClose, onConfirm }) {
+  const [busy, setBusy] = React.useState(false);
+  const go = async () => { setBusy(true); try { await onConfirm(); } finally { setBusy(false); onClose(); } };
+  return (
+    <Modal title={title} onClose={onClose}>
+      <div className="adm-form">
+        <p className="adm-hint" style={{ fontSize: 13.5, color: 'var(--ink)' }}>{message}</p>
+        <div className="adm-form-foot">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button type="button" className="btn btn-primary" disabled={busy} style={danger ? { background: '#c0392b', borderColor: '#c0392b' } : undefined} onClick={go}>{busy ? '…' : confirmLabel}</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+function RecoveryModal({ email, link, onClose }) {
+  const [copied, setCopied] = React.useState(false);
+  const copy = async () => { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch (e) {} };
+  return (
+    <Modal title="Enlace de recuperación" onClose={onClose}>
+      <div className="adm-form">
+        <p className="adm-hint" style={{ fontSize: 13.5, color: 'var(--ink)' }}>Envíale este enlace a <b>{email}</b> para que ponga una nueva contraseña (caduca pronto).</p>
+        <div className="form-field"><label>enlace</label>
+          <input type="text" readOnly value={link} onFocus={(e) => e.target.select()} /></div>
+        <div className="adm-form-foot">
+          <button type="button" className="btn btn-ghost" onClick={onClose}>Cerrar</button>
+          <button type="button" className="btn btn-primary" onClick={copy}>{copied ? '✓ Copiado' : 'Copiar enlace'}</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── Modal: crear empresa ──────────────────────────────────────────────────────
 function CompanyModal({ onClose, onSaved }) {
   const [f, setF] = React.useState({ name: '', city: '' });
@@ -265,6 +316,10 @@ function AdminApp({ profile }) {
   const [flows, setFlows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [modal, setModal] = React.useState(null); // 'company' | 'user' | null
+  const [editU, setEditU] = React.useState(null);  // usuario a renombrar
+  const [delU, setDelU] = React.useState(null);     // usuario a eliminar (confirm)
+  const [recov, setRecov] = React.useState(null);   // { email, link }
+  const [toast, setToast] = React.useState(null);   // { type, text }
   const [sedesOf, setSedesOf] = React.useState(null); // company para el modal de sedes
   const [companyFilter, setCompanyFilter] = React.useState('todas');
   const [consumoCo, setConsumoCo] = React.useState('todas');
@@ -312,17 +367,16 @@ function AdminApp({ profile }) {
     });
     return { ok: r.ok, body: await r.json().catch(() => ({})) };
   };
-  const deleteUser = async (u) => {
-    if (!window.confirm('¿Eliminar a ' + u.email + '?\nBorra su cuenta de forma PERMANENTE.')) return;
+  const doDelete = async (u) => {
     const { ok, body } = await callAdminFn('delete', { userId: u.id });
-    if (!ok || body.error) { window.alert('No se pudo eliminar: ' + (body.error || 'error')); return; }
+    if (!ok || body.error) { setToast({ type: 'error', text: 'No se pudo eliminar: ' + (body.error || 'error') }); return; }
     setUsers((us) => us.filter((x) => x.id !== u.id));
+    setToast({ type: 'ok', text: u.email + ' eliminado.' });
   };
-  const resetLink = async (u) => {
+  const genRecovery = async (u) => {
     const { ok, body } = await callAdminFn('reset-link', { email: u.email });
-    if (!ok || !body.link) { window.alert('No se pudo generar el enlace: ' + (body.error || 'error')); return; }
-    try { await navigator.clipboard.writeText(body.link); window.alert('Enlace de recuperación de ' + u.email + ' COPIADO al portapapeles. Envíaselo (caduca pronto).'); }
-    catch (e) { window.prompt('Enlace de recuperación de ' + u.email + ' (cópialo):', body.link); }
+    if (!ok || !body.link) { setToast({ type: 'error', text: 'No se pudo generar el enlace: ' + (body.error || 'error') }); return; }
+    setRecov({ email: u.email, link: body.link });
   };
   const toggleUser = async (u) => {
     const status = u.status === 'active' ? 'disabled' : 'active';
@@ -452,10 +506,20 @@ function AdminApp({ profile }) {
                         <td className="admin-dim">{fmtDate(u.last_sign_in_at)}</td>
                         <td><span className={`flow-status ${u.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{u.status === 'active' ? 'activo' : 'inactivo'}</span></td>
                         <td className="admin-row-actions">
-                          <button type="button" className="admin-link" onClick={() => { const v = prompt('Nombre de ' + u.email, u.full_name || ''); if (v != null && v.trim()) updateName(u, v.trim()); }}>Editar</button>
-                          <button type="button" className="admin-link" onClick={() => resetLink(u)}>Recuperar</button>
-                          {!me && <button type="button" className="admin-link" onClick={() => toggleUser(u)}>{u.status === 'active' ? 'Desactivar' : 'Activar'}</button>}
-                          {!me && <button type="button" className="admin-link danger" onClick={() => deleteUser(u)}>Eliminar</button>}
+                          <button type="button" className="admin-icon-btn" title="Editar nombre" onClick={() => setEditU(u)}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                          </button>
+                          <button type="button" className="admin-icon-btn" title="Enviar enlace de recuperación" onClick={() => genRecovery(u)}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8m-3 0h3v3m-3 2l2 2"/></svg>
+                          </button>
+                          {!me && <button type="button" className="admin-icon-btn" title={u.status === 'active' ? 'Desactivar' : 'Activar'} onClick={() => toggleUser(u)}>
+                            {u.status === 'active'
+                              ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 5l12 7-12 7z"/></svg>}
+                          </button>}
+                          {!me && <button type="button" className="admin-icon-btn danger" title="Eliminar" onClick={() => setDelU(u)}>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+                          </button>}
                           {me && <span className="admin-dim">tú</span>}
                         </td>
                       </tr>
@@ -550,6 +614,10 @@ function AdminApp({ profile }) {
       {modal === 'company' && <CompanyModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {modal === 'user' && <UserModal companies={companies} onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {sedesOf && <SedesModal company={sedesOf} onClose={() => setSedesOf(null)} onChanged={reload} />}
+      {editU && <EditNameModal user={editU} onClose={() => setEditU(null)} onSaved={updateName} />}
+      {delU && <ConfirmModal title="Eliminar usuario" danger confirmLabel="Eliminar" message={'¿Eliminar a ' + delU.email + '? Se borra su cuenta de forma permanente.'} onClose={() => setDelU(null)} onConfirm={() => doDelete(delU)} />}
+      {recov && <RecoveryModal email={recov.email} link={recov.link} onClose={() => setRecov(null)} />}
+      {toast && <div className={'admin-toast ' + (toast.type || '')} onClick={() => setToast(null)}>{toast.text}</div>}
     </div>
   );
 }
