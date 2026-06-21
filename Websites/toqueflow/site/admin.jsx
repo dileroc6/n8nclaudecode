@@ -262,6 +262,7 @@ function AdminApp({ profile }) {
   const [users, setUsers] = React.useState([]);
   const [sedes, setSedes] = React.useState([]);
   const [usage, setUsage] = React.useState([]);
+  const [flows, setFlows] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [modal, setModal] = React.useState(null); // 'company' | 'user' | null
   const [sedesOf, setSedesOf] = React.useState(null); // company para el modal de sedes
@@ -272,16 +273,18 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai] = await Promise.all([
+    const [c, u, s, ai, fl] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
       sb.from('ai_usage').select('*'),
+      sb.from('flows').select('id, company_id'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
     setSedes(s.data || []);
     setUsage(ai.data || []);
+    setFlows(fl.data || []);
     setLoading(false);
   }, []);
 
@@ -289,6 +292,7 @@ function AdminApp({ profile }) {
 
   const usersByCompany = (cid) => users.filter((u) => u.company_id === cid).length;
   const sedesByCompany = (cid) => sedes.filter((s) => s.company_id === cid).length;
+  const flowsByCompany = (cid) => flows.filter((f) => f.company_id === cid).length;
 
   const setRole = async (u, role) => {
     setUsers((us) => us.map((x) => x.id === u.id ? { ...x, role } : x));
@@ -357,25 +361,22 @@ function AdminApp({ profile }) {
             {companies.map((c) => (
               <article key={c.id} className="admin-co-card">
                 <div className="admin-co-top">
-                  <span className="sede-ic">{initials(c.name)}</span>
+                  {c.logo_url
+                    ? <img className="admin-co-logo" src={c.logo_url} alt={c.name} />
+                    : <span className="admin-co-logo admin-co-logo-fallback">{initials(c.name)}</span>}
                   <div className="admin-co-meta">
                     <b>{c.name}</b>
-                    <span>{c.city || 'sin ciudad'}</span>
                   </div>
                   <span className={`flow-status ${c.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{c.status === 'active' ? 'activa' : 'pausada'}</span>
                 </div>
                 <div className="admin-co-stats">
                   <div><b>{usersByCompany(c.id)}</b><span>usuarios</span></div>
-                  <div><b>{sedesByCompany(c.id)}</b><span>sedes</span></div>
+                  <div><b>{flowsByCompany(c.id)}</b><span>flows creados</span></div>
                   <div><b>{fmtDate(c.created_at)}</b><span>creada</span></div>
                 </div>
                 <div className="admin-co-foot">
-                  <a className="flow-view" href={'dashboard.html?empresa=' + c.id}>Entrar al panel →</a>
-                  <div className="admin-co-actions">
-                    <button type="button" className="admin-link" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>
-                    <button type="button" className="admin-link" onClick={() => setSedesOf(c)}>Sedes</button>
-                    <button type="button" className="admin-link" onClick={() => toggleCompany(c)}>{c.status === 'active' ? 'Pausar' : 'Activar'}</button>
-                  </div>
+                  <a className="admin-co-btn primary" href={'dashboard.html?empresa=' + c.id}>Entrar al panel →</a>
+                  <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>
                 </div>
               </article>
             ))}

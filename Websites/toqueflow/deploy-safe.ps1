@@ -46,7 +46,15 @@ function Build-SiteZip($outZip) {
     $rel = $_.FullName.Substring($site.Length + 1) -replace '\\','/'
     if (Should-Exclude $rel) { return }
     $entry = $ar.CreateEntry($rel, [System.IO.Compression.CompressionLevel]::Optimal)
-    $es = $entry.Open(); $b = [System.IO.File]::ReadAllBytes($_.FullName); $es.Write($b,0,$b.Length); $es.Close()
+    $es = $entry.Open()
+    if ($rel -match '\.html$') {
+      $txt = [System.IO.File]::ReadAllText($_.FullName)
+      $txt = [regex]::Replace($txt, '(src|href)="([A-Za-z0-9_./-]+\.(?:jsx|js|css))"', ('${1}="${2}?v=' + $stamp + '"'))
+      $b = [System.Text.Encoding]::UTF8.GetBytes($txt)
+    } else {
+      $b = [System.IO.File]::ReadAllBytes($_.FullName)
+    }
+    $es.Write($b,0,$b.Length); $es.Close()
     $n++
   }
   $ar.Dispose(); $fs.Close()

@@ -135,10 +135,12 @@ function DashTopbar({ page }) {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ marginRight: 7 }}><path d="M3 11l9-8 9 8M5 10v10h14V10" /></svg>
           Inicio
         </a>
-        <a href="dashboard.html" className={`dash-nav-link ${page === 'panel' ? 'is-active' : ''}`}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ marginRight: 7 }}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-          Mis flows
-        </a>
+        {!BRAND.isSuperAdmin && (
+          <a href="dashboard.html" className={`dash-nav-link ${page === 'panel' ? 'is-active' : ''}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ marginRight: 7 }}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            Mis flows
+          </a>
+        )}
         {BRAND.isSuperAdmin && (
           <a href="admin.html" className={`dash-nav-link ${page === 'admin' ? 'is-active' : ''}`}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" style={{ marginRight: 7 }}><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9z" /></svg>

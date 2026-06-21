@@ -100,20 +100,21 @@ function Sparkline({ data, active }) {
 }
 
 function FlowCard({ flow, showSede, onView }) {
+  const soon = flow.status === 'próximamente';
   const active = flow.status === 'activo';
   return (
-    <article className={`flow-card ${active ? '' : 'is-paused'}`}>
+    <article className={`flow-card ${soon ? 'is-soon' : active ? '' : 'is-paused'}`}>
       <div className="flow-card-top">
         <div className="flow-card-icon" data-kind={flow.kind}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">{FLOW_ICON[flow.type]}</svg>
         </div>
-        <span className={`flow-status ${active ? 'on' : 'off'}`}>
-          <span className="flow-status-dot"></span>{flow.status}
-        </span>
+        {soon
+          ? <span className="flow-status soon"><span className="flow-status-dot"></span>Próximamente</span>
+          : <span className={`flow-status ${active ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{flow.status}</span>}
       </div>
 
       <span className="flow-kind" data-kind={flow.kind}>{flow.kind}</span>
-      {showSede && <span className="flow-sede">{flow.sede === 'ambas' ? 'Ambas sedes' : SEDE_NAME[flow.sede]}</span>}
+      {showSede && SEDES.length > 0 && <span className="flow-sede">{flow.sede === 'ambas' ? 'Ambas sedes' : SEDE_NAME[flow.sede]}</span>}
       <h3 className="flow-name">{flow.name}</h3>
       <p className="flow-desc">{flow.desc}</p>
 
@@ -125,23 +126,31 @@ function FlowCard({ flow, showSede, onView }) {
         ))}
       </div>
 
-      <div className="flow-stats">
-        {flow.stats.map((s, i) => (
-          <div key={i} className="flow-stat">
-            <div className="flow-stat-n">{s.n}</div>
-            <div className="flow-stat-l">{s.l}</div>
+      {soon ? (
+        <div className="flow-soon-note">
+          <b>Disponible muy pronto</b>{flow.last ? <span> · {flow.last}</span> : null}
+        </div>
+      ) : (
+        <>
+          <div className="flow-stats">
+            {flow.stats.map((s, i) => (
+              <div key={i} className="flow-stat">
+                <div className="flow-stat-n">{s.n}</div>
+                <div className="flow-stat-l">{s.l}</div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <Sparkline data={flow.spark} active={active} />
+          <Sparkline data={flow.spark} active={active} />
 
-      <div className="flow-card-foot">
-        <span className="flow-last">{flow.last}</span>
-        {flow.tool_url
-          ? <a className="flow-view" href={flow.tool_url}>Abrir <span className="arrow">→</span></a>
-          : <button type="button" className="flow-view" onClick={() => onView(flow)}>Ver <span className="arrow">→</span></button>}
-      </div>
+          <div className="flow-card-foot">
+            <span className="flow-last">{flow.last}</span>
+            {flow.tool_url
+              ? <a className="flow-view" href={flow.tool_url}>Abrir <span className="arrow">→</span></a>
+              : <span className="flow-soon-tag">Muy pronto</span>}
+          </div>
+        </>
+      )}
     </article>
   );
 }
@@ -160,45 +169,6 @@ function NewFlowCard() {
   );
 }
 
-// Recent activity log per flow type — believable events for the demo.
-const FLOW_LOG = {
-  chat: [
-    { t: 'hace 3 min', ic: 'in', txt: 'Cliente preguntó por disponibilidad de taladro percutor' },
-    { t: 'hace 11 min', ic: 'ok', txt: 'Cotización enviada · $389.000' },
-    { t: 'hace 26 min', ic: 'in', txt: 'Consulta de horario de la tienda → respondida' },
-    { t: 'hace 48 min', ic: 'up', txt: 'Conversación escalada a un asesor humano' },
-    { t: 'hace 1 h', ic: 'ok', txt: 'Pedido confirmado y registrado en el sistema' },
-  ],
-  admin: [
-    { t: 'hace 18 min', ic: 'ok', txt: 'Stock actualizado: +120 unidades en cemento gris' },
-    { t: 'hace 40 min', ic: 'up', txt: 'Precio de 8 productos modificado por comando' },
-    { t: 'hace 2 h', ic: 'warn', txt: 'Alerta: 3 productos bajo el mínimo' },
-    { t: 'hace 3 h', ic: 'ok', txt: 'Nuevo producto publicado en la web' },
-  ],
-  invoice: [
-    { t: 'hace 1 min', ic: 'ok', txt: 'Factura #RP-2841 generada · pedido Rappi' },
-    { t: 'hace 9 min', ic: 'ok', txt: 'Factura #RP-2840 generada · $54.300' },
-    { t: 'hace 22 min', ic: 'ok', txt: 'Factura #RP-2839 generada · $128.900' },
-    { t: 'hace 35 min', ic: 'up', txt: 'Lote de 12 facturas sincronizado con contabilidad' },
-  ],
-  chart: [
-    { t: 'hace 14 min', ic: 'up', txt: 'Tablero actualizado con datos de Meta Ads' },
-    { t: 'hace 1 h', ic: 'ok', txt: 'Reporte diario enviado al correo' },
-    { t: 'hace 3 h', ic: 'warn', txt: 'CPL de campaña "Herramientas" subió 18%' },
-  ],
-  ads: [
-    { t: 'hace 40 min', ic: 'up', txt: 'Presupuesto +15% en campaña con mejor ROAS' },
-    { t: 'hace 2 h', ic: 'warn', txt: 'Campaña "Pintura" pausada por bajo rendimiento' },
-    { t: 'hace 5 h', ic: 'ok', txt: '3 anuncios nuevos activados automáticamente' },
-  ],
-};
-const LOG_IC = {
-  in:   { c: '#2a6fdb', d: 'M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-7l-5 4v-4H6a3 3 0 0 1-3-3z' },
-  ok:   { c: '#1f8a5b', d: 'M5 13l4 4L19 7' },
-  up:   { c: '#f15a24', d: 'M12 19V5M5 12l7-7 7 7' },
-  warn: { c: '#d99a1f', d: 'M12 3 2 20h20zM12 10v4M12 17h.01' },
-};
-
 function FlowDetail({ flow, onClose, onToggle, canManage }) {
   React.useEffect(() => {
     if (!flow) return; // solo bloquea el scroll cuando el drawer está abierto
@@ -210,7 +180,6 @@ function FlowDetail({ flow, onClose, onToggle, canManage }) {
 
   if (!flow) return null;
   const active = flow.status === 'activo';
-  const log = FLOW_LOG[flow.type] || [];
 
   return (
     <div className="fd-overlay" onClick={onClose}>
@@ -221,7 +190,7 @@ function FlowDetail({ flow, onClose, onToggle, canManage }) {
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">{FLOW_ICON[flow.type]}</svg>
             </div>
             <div>
-              <div className="fd-drawer-kind"><span className="flow-kind" data-kind={flow.kind}>{flow.kind}</span><span className="fd-drawer-sede">{flow.sede === 'ambas' ? 'Ambas sedes' : SEDE_NAME[flow.sede]}</span></div>
+              <div className="fd-drawer-kind"><span className="flow-kind" data-kind={flow.kind}>{flow.kind}</span>{SEDES.length > 0 && <span className="fd-drawer-sede">{flow.sede === 'ambas' ? 'Ambas sedes' : SEDE_NAME[flow.sede]}</span>}</div>
               <h2 className="fd-drawer-name">{flow.name}</h2>
             </div>
           </div>
@@ -266,22 +235,6 @@ function FlowDetail({ flow, onClose, onToggle, canManage }) {
               </span>
             ))}
           </div>
-
-          <div className="fd-section-label">// actividad reciente</div>
-          <ul className="fd-log">
-            {log.map((e, i) => {
-              const ic = LOG_IC[e.ic];
-              return (
-                <li key={i} className="fd-log-row">
-                  <span className="fd-log-ic" style={{ color: ic.c, background: `color-mix(in oklab, ${ic.c} 12%, transparent)` }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d={ic.d} /></svg>
-                  </span>
-                  <span className="fd-log-txt">{e.txt}</span>
-                  <span className="fd-log-t">{e.t}</span>
-                </li>
-              );
-            })}
-          </ul>
         </div>
 
         <div className="fd-drawer-foot">
