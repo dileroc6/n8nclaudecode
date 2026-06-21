@@ -413,14 +413,16 @@ function DashApp({ companyId, previewName }) {
             <div className="eyebrow">panel de {BRAND.name}</div>
             <h1 className="dash-greeting">Hola, {BRAND.user.split(' ')[0]}.</h1>
             <p className="dash-greeting-sub">
-              {activeSede === 'todas'
+              {SEDES.length === 0
+                ? <>Esto es lo que está fluyendo en <span className="hl">{BRAND.name}</span> ahora mismo.</>
+                : activeSede === 'todas'
                 ? <>Vista general de <span className="hl">las {SEDES.length} sedes</span> de {BRAND.name}.</>
                 : <>Esto es lo que está fluyendo en <span className="hl">{SEDE_NAME[activeSede]}</span> ahora mismo.</>}
             </p>
           </div>
         </div>
 
-        {activeSede === 'todas' && (
+        {activeSede === 'todas' && SEDES.length > 0 && (
           <div className="sede-compare">
             {sedeSummary.map((s) => (
               <button key={s.id} type="button" className="sede-compare-card" onClick={() => setActiveSede(s.id)}>

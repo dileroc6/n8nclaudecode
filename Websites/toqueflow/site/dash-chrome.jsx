@@ -126,8 +126,8 @@ function DashTopbar({ page }) {
             <img src="assets/toqueflow-logo.png" alt="ToqueFlow" />
           </a>
         </div>
-        <span className="dash-vdivider"></span>
-        <SedeSwitcher />
+        {SEDES.length > 0 && <span className="dash-vdivider"></span>}
+        {SEDES.length > 0 && <SedeSwitcher />}
       </div>
 
       <nav className="dash-nav">
