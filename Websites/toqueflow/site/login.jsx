@@ -172,9 +172,63 @@ function LoginForm() {
   );
 }
 
+// Pantalla "nueva contraseña": aparece cuando se entra por un enlace de
+// recuperación (Supabase pone #type=recovery en la URL y deja una sesión temporal).
+function RecoveryForm() {
+  const [pass, setPass] = React.useState('');
+  const [show, setShow] = React.useState(false);
+  const [state, setState] = React.useState('idle'); // idle | loading | done
+  const [error, setError] = React.useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (state === 'loading') return;
+    if (pass.length < 6) { setError('La contraseña debe tener al menos 6 caracteres.'); return; }
+    setState('loading'); setError('');
+    const { error: err } = await TF_AUTH.sb.auth.updateUser({ password: pass });
+    if (err) { setState('idle'); setError(err.message || 'No se pudo cambiar. El enlace pudo expirar; pide otro.'); return; }
+    setState('done');
+    const ctx = await TF_AUTH.load();
+    const dest = ctx && ctx.profile && ctx.profile.role === 'super_admin' ? 'admin.html' : 'dashboard.html';
+    setTimeout(() => { try { history.replaceState(null, '', 'login.html'); } catch (e) {} window.location.replace(dest); }, 700);
+  };
+
+  return (
+    <div className="login-panel">
+      <div className="login-card">
+        <div className="login-mobile-logo"><a href="index.html"><img src="assets/toqueflow-logo.png" alt="ToqueFlow" /></a></div>
+        <div className="eyebrow">recuperar acceso</div>
+        <h1 className="login-title">Nueva contraseña.</h1>
+        <p className="login-sub">Escribe tu nueva contraseña para entrar a tu panel.</p>
+        {error && <div className="login-notice error">{error}</div>}
+        <form className="login-form" onSubmit={submit}>
+          <div className="form-field">
+            <label>nueva contraseña</label>
+            <div className="login-pass">
+              <input type={show ? 'text' : 'password'} value={pass} onChange={(e) => setPass(e.target.value)} placeholder="mínimo 6 caracteres" autoComplete="new-password" autoFocus />
+              <button type="button" className="login-eye" onClick={() => setShow((s) => !s)} aria-label="Mostrar contraseña">
+                {show
+                  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.4 5.2A9.5 9.5 0 0 1 12 5c5 0 9 4.5 10 7a13 13 0 0 1-2.2 3.1M6.1 6.1C3.8 7.5 2.3 9.7 2 12c1 2.5 5 7 10 7a9.7 9.7 0 0 0 3.3-.6"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>}
+              </button>
+            </div>
+          </div>
+          <button type="submit" className={`btn btn-primary login-submit ${state}`}>
+            {state === 'idle' && <>Guardar y entrar <span className="arrow">→</span></>}
+            {state === 'loading' && <span className="login-spinner"></span>}
+            {state === 'done' && <>✓ Listo</>}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function LoginApp() {
+  const isRecovery = ((window.location.hash || '') + (window.location.search || '')).indexOf('type=recovery') !== -1;
   React.useEffect(() => {
     applyDefaultTokens();
+    if (isRecovery) return; // recovery: NO redirigir; mostrar el form de nueva contraseña
     // Si ya hay sesión activa, salta directo al panel que corresponde.
     (async () => {
       const ctx = await TF_AUTH.load();
@@ -186,7 +240,7 @@ function LoginApp() {
   return (
     <div className="login-shell">
       <LoginBrandPanel />
-      <LoginForm />
+      {isRecovery ? <RecoveryForm /> : <LoginForm />}
     </div>
   );
 }
