@@ -2,3 +2,18 @@
 credentials.env
 site/node_modules/
 site/dist/
+
+# Artefactos de deploy / respaldo (snapshots completos viven en backups/*.zip y en Hostinger)
+backups/
+_mirror/
+_restore/
+*.zip
+
+# Media binaria pesada (estable; respaldada en backups/ + sitio vivo). Se versiona el CÓDIGO.
+site/assets/*.mov
+site/assets/*.mp4
+site/assets/*.jpg
+site/assets/*.jpeg
+site/assets/*.png
+site/assets/*.webp
+site/assets/img/
