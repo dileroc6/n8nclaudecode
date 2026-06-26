@@ -385,6 +385,7 @@ tbody td:not(:first-child) { text-align:right; }
 <!-- ── TABS ── -->
 <div class="tabs">
   <button class="tab-btn active" data-tab="historico">Histórico</button>
+  <button class="tab-btn" data-tab="complementary">Complementary</button>
   <button class="tab-btn" data-tab="proyeccion">Proyección próximos meses</button>
 </div>
 
@@ -557,6 +558,74 @@ tbody td:not(:first-child) { text-align:right; }
   </div>
 
 </div><!-- /main proyección -->
+
+<!-- ── MAIN (complementary) ── -->
+<div class="main" id="view-complementary" style="display:none">
+
+  <div class="proj-note" style="margin-top:0">
+    Las <strong>Complementary</strong> (habitaciones de cortesía/regalo) no cuentan en la ocupación oficial. Aquí ves cuántas hubo y cuánto suman a la <strong>ocupación real</strong>. Datos de mes cerrado, jun 2025 – may 2026.
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="complementary-kpi-grid"></div>
+
+  <!-- charts -->
+  <div class="charts-row" style="grid-template-columns:1fr 1fr">
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <div>
+          <div class="chart-eyebrow">Complementary por mes</div>
+          <div class="chart-title">Habitaciones complementary</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#f15a24"></div><span>Habitaciones</span></div>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height:260px"><canvas id="chart-compl"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr">
+        <div>
+          <div class="chart-eyebrow">Oficial vs real</div>
+          <div class="chart-title">Ocupación con complementary</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#f15a24"></div><span>Oficial</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#c1272d"></div><span>+ complementary</span></div>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="height:260px"><canvas id="chart-occreal"></canvas></div>
+    </div>
+  </div>
+
+  <!-- table -->
+  <div class="table-card">
+    <div class="chart-hdr">
+      <div>
+        <div class="chart-eyebrow">Detalle</div>
+        <div class="chart-title">Complementary y ocupación real por mes</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th>Complementary hab.</th>
+          <th>Complementary huésp.</th>
+          <th>Ocup. oficial</th>
+          <th>Ocup. real</th>
+          <th>Aporte</th>
+          <th>Complementary año ant.</th>
+        </tr>
+      </thead>
+      <tbody id="complementary-tbody"></tbody>
+    </table>
+    <div class="proj-note">
+      El <strong>año anterior</strong> de complementary solo está disponible desde abr 2025 (el hotel empezó a registrarlas entonces); por eso los meses previos aparecen sin comparativo.
+    </div>
+  </div>
+
+</div><!-- /main complementary -->
 
 <script>
 /* ═══════════════════════════════════════
@@ -1114,17 +1183,125 @@ function renderProjection() {
 }
 
 /* ═══════════════════════════════════════
-   PESTAÑAS — Histórico / Proyección
+   COMPLEMENTARY — datos mensuales (mes cerrado, de los Informe Diario)
+   compl = habitaciones complementary · hCompl = huéspedes complementary
+   vend/total = vendidas/totales del mismo mes (para la ocupación oficial vs real)
+   complPY/hComplPY = mismo mes año anterior (solo desde abr 2025)
+═══════════════════════════════════════ */
+const COMPL_DATA = [
+  { y:2025, m:6,  compl:16, hCompl:36,  vend:788, total:1470, complPY:0,  hComplPY:0   },
+  { y:2025, m:7,  compl:13, hCompl:26,  vend:796, total:1519, complPY:0,  hComplPY:0   },
+  { y:2025, m:8,  compl:10, hCompl:25,  vend:616, total:1519, complPY:0,  hComplPY:0   },
+  { y:2025, m:9,  compl:14, hCompl:34,  vend:482, total:1470, complPY:0,  hComplPY:0   },
+  { y:2025, m:10, compl:10, hCompl:24,  vend:804, total:1519, complPY:0,  hComplPY:0   },
+  { y:2025, m:11, compl:8,  hCompl:18,  vend:830, total:1470, complPY:0,  hComplPY:0   },
+  { y:2025, m:12, compl:44, hCompl:101, vend:360, total:1519, complPY:0,  hComplPY:0   },
+  { y:2026, m:1,  compl:13, hCompl:21,  vend:351, total:1519, complPY:0,  hComplPY:0   },
+  { y:2026, m:2,  compl:12, hCompl:20,  vend:511, total:1372, complPY:0,  hComplPY:0   },
+  { y:2026, m:3,  compl:2,  hCompl:5,   vend:247, total:1519, complPY:0,  hComplPY:0   },
+  { y:2026, m:4,  compl:34, hCompl:105, vend:372, total:1470, complPY:48, hComplPY:113 },
+  { y:2026, m:5,  compl:16, hCompl:45,  vend:331, total:1519, complPY:50, hComplPY:147 },
+];
+
+function renderComplementary() {
+  const D = COMPL_DATA;
+  const labels = D.map(r => `${MONTHS_S[r.m-1]} ${String(r.y).slice(2)}`);
+  const ofic = D.map(r => +(r.vend / r.total * 100).toFixed(1));            // ocupación oficial %
+  const real = D.map(r => +((r.vend + r.compl) / r.total * 100).toFixed(1)); // ocupación real %
+  const lift = D.map((r,i) => +(real[i] - ofic[i]).toFixed(2));              // aporte complementary (pts)
+  const rooms = D.map(r => r.compl);
+
+  const totRooms  = D.reduce((s,r)=>s+r.compl,0);
+  const totGuests = D.reduce((s,r)=>s+r.hCompl,0);
+  const peak      = D.reduce((a,b)=>b.compl>a.compl?b:a, D[0]);
+  const avgLift   = lift.reduce((s,v)=>s+v,0)/D.length;
+  const avgOfic   = ofic.reduce((s,v)=>s+v,0)/D.length;
+  const avgReal   = real.reduce((s,v)=>s+v,0)/D.length;
+
+  document.getElementById('complementary-kpi-grid').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-eyebrow">Complementary · 12 meses</div>
+      <div class="kpi-value copper">${fmtNum(totRooms)}<span class="kpi-unit"> hab</span></div>
+      <div class="kpi-sub">${fmtNum(totGuests)} huéspedes complementary</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-eyebrow">Mes pico</div>
+      <div class="kpi-value">${MONTHS_S[peak.m-1]}<span class="kpi-unit" style="font-size:14px"> ${peak.y}</span></div>
+      <div class="kpi-sub">${peak.compl} hab · ${peak.hCompl} huéspedes</div>
+      <div class="kpi-badge badge-neu">▲ Pico</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-eyebrow">Aporte a la ocupación</div>
+      <div class="kpi-value copper">+${avgLift.toFixed(1)}<span class="kpi-unit"> pts</span></div>
+      <div class="kpi-sub">Lo que suman las complementary, en promedio</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-eyebrow">Ocupación real prom.</div>
+      <div class="kpi-value">${avgReal.toFixed(1)}<span class="kpi-unit">%</span></div>
+      <div class="kpi-sub">vs ${avgOfic.toFixed(1)}% oficial · 12 meses</div>
+    </div>
+  `;
+
+  const axisX = { grid:{ color:'rgba(10,34,48,.08)', drawBorder:false }, ticks:{ color:'rgba(10,34,48,.55)', font:{family:'Sora',size:10}, maxRotation:45 } };
+  const tip   = { backgroundColor:'#0a2230', borderColor:'rgba(255,255,255,.12)', borderWidth:1, titleColor:'#ffffff', bodyColor:'rgba(255,255,255,.82)', padding:10 };
+
+  // Chart 1 — habitaciones complementary por mes
+  const ctx1 = document.getElementById('chart-compl').getContext('2d');
+  if (charts.compl) charts.compl.destroy();
+  charts.compl = new Chart(ctx1, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Complementary', data:rooms, backgroundColor:'#f15a24', borderRadius:4, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ ...tip, callbacks:{ label:c=>{ const r=D[c.dataIndex]; return ` ${r.compl} hab · ${r.hCompl} huéspedes`; } } } },
+      scales:{ x:axisX, y:{ beginAtZero:true, grid:{ color:'rgba(10,34,48,.08)' }, ticks:{ color:'rgba(10,34,48,.55)', font:{family:'Sora',size:10}, precision:0 } } } }
+  });
+
+  // Chart 2 — ocupación oficial vs real (apilado: oficial + aporte complementary)
+  const ctx2 = document.getElementById('chart-occreal').getContext('2d');
+  if (charts.occreal) charts.occreal.destroy();
+  charts.occreal = new Chart(ctx2, {
+    type:'bar',
+    data:{ labels, datasets:[
+      { label:'Oficial',        data:ofic, backgroundColor:'#f15a24', borderRadius:3, borderSkipped:false, stack:'occ' },
+      { label:'+ complementary', data:lift, backgroundColor:'#c1272d', borderRadius:3, borderSkipped:false, stack:'occ' },
+    ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ ...tip, callbacks:{ label:c=>{ const i=c.dataIndex;
+        return c.datasetIndex===0 ? ` Oficial: ${ofic[i].toFixed(1)}%` : ` + complementary: ${lift[i].toFixed(1)} pts → real ${real[i].toFixed(1)}%`; } } } },
+      scales:{ x:{ ...axisX, stacked:true }, y:{ stacked:true, beginAtZero:true, grid:{ color:'rgba(10,34,48,.08)' }, ticks:{ color:'rgba(10,34,48,.55)', font:{family:'Sora',size:10}, callback:v=>v+'%' } } } }
+  });
+
+  // Tabla
+  const maxRooms = Math.max(...rooms);
+  document.getElementById('complementary-tbody').innerHTML = D.map((r,i)=>{
+    const isPeak = r.compl === maxRooms;
+    const py = r.complPY > 0 ? `${r.complPY} hab · ${r.hComplPY} huésp.` : '—';
+    return `<tr>
+      <td>${MONTHS_L[r.m-1]} ${r.y}</td>
+      <td>${r.compl}${isPeak ? ' <span class="tag tag-peak">▲ pico</span>' : ''}</td>
+      <td>${r.hCompl}</td>
+      <td>${ofic[i].toFixed(1)}%</td>
+      <td><span class="occ-pct">${real[i].toFixed(1)}%</span></td>
+      <td style="color:var(--copper);font-weight:600">+${lift[i].toFixed(1)} pts</td>
+      <td>${py}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   PESTAÑAS — Histórico / Complementary / Proyección
 ═══════════════════════════════════════ */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    const isHist = btn.dataset.tab === 'historico';
-    document.getElementById('view-historico').style.display  = isHist ? 'flex' : 'none';
-    document.getElementById('filters-bar').style.display     = isHist ? 'flex' : 'none';
-    document.getElementById('view-proyeccion').style.display = isHist ? 'none' : 'flex';
-    if (!isHist) renderProjection();   // re-render con el canvas visible (sizing correcto)
+    const tab = btn.dataset.tab;
+    document.getElementById('view-historico').style.display     = tab === 'historico'     ? 'flex' : 'none';
+    document.getElementById('filters-bar').style.display        = tab === 'historico'     ? 'flex' : 'none';
+    document.getElementById('view-complementary').style.display = tab === 'complementary' ? 'flex' : 'none';
+    document.getElementById('view-proyeccion').style.display    = tab === 'proyeccion'    ? 'flex' : 'none';
+    if (tab === 'proyeccion')    renderProjection();   // re-render con el canvas visible
+    if (tab === 'complementary') renderComplementary();
   });
 });
 
