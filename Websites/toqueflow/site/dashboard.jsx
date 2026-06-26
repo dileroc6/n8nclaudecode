@@ -289,12 +289,15 @@ function DashApp({ companyId, previewName }) {
       setFlows((flowsRes.data || []).map((r) => {
         const matching = usg.filter((u) => (r.sede_id ? u.sede_id === r.sede_id : true));
         const st = usageStats(matching);
+        // Los flows tipo 'chart' (dashboards/reportes, sin consumo de IA) muestran sus
+        // propias métricas guardadas (stats/spark) en vez de los contadores de ai_usage.
+        const useStored = r.type === 'chart' && Array.isArray(r.stats) && r.stats.length;
         return {
           id: r.id, name: r.name, type: r.type, kind: r.kind, status: r.status,
           sede: r.sede_id || 'ambas', desc: r.description || '',
           channels: r.channels || [],
-          stats: [{ n: String(st.total), l: 'pedidos' }, { n: String(st.mes), l: 'este mes' }, { n: String(st.hoy), l: 'hoy' }],
-          spark: st.spark,
+          stats: useStored ? r.stats : [{ n: String(st.total), l: 'pedidos' }, { n: String(st.mes), l: 'este mes' }, { n: String(st.hoy), l: 'hoy' }],
+          spark: (useStored && Array.isArray(r.spark) && r.spark.length) ? r.spark : st.spark,
           last: r.last_label || '', tool_url: r.tool_url || null,
         };
       }));

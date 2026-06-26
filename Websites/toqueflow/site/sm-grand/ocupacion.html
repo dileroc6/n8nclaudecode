@@ -84,6 +84,17 @@ body {
 .update-badge svg { width:13px; height:13px; color:var(--copper); flex-shrink:0; }
 .update-badge strong { color:var(--copper-pale); font-weight:600; }
 
+/* Botón volver a ToqueFlow */
+.back-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:7px 14px 7px 10px; border-radius:20px;
+  border:1px solid var(--border); background:var(--bg-card);
+  color:var(--text-mid); font-size:12px; font-weight:600;
+  text-decoration:none; transition:all .18s; white-space:nowrap;
+}
+.back-btn:hover { border-color:var(--copper); color:var(--copper); }
+.back-btn svg { width:15px; height:15px; }
+
 /* ── FILTERS ── */
 .filters {
   padding: 18px 32px;
@@ -365,6 +376,10 @@ tbody td:not(:first-child) { text-align:right; }
 <!-- ── HEADER ── -->
 <header class="header">
   <div class="header-brand">
+    <a href="../dashboard.html" class="back-btn" title="Volver al panel de ToqueFlow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      ToqueFlow
+    </a>
     <div class="header-logo">S</div>
     <div>
       <div class="header-name">SM Grand Hotel</div>

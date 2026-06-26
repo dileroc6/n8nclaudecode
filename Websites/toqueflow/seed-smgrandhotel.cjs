@@ -28,6 +28,7 @@ const SERVICE = (env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 if (!URL || !SERVICE) { console.error('Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en credentials.env'); process.exit(2); }
 
 const WITH_FLOW = process.argv.includes('--with-flow');
+const FLOW_ONLY = process.argv.includes('--flow-only'); // solo refresca empresa+flow; NO toca al usuario (no resetea contraseña)
 const H = { apikey: SERVICE, Authorization: 'Bearer ' + SERVICE, 'Content-Type': 'application/json' };
 const rest = (p, opts = {}) => fetch(URL + '/rest/v1/' + p, { ...opts, headers: { ...H, ...(opts.headers || {}) } });
 
@@ -40,9 +41,9 @@ const FLOW = {
   name: 'KPI de Ocupación', type: 'chart', kind: 'automatización', status: 'activo', sede: null,
   desc: 'Dashboard de ocupación hotelera (49 habitaciones), actualizado periódicamente desde el Excel de reservas.',
   channels: [],
-  stats: [{ n: '49', l: 'habitaciones' }, { n: '60%', l: 'meta ocup.' }, { n: '2026', l: 'forecast' }],
-  spark: [20, 34, 28, 41, 30, 52, 38, 60, 44, 68, 49, 63],
-  last: 'actualizado 16 jun 2026', tool_url: 'sm-grand/ocupacion.html',
+  stats: [{ n: '36%', l: 'ocup. 12m' }, { n: '57%', l: 'mejor mes' }, { n: '49', l: 'habitaciones' }],
+  spark: [54, 52, 41, 33, 53, 57, 24, 23, 37, 16, 25, 22],   // ocupación % oficial, jun25–may26
+  last: 'actualizado 26 jun 2026', tool_url: 'sm-grand/ocupacion.html',
 };
 
 async function getOrCreate(table, matchQS, insertBody) {
@@ -71,28 +72,32 @@ async function findUser(email) {
   console.log('1) empresa:', company.name, '(id ' + company.id + ')');
 
   // 2) Usuario (Auth + profile). Idempotente: si ya existe, le refresca la contraseña.
-  let uid = null, reused = false;
-  const create = await fetch(URL + '/auth/v1/admin/users', {
-    method: 'POST', headers: H,
-    body: JSON.stringify({ email: USER.email, password: USER.password, email_confirm: true, user_metadata: { full_name: USER.name } }),
-  });
-  if (create.ok) { uid = (await create.json()).id; }
-  else {
-    const t = await create.text();
-    if (/already|exists|registered|duplicate/i.test(t)) {
-      const u = await findUser(USER.email); uid = u && u.id; reused = true;
-      if (uid) await fetch(URL + '/auth/v1/admin/users/' + uid, { method: 'PUT', headers: H, body: JSON.stringify({ password: USER.password, email_confirm: true }) });
-    } else { console.error('crear usuario →', t.slice(0, 200)); process.exit(4); }
-  }
-  if (!uid) { console.error('No se pudo obtener el uid del usuario.'); process.exit(4); }
+  if (!FLOW_ONLY) {
+    let uid = null, reused = false;
+    const create = await fetch(URL + '/auth/v1/admin/users', {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ email: USER.email, password: USER.password, email_confirm: true, user_metadata: { full_name: USER.name } }),
+    });
+    if (create.ok) { uid = (await create.json()).id; }
+    else {
+      const t = await create.text();
+      if (/already|exists|registered|duplicate/i.test(t)) {
+        const u = await findUser(USER.email); uid = u && u.id; reused = true;
+        if (uid) await fetch(URL + '/auth/v1/admin/users/' + uid, { method: 'PUT', headers: H, body: JSON.stringify({ password: USER.password, email_confirm: true }) });
+      } else { console.error('crear usuario →', t.slice(0, 200)); process.exit(4); }
+    }
+    if (!uid) { console.error('No se pudo obtener el uid del usuario.'); process.exit(4); }
 
-  const up = await rest('profiles?on_conflict=id', {
-    method: 'POST',
-    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify({ id: uid, email: USER.email, full_name: USER.name, company_id: company.id, role: 'member', status: 'active' }),
-  });
-  if (!up.ok) { console.error('profile →', (await up.text()).slice(0, 200)); process.exit(5); }
-  console.log('2) usuario:', USER.email, reused ? '(ya existía → contraseña actualizada)' : '(creado)');
+    const up = await rest('profiles?on_conflict=id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ id: uid, email: USER.email, full_name: USER.name, company_id: company.id, role: 'member', status: 'active' }),
+    });
+    if (!up.ok) { console.error('profile →', (await up.text()).slice(0, 200)); process.exit(5); }
+    console.log('2) usuario:', USER.email, reused ? '(ya existía → contraseña actualizada)' : '(creado)');
+  } else {
+    console.log('2) usuario: omitido (--flow-only, no se toca la contraseña)');
+  }
 
   // 3) Flow "Ocupación" — solo con --with-flow (cuando el HTML ya esté desplegado)
   if (WITH_FLOW) {
