@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integración bot WhatsApp ↔ CRM — Luxe Smile</title>
+<style>
+  :root {
+    --lead: #16a34a;
+    --lead-bg: #f0fdf4;
+    --bot: #0d9488;
+    --bot-bg: #ccfbf1;
+    --crm: #7c3aed;
+    --crm-bg: #ede9fe;
+    --human: #ea580c;
+    --human-bg: #ffedd5;
+    --gap: #dc2626;
+    --gap-bg: #fef2f2;
+    --pending: #d97706;
+    --pending-bg: #fef3c7;
+    --decision: #f59e0b;
+    --decision-bg: #fffbeb;
+
+    --p1: #dc2626;
+    --p2: #ea580c;
+    --p3: #4f46e5;
+
+    --text: #0f172a;
+    --gray: #64748b;
+    --gray-light: #cbd5e1;
+    --gray-bg: #f8fafc;
+    --shadow: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-md: 0 4px 12px rgba(15,23,42,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text);
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    padding: 32px 16px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  /* ─── HEADER ─── */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding: 32px 24px;
+    background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+    color: white;
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+  }
+  .header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .header .subtitle { font-size: 15px; opacity: 0.92; }
+  .header .badges { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .header .badge { background: rgba(255,255,255,0.18); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; backdrop-filter: blur(8px); }
+
+  /* ─── CONTEXTO ─── */
+  .context-wrap {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--bot);
+  }
+  .context-wrap h2 {
+    font-size: 16px;
+    color: var(--bot);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+  .context-wrap p { margin-bottom: 12px; font-size: 15px; color: #334155; }
+  .context-wrap p:last-child { margin-bottom: 0; }
+  .callout {
+    background: var(--gap-bg);
+    border-left: 4px solid var(--gap);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout strong { color: var(--gap); }
+  .callout code { background: white; padding: 1px 6px; border-radius: 3px; font-family: monospace; font-size: 0.88em; }
+
+  /* ─── LEYENDA ─── */
+  .legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .dot-lead  { background: var(--lead); }
+  .dot-bot   { background: var(--bot); }
+  .dot-crm   { background: var(--crm); }
+  .dot-human { background: var(--human); }
+  .dot-pending { background: var(--pending); }
+  .dot-gap   { background: var(--gap); }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-title {
+    font-size: 22px;
+    margin: 40px 0 20px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .emoji { font-size: 28px; }
+
+  /* ─── FLOWCHART (vista rápida) ─── */
+  .flowchart {
+    background: white;
+    border-radius: 12px;
+    padding: 32px 24px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .fc-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    position: relative;
+  }
+  .fc-box {
+    background: white;
+    border: 2px solid var(--gray-light);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 220px;
+    max-width: 360px;
+    position: relative;
+  }
+  .fc-box.start    { background: var(--lead-bg); border-color: var(--lead); color: var(--lead); border-radius: 999px; }
+  .fc-box.process  { background: white; border-color: var(--bot); color: var(--bot); }
+  .fc-box.crm-op   { background: var(--crm-bg); border-color: var(--crm); color: var(--crm); }
+  .fc-box.end      { background: var(--gray-bg); border-color: var(--gray); color: var(--gray); border-radius: 999px; min-width: 100px; padding: 8px 18px; }
+  .fc-box.pending  { background: var(--pending-bg); border: 2px dashed var(--pending); color: var(--pending); }
+  .fc-box.gap      { background: var(--gap-bg); border: 2px solid var(--gap); color: var(--gap); }
+
+  .fc-status-badge {
+    position: absolute;
+    top: -10px;
+    right: -8px;
+    background: var(--pending);
+    color: white;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .fc-status-badge.gap { background: var(--gap); }
+
+  /* Decisión: diamond shape */
+  .fc-decision-wrap {
+    position: relative;
+    width: 180px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fc-decision-shape {
+    position: absolute;
+    inset: 0;
+    background: var(--decision-bg);
+    border: 2px solid var(--decision);
+    transform: rotate(45deg) scale(0.7);
+    border-radius: 6px;
+  }
+  .fc-decision-text {
+    position: relative;
+    z-index: 1;
+    font-size: 13px;
+    font-weight: 700;
+    color: #b45309;
+    text-align: center;
+  }
+
+  .fc-arrow-v {
+    width: 2px;
+    height: 28px;
+    background: var(--gray);
+    position: relative;
+    margin: 0 auto;
+  }
+  .fc-arrow-v::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--gray);
+  }
+
+  .fc-branch {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+  }
+  .fc-branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+  }
+  .fc-branch-label {
+    display: inline-block;
+    background: white;
+    border: 1px solid var(--gray-light);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray);
+    margin-bottom: 6px;
+  }
+  .fc-branch-label.yes { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+  .fc-branch-label.no  { color: #dc2626; border-color: #fca5a5; background: #fef2f2; }
+
+  /* ─── DETAILED STAGES ─── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .stage {
+    width: 100%;
+    max-width: 760px;
+    background: white;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    border-top: 4px solid var(--bot);
+    position: relative;
+  }
+  .stage.stage-bot   { border-top-color: var(--bot); }
+  .stage.stage-mixed { border-top-color: var(--crm); }
+  .stage.stage-pending { border-top-color: var(--pending); background: linear-gradient(180deg, var(--pending-bg) 0%, white 40%); }
+  .stage.stage-gap   { border-top-color: var(--gap); background: var(--gap-bg); }
+
+  .stage-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .stage-title { font-size: 16px; font-weight: 700; color: var(--text); display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .stage-num { display: inline-block; background: var(--bot); color: white; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+  .stage-pending .stage-num { background: var(--pending); }
+  .stage-gap .stage-num { background: var(--gap); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .status-pending { background: var(--pending); color: white; }
+  .status-gap { background: var(--gap); color: white; }
+
+  .actors { display: flex; gap: 6px; flex-wrap: wrap; }
+  .actor-chip { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .chip-lead  { background: var(--lead-bg);  color: var(--lead); }
+  .chip-bot   { background: var(--bot-bg);   color: var(--bot); }
+  .chip-crm   { background: var(--crm-bg);   color: var(--crm); }
+  .chip-human { background: var(--human-bg); color: var(--human); }
+
+  .stage-actions { list-style: none; padding: 0; }
+  .stage-actions li {
+    padding: 4px 0;
+    font-size: 14px;
+    color: #334155;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .stage-actions li::before { content: "→"; color: var(--gray); font-weight: 700; flex-shrink: 0; }
+  .stage-actions code {
+    background: #f1f5f9;
+    color: #7c3aed;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 0.88em;
+    font-weight: 600;
+  }
+  .stage-gap .stage-actions code { color: var(--gap); background: white; }
+  .stage-pending .stage-actions code { color: var(--pending); background: white; }
+
+  .arrow {
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 12px solid var(--gray-light);
+    margin: 8px 0;
+  }
+
+  .pending-note {
+    background: var(--pending-bg);
+    border-left: 3px solid var(--pending);
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #92400e;
+  }
+
+  /* ─── PRIORITY SECTIONS ─── */
+  .priority-section { margin-top: 48px; }
+  .priority-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-p1 { background: var(--p1); }
+  .badge-p2 { background: var(--p2); }
+  .badge-p3 { background: var(--p3); }
+  .priority-header h2 { font-size: 22px; font-weight: 700; margin: 0; }
+  .priority-subtitle { font-size: 14px; color: var(--gray); margin-bottom: 24px; font-style: italic; }
+
+  .subsection { margin-bottom: 28px; }
+  .subsection-header {
+    background: var(--gray-bg);
+    padding: 14px 18px;
+    border-radius: 10px 10px 0 0;
+    border-left: 4px solid var(--bot);
+  }
+  .priority-section.p1 .subsection-header { border-left-color: var(--p1); }
+  .priority-section.p2 .subsection-header { border-left-color: var(--p2); }
+  .priority-section.p3 .subsection-header { border-left-color: var(--p3); }
+
+  .subsection-title { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .subsection-title .letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: white;
+    color: var(--text);
+    font-weight: 700;
+    border: 2px solid var(--gray-light);
+    font-size: 14px;
+  }
+  .priority-section.p1 .subsection-title .letter { border-color: var(--p1); color: var(--p1); }
+  .priority-section.p2 .subsection-title .letter { border-color: var(--p2); color: var(--p2); }
+  .priority-section.p3 .subsection-title .letter { border-color: var(--p3); color: var(--p3); }
+
+  .subsection-intro { font-size: 14px; color: var(--gray); margin-top: 6px; }
+
+  .questions {
+    background: white;
+    border-radius: 0 0 10px 10px;
+    padding: 8px;
+    box-shadow: var(--shadow);
+  }
+  .question {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--gray-bg);
+  }
+  .question:last-child { border-bottom: none; }
+  .q-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--gray-bg);
+    color: var(--text);
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .priority-section.p1 .q-num { background: var(--p1); color: white; }
+  .priority-section.p2 .q-num { background: var(--p2); color: white; }
+  .priority-section.p3 .q-num { background: var(--p3); color: white; }
+  .q-text { font-size: 15px; color: #1e293b; line-height: 1.55; flex: 1; }
+  .q-text code { background: #f1f5f9; color: #be185d; padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 0.88em; }
+  .q-text ul { margin-top: 8px; padding-left: 20px; }
+  .q-text ul li { list-style: disc; margin: 4px 0; }
+
+  /* ─── CIERRE ─── */
+  .closing {
+    background: linear-gradient(135deg, var(--bot-bg) 0%, #d1fae5 100%);
+    padding: 24px;
+    border-radius: 12px;
+    margin-top: 48px;
+    text-align: center;
+  }
+  .closing h2 { color: var(--bot); font-size: 18px; margin-bottom: 10px; }
+  .closing p { font-size: 14px; color: #134e4a; }
+
+  .footer { text-align: center; color: var(--gray); font-size: 12px; margin-top: 32px; }
+
+  @media (max-width: 720px) {
+    .header h1 { font-size: 22px; }
+    .stage { padding: 14px; }
+    .stage-title { font-size: 15px; }
+    .question { padding: 12px 8px; }
+    .q-text { font-size: 14px; }
+    .fc-box { min-width: 160px; max-width: 280px; font-size: 13px; padding: 10px 14px; }
+    .fc-branch { flex-direction: column; gap: 16px; }
+  }
+
+  @media print {
+    body { background: white; padding: 16px; }
+    .header { background: var(--bot) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .stage, .questions, .flowchart { box-shadow: none; border: 1px solid var(--gray-light); }
+    .priority-badge, .q-num, .fc-status-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+  <div class="header">
+    <h1>Integración bot WhatsApp ↔ CRM</h1>
+    <div class="subtitle">Preguntas pendientes — Luxe Smile · Cima Labs</div>
+    <div class="badges">
+      <span class="badge">8 preguntas bloqueantes</span>
+      <span class="badge">10 importantes</span>
+      <span class="badge">5 de formato</span>
+    </div>
+  </div>
+
+  <!-- ─── CONTEXTO ─── -->
+  <div class="context-wrap">
+    <h2>Contexto</h2>
+    <p>Luxe Smile contrató el desarrollo de un bot de WhatsApp para automatizar la atención de pacientes internacionales que llegan por anuncios. El bot saluda al lead, le presenta el paquete (carillas + hotel + traslados), le pide las fotos de la sonrisa, las envía al grupo de revisión del odontólogo, le entrega la cotización ya formateada, cobra el depósito de USD 500 (por PayPal o pantallazo), recopila los datos finales y agenda las <strong>citas dentales</strong> dentro de la conversación de WhatsApp.</p>
+
+    <div class="callout">
+      <strong>Pendiente de definir:</strong> la coordinación operativa del hotel, los vuelos y los traslados (que están incluidos en el paquete) todavía no la tenemos definida. El bot deja registradas en el CRM las fechas tentativas, pero no nos queda claro quién hace las reservas reales y completa los campos como <code>hotel_asignado</code>.
+    </div>
+
+    <p>La integración con el CRM <strong>no es solo para visualizar leads</strong>: queremos que el CRM sea la fuente única de verdad de cada paciente, para que el equipo de Luxe Smile gestione desde ahí toda la operación post-venta (logística de viaje, recordatorios, comisiones), mida conversión del embudo y haga remarketing de los leads cotizados que no cerraron.</p>
+
+    <p>Ya validamos que la conexión y la API key funcionan correctamente (probamos <code>/health</code>, <code>/closers</code> y <code>/leads/search</code>). Antes de avanzar con la implementación productiva nos surgieron dudas puntuales sobre cómo está pensado el flujo del CRM.</p>
+  </div>
+
+  <!-- ─── LEYENDA ─── -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-dot dot-lead"></span> Lead (paciente)</div>
+    <div class="legend-item"><span class="legend-dot dot-bot"></span> Bot (n8n)</div>
+    <div class="legend-item"><span class="legend-dot dot-crm"></span> CRM (Cima Labs)</div>
+    <div class="legend-item"><span class="legend-dot dot-human"></span> Equipo humano</div>
+    <div class="legend-item"><span class="legend-dot dot-pending"></span> Pendiente de implementar</div>
+    <div class="legend-item"><span class="legend-dot dot-gap"></span> Pendiente de definir</div>
+  </div>
+
+  <!-- ─── DIAGRAMA DE FLUJO (vista rápida) ─── -->
+  <h2 class="section-title"><span class="emoji">📊</span> Diagrama de flujo</h2>
+  <div class="flowchart">
+
+    <!-- Inicio -->
+    <div class="fc-box start">Lead entra por WhatsApp</div>
+    <div class="fc-arrow-v"></div>
+
+    <!-- Captación + fotos -->
+    <div class="fc-box process">Captación + recepción de fotos<br><small style="font-weight:400;opacity:0.8">(estado local, sin tocar el CRM)</small></div>
+    <div class="fc-arrow-v"></div>
+
+    <!-- Decisión: VIABLE? -->
+    <div class="fc-decision-wrap">
+      <div class="fc-decision-shape"></div>
+      <div class="fc-decision-text">¿Odontólogo<br>dice VIABLE?</div>
+    </div>
+
+    <!-- Branch SÍ / NO -->
+    <div class="fc-branch">
+      <div class="fc-branch-col">
+        <span class="fc-branch-label no">NO</span>
+        <div class="fc-arrow-v"></div>
+        <div class="fc-box end">Fin</div>
+      </div>
+      <div class="fc-branch-col">
+        <span class="fc-branch-label yes">SÍ</span>
+        <div class="fc-arrow-v"></div>
+        <div class="fc-box crm-op"><code style="background:rgba(255,255,255,0.5);padding:1px 6px;border-radius:3px;font-family:monospace;color:var(--crm)">POST /leads</code> → CRM crea el lead</div>
+        <div class="fc-arrow-v"></div>
+        <div class="fc-box process">Cotización al lead + elección de mes</div>
+        <div class="fc-arrow-v"></div>
+
+        <!-- Decisión: PAGA? -->
+        <div class="fc-decision-wrap">
+          <div class="fc-decision-shape"></div>
+          <div class="fc-decision-text">¿Paga el<br>depósito $500?</div>
+        </div>
+
+        <div class="fc-branch">
+          <div class="fc-branch-col">
+            <span class="fc-branch-label no">NO</span>
+            <div class="fc-arrow-v"></div>
+            <div class="fc-box end">Fin</div>
+          </div>
+          <div class="fc-branch-col">
+            <span class="fc-branch-label yes">SÍ</span>
+            <div class="fc-arrow-v"></div>
+            <div class="fc-box pending">
+              <span class="fc-status-badge">PENDIENTE</span>
+              <code style="background:rgba(255,255,255,0.6);padding:1px 6px;border-radius:3px;font-family:monospace;color:var(--pending)">POST /pacientes</code> → CRM cierra el caso
+              <div style="font-size:11px;font-weight:500;margin-top:4px;opacity:0.85">(integración PayPal aún no configurada)</div>
+            </div>
+            <div class="fc-arrow-v"></div>
+            <div class="fc-box process">Datos finales + agenda dental</div>
+            <div class="fc-arrow-v"></div>
+            <div class="fc-box gap">
+              <span class="fc-status-badge gap">GAP ❓</span>
+              Coordinación hotel + vuelos + traslados
+              <div style="font-size:11px;font-weight:500;margin-top:4px;opacity:0.85">(handoff bot → equipo humano sin definir)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── DETALLE DEL FLUJO (cards) ─── -->
+  <h2 class="section-title"><span class="emoji">📋</span> Detalle del flujo paso a paso</h2>
+  <div class="flow">
+
+    <!-- Etapa 1-2 -->
+    <div class="stage stage-bot">
+      <div class="stage-header">
+        <div class="stage-title"><span class="stage-num">1-2</span>Captación y fotos</div>
+        <div class="actors">
+          <span class="actor-chip chip-lead">Lead</span>
+          <span class="actor-chip chip-bot">Bot</span>
+        </div>
+      </div>
+      <ul class="stage-actions">
+        <li>Lead escribe por WhatsApp, bot lo saluda y presenta el paquete</li>
+        <li>Bot guarda estado en PostgreSQL local (SKU + idioma)</li>
+        <li><strong>Aún no toca el CRM</strong> — evitamos ruido de leads que no avanzan</li>
+      </ul>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- Etapa 3 -->
+    <div class="stage stage-mixed">
+      <div class="stage-header">
+        <div class="stage-title"><span class="stage-num">3</span>Revisión del odontólogo</div>
+        <div class="actors">
+          <span class="actor-chip chip-bot">Bot</span>
+          <span class="actor-chip chip-human">Odontólogo</span>
+          <span class="actor-chip chip-crm">CRM</span>
+        </div>
+      </div>
+      <ul class="stage-actions">
+        <li>Bot reenvía las fotos al grupo WhatsApp "Revisión de Casos"</li>
+        <li>Odontólogo responde: <code>0042 VIABLE 5500 USD</code></li>
+        <li>Bot ejecuta <code>POST /leads</code> → CRM crea el lead</li>
+        <li>Bot guarda <code>crm_lead_id</code> en local</li>
+      </ul>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- Etapa 4 -->
+    <div class="stage stage-mixed">
+      <div class="stage-header">
+        <div class="stage-title"><span class="stage-num">4</span>Cotización y elección de mes</div>
+        <div class="actors">
+          <span class="actor-chip chip-bot">Bot</span>
+          <span class="actor-chip chip-lead">Lead</span>
+          <span class="actor-chip chip-crm">CRM</span>
+        </div>
+      </div>
+      <ul class="stage-actions">
+        <li>Bot envía la cotización formateada al lead</li>
+        <li>Lead elige el mes preferido</li>
+        <li>Bot ejecuta <code>PATCH /leads/:id</code> con la fecha tentativa</li>
+      </ul>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- Etapa 5 (PENDIENTE) -->
+    <div class="stage stage-pending">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span class="stage-num">5</span>Depósito USD 500
+          <span class="status-pill status-pending">⚠ PENDIENTE</span>
+        </div>
+        <div class="actors">
+          <span class="actor-chip chip-lead">Lead</span>
+          <span class="actor-chip chip-bot">Bot</span>
+          <span class="actor-chip chip-crm">CRM</span>
+        </div>
+      </div>
+      <div class="pending-note">
+        <strong>Estado actual:</strong> esta etapa <strong>aún no está implementada</strong>. La integración con PayPal Checkout API requiere las credenciales del cliente (Client ID + Secret), todavía pendientes. Mientras tanto, el flujo de depósito por pantallazo manual también requiere los IDs de los grupos de WhatsApp del equipo. Una vez resueltas estas dos dependencias, conectamos esta etapa con el CRM vía <code>POST /pacientes</code>.
+      </div>
+      <ul class="stage-actions">
+        <li>Lead paga por PayPal (link único) o sube pantallazo</li>
+        <li>Bot ejecuta <code>POST /pacientes</code> → CRM cierra el caso</li>
+        <li>Bot guarda <code>crm_paciente_id</code> en local</li>
+      </ul>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- Etapas 6-7 -->
+    <div class="stage stage-mixed">
+      <div class="stage-header">
+        <div class="stage-title"><span class="stage-num">6-7</span>Datos finales y agenda dental</div>
+        <div class="actors">
+          <span class="actor-chip chip-bot">Bot</span>
+          <span class="actor-chip chip-lead">Lead</span>
+          <span class="actor-chip chip-crm">CRM</span>
+        </div>
+      </div>
+      <ul class="stage-actions">
+        <li>Bot pide email, identificación y fecha de nacimiento</li>
+        <li>Bot ejecuta <code>PATCH</code> datos personales y <code>POST /agenda</code></li>
+        <li>Bot envía resumen final al lead y cierra su intervención</li>
+      </ul>
+    </div>
+    <div class="arrow" style="border-top-color: var(--gap);"></div>
+
+    <!-- Post-cierre GAP -->
+    <div class="stage stage-gap">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span class="stage-num">❓</span>Post-cierre — coordinación operativa
+          <span class="status-pill status-gap">GAP</span>
+        </div>
+        <div class="actors">
+          <span class="actor-chip chip-human">Equipo humano</span>
+          <span class="actor-chip chip-crm">CRM</span>
+        </div>
+      </div>
+      <ul class="stage-actions">
+        <li><strong>Este bloque NO está cubierto por el bot</strong> — es lo que necesitamos entender</li>
+        <li><code>hotel_asignado</code> ¿quién lo llena? ¿desde dónde? ¿catálogo o libre?</li>
+        <li><code>hotel_reservado</code> ¿quién confirma la reserva con el hotel?</li>
+        <li><strong>Vuelos</strong> ¿los reserva Luxe Smile, el paciente o una agencia?</li>
+        <li><code>driver_package</code> ¿cuándo se confirma y quién coordina al chofer?</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ────────────────────────────────────── -->
+  <!-- ─── PRIORIDAD 1 ─── -->
+  <!-- ────────────────────────────────────── -->
+  <div class="priority-section p1">
+    <div class="priority-header">
+      <span class="priority-badge badge-p1">🔴 Prioridad 1</span>
+      <h2>Bloqueantes</h2>
+    </div>
+    <p class="priority-subtitle">Sin estas respuestas no podemos avanzar con la implementación productiva.</p>
+
+    <!-- A. Closer del bot -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">A</span> Closer del bot</div>
+        <div class="subsection-intro">Los leads que entran por el bot <strong>no deben asignarse automáticamente</strong> a un closer humano (Hernan, Joshe o Mariana). Cuando un humano tome el caso, queremos que lo haga de forma explícita.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">1</span>
+          <div class="q-text">¿Pueden crear un closer especial en el CRM llamado <code>"Bot"</code>, <code>"Sistema"</code> o <code>"Luxe Smile Bot"</code> (sin WhatsApp asociado) que sea el dueño por defecto de los leads que crea el bot?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">2</span>
+          <div class="q-text">Si no es viable, ¿hay alguna alternativa nativa del API — por ejemplo, mandar <code>closer: null</code>, omitir el campo, o un valor reservado para representar "creado automáticamente"?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B. Agendamiento -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">B</span> Agendamiento y disponibilidad</div>
+        <div class="subsection-intro">El bot necesita ofrecerle al lead fechas disponibles para la cita y luego registrar las fechas confirmadas en el CRM.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">3</span>
+          <div class="q-text">El endpoint <code>/agenda</code>, ¿es solo un registro/log de "qué paciente tiene qué fecha", o tiene noción real de <strong>disponibilidad</strong> (slots ocupados vs libres)?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">4</span>
+          <div class="q-text">¿Existe algún endpoint tipo <code>GET /agenda/disponibilidad?from=...&amp;to=...</code> que devuelva fechas o slots libres?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">5</span>
+          <div class="q-text">¿El CRM tiene configurados los <strong>horarios de atención</strong> de la clínica? ¿O las fechas en <code>/agenda</code> admiten cualquier valor sin validación?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">6</span>
+          <div class="q-text">¿Hay un <strong>cupo máximo de pacientes</strong> por día o semana configurado en el CRM? ¿O el CRM acepta cuantas citas se le manden para la misma fecha sin tope?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">7</span>
+          <div class="q-text"><code>POST /agenda</code>, ¿valida que la fecha no choque con otra ya registrada para el mismo closer/clínica, o permite overlap?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">8</span>
+          <div class="q-text">¿Hay alguna forma de <strong>bloquear rangos de fechas</strong> desde el CRM (vacaciones del odontólogo, días no laborales)? El administrador necesita poder cancelar días desde su propio WhatsApp.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────── -->
+  <!-- ─── PRIORIDAD 2 ─── -->
+  <!-- ────────────────────────────────────── -->
+  <div class="priority-section p2">
+    <div class="priority-header">
+      <span class="priority-badge badge-p2">🟠 Prioridad 2</span>
+      <h2>Importantes pero no bloqueantes</h2>
+    </div>
+    <p class="priority-subtitle">Las podemos resolver iterando, pero idealmente queremos respuesta antes del deploy.</p>
+
+    <!-- C. Ciclo lead → paciente -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">C</span> Ciclo lead → paciente</div>
+        <div class="subsection-intro">Cuando el bot crea primero un lead y luego ese lead paga el depósito y se convierte en paciente cerrado, no nos queda claro cómo se hace la transición.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">9</span>
+          <div class="q-text">Al hacer <code>POST /pacientes</code> para un lead que ya existe en el CRM, ¿qué pasa:
+            <ul>
+              <li>(a) ¿Hay que pasar el <code>lead_id</code> para que el CRM lo "promueva" automáticamente?</li>
+              <li>(b) ¿Tenemos que hacer <code>DELETE /leads/:id</code> manualmente después?</li>
+              <li>(c) ¿El CRM detecta el duplicado por teléfono y resuelve solo?</li>
+            </ul>
+          </div>
+        </div>
+        <div class="question">
+          <span class="q-num">10</span>
+          <div class="q-text"><code>POST /pacientes</code>, ¿devuelve un <code>id</code> propio (paciente_id) distinto al <code>lead_id</code>, o reutiliza el mismo identificador?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">11</span>
+          <div class="q-text">Si el bot necesita actualizar datos de un paciente ya cerrado (por ejemplo, completar <code>email</code> o <code>fecha_nacimiento</code>), ¿se hace vía <code>PATCH /leads/:id</code> o existe un endpoint específico de pacientes?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D. Hotel/vuelos -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">D</span> Coordinación post-cierre (hotel, vuelos, traslados)</div>
+        <div class="subsection-intro">En el body de <code>POST /pacientes</code> vimos campos como <code>hotel_asignado</code>, <code>hotel_reservado</code>, <code>travel_package</code>, <code>driver_package</code>. Necesitamos entender el ciclo de vida de estos campos.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">12</span>
+          <div class="q-text">¿Quién es el responsable habitual de llenar <code>hotel_asignado</code> y <code>hotel_reservado</code>? ¿Lo hace el admin desde el panel, un coordinador de viajes externo, o llega desde una integración?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">13</span>
+          <div class="q-text">¿Existe en el panel un <strong>catálogo de hoteles</strong> preconfigurado para asignar (dropdown), o <code>hotel_asignado</code> es texto libre?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">14</span>
+          <div class="q-text"><code>travel_package</code> y <code>driver_package</code> son booleanos: ¿representan que el paciente <em>contrató</em> el paquete, o que ya está <em>confirmado/reservado</em>? ¿Hay un campo separado para el estado de reserva?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">15</span>
+          <div class="q-text">¿El CRM tiene alguna <strong>sección dedicada</strong> a la coordinación logística post-cierre (vista de "pacientes por llegar este mes", checklist de reservas), o vive todo dentro de la ficha del paciente?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">16</span>
+          <div class="q-text">Si en otros clientes ustedes han automatizado esta parte, ¿hay alguna integración recomendada (Booking API, agencias de viaje, traslados)?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E. Sincronización -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">E</span> Sincronización CRM → bot</div>
+        <div class="subsection-intro">Si un humano edita un paciente directamente desde el panel del CRM (cambia fecha, modifica monto, agrega notas), el bot debería enterarse para no operar con datos desactualizados.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">17</span>
+          <div class="q-text">¿El CRM tiene <strong>webhooks salientes</strong> que nos avisen cuando un lead/paciente se modifica desde el panel?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">18</span>
+          <div class="q-text">Si no hay webhooks, ¿la única opción es polling periódico? ¿Hay algún campo <code>updated_at</code> o filtro tipo <code>?modified_since=...</code> para no traerse todo cada vez?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────── -->
+  <!-- ─── PRIORIDAD 3 ─── -->
+  <!-- ────────────────────────────────────── -->
+  <div class="priority-section p3">
+    <div class="priority-header">
+      <span class="priority-badge badge-p3">🔵 Prioridad 3</span>
+      <h2>Convenciones y formatos</h2>
+    </div>
+    <p class="priority-subtitle">Las podemos descubrir por prueba y error, pero ahorra tiempo tener la lista oficial.</p>
+
+    <!-- F. Enums -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">F</span> Enums y formatos</div>
+        <div class="subsection-intro">Para evitar errores <code>400 validation</code> queremos saber exactamente qué valores acepta cada campo.</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">19</span>
+          <div class="q-text">Campo <code>fuente</code> en <code>POST /leads</code>: ¿cuáles son los valores válidos? Vimos <code>"WhatsApp"</code>, pero ¿hay un enum cerrado (Instagram, TikTok, Ads, Referido, etc.) o admite cualquier string?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">20</span>
+          <div class="q-text">Campo <code>pipeline_stage</code>: vimos <code>"Cotizado"</code> y <code>"Cerrado"</code>, pero ¿cuál es el enum completo? ¿Hay estados como <code>"Nuevo"</code>, <code>"Contactado"</code>, <code>"Perdido"</code>, <code>"No viable"</code>?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">21</span>
+          <div class="q-text">Campo <code>metodo_deposito</code> en <code>POST /pacientes</code>: vimos <code>"PayPal"</code>, ¿cuáles son los demás valores válidos? (<code>"Transferencia"</code>, <code>"Zelle"</code>, <code>"Efectivo"</code>)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- G. Google Calendar -->
+    <div class="subsection">
+      <div class="subsection-header">
+        <div class="subsection-title"><span class="letter">G</span> Integración con Google Calendar</div>
+      </div>
+      <div class="questions">
+        <div class="question">
+          <span class="q-num">22</span>
+          <div class="q-text">¿El CRM tiene integración nativa con Google Calendar (lee/escribe eventos automáticamente), o esa sincronización queda 100% a cargo de n8n?</div>
+        </div>
+        <div class="question">
+          <span class="q-num">23</span>
+          <div class="q-text">Si la sincronización queda de nuestro lado, ¿hay alguna recomendación o convención que ustedes hayan visto funcionar bien con otros clientes?</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CIERRE ─── -->
+  <div class="closing">
+    <h2>🙏 Cierre</h2>
+    <p>Cualquiera de estas respuestas, aunque sea parcial, nos desbloquea para empezar la implementación productiva.<br>
+    Las preguntas de <strong>Prioridad 1</strong> son las que realmente nos frenan; las demás las podemos resolver iterando.</p>
+    <p style="margin-top: 12px;"><strong>Gracias por el tiempo.</strong></p>
+  </div>
+
+  <div class="footer">
+    Documento generado para la integración del bot de WhatsApp con el CRM de Luxe Smile.
+  </div>
+
+</div>
+
+</body>
+</html>

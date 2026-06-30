@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__n8n__n8n_create_workflow",
+      "mcp__n8n__n8n_get_workflow",
+      "mcp__n8n__n8n_update_workflow",
+      "mcp__n8n__n8n_list_workflows",
+      "mcp__n8n__n8n_delete_workflow",
+      "mcp__n8n__n8n_activate_workflow",
+      "mcp__n8n__n8n_deactivate_workflow",
+      "Bash(curl -s https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
+      "Bash(curl -s -X POST https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
+      "Bash(curl -s -X PUT https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
+      "Bash(curl -s -X DELETE https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
+      "Bash(python3 -m json.tool)",
+      "Bash(jq *)",
+      "Bash(psql *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledPlugins": {
+    "n8n-mcp-skills@n8n-skills-local": true
+  },
+  "extraKnownMarketplaces": {
+    "n8n-skills-local": {
+      "source": {
+        "source": "directory",
+        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-skills"
+      }
+    }
+  }
+}

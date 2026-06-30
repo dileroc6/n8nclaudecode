@@ -1,0 +1,26 @@
+# Variables de entorno reales — NUNCA en git
+.env
+.env.local
+.env.production
+
+# Dumps de base de datos
+*.dump
+*.sql.gz
+bejauha_*.dump
+
+# JSONs exportados de n8n con credenciales inline
+workflows/*.credentials.json
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Datos personales (no commitear)
+data/
+database/007_import_generado.sql

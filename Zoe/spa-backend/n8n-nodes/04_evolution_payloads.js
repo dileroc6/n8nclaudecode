@@ -129,17 +129,18 @@ Tienes hasta las ${expira} para enviarlo.`;
     }
 
     case 'recordatorio_24h': {
+      // NOTA: WF4 actualmente usa un Code node inline ("Construir recordatorio") con
+      // 5 variantes aleatorias humanizadas — ver CLAUDE.md §11.5 (2026-05-14).
+      // Este case queda como template natural, sin emojis decorativos ni cierre robótico.
       const fecha = fechaLegible(ctx.cita.slot_inicio);
       const terapeutas = ctx.terapeuta_secundario
         ? `${ctx.terapeuta.nombre} y ${ctx.terapeuta_secundario.nombre}`
         : ctx.terapeuta.nombre;
+      const nombre = (ctx.cliente?.nombre || '').trim();
+      const saludo = nombre ? `Hola ${nombre}` : 'Hola';
       body = payloadTexto({
         number,
-        text:
-`🔔 Recordatorio: tienes cita mañana ${fecha}.
-${ctx.servicio.nombre} con ${terapeutas} en ${ctx.sede.nombre}.
-
-Si necesitas reagendar, responde aquí. ¡Te esperamos!`,
+        text: `${saludo}, te escribo para recordarte que mañana ${fecha} tienes tu sesión de ${ctx.servicio.nombre} con ${terapeutas} en ${ctx.sede.nombre}. Si necesitas mover algo, me cuentas.`,
       });
       break;
     }

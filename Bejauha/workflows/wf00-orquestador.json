@@ -1,0 +1,239 @@
+{
+  "name": "Bejauha - Orquestador WhatsApp (WF00)",
+  "settings": { "executionOrder": "v1", "timezone": "America/Bogota" },
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Entrada WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1000, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bejauha-wa",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-normalizar",
+      "name": "Normalizar payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-780, 0],
+      "parameters": {
+        "jsCode": "const ev = $input.first().json;\nconst body = ev.body || ev;\nconst data = body.data || body;\nconst key = data.key || {};\n\nif (key.fromMe) return [];\nconst remoteJid = key.remoteJid || '';\nconst ADMIN_GROUP = '120363409231703955@g.us';\nconst isGroup = remoteJid.endsWith('@g.us');\n\n// Solo aceptamos el grupo de admins; otros grupos se descartan\nif (isGroup && remoteJid !== ADMIN_GROUP) return [];\n\nconst msg = data.message || {};\nlet text = '';\nif (msg.conversation) text = msg.conversation;\nelse if (msg.extendedTextMessage && msg.extendedTextMessage.text) text = msg.extendedTextMessage.text;\nelse if (msg.imageMessage) text = msg.imageMessage.caption || '';\nelse if (msg.videoMessage) text = msg.videoMessage.caption || '';\nif (!text) return [];\n\nconst messageId = key.id;\nif (!messageId) return [];\n\nif (isGroup) {\n  // En DEV el WA Router compartido ya filtra por prefijo BEJA y lo strippea antes de mandarlo aca.\n  // En PRODUCCION (linea propia, sin WA Router) hay que reactivar el filtro BEJA local:\n  //   if (!/^BEJA\\b/i.test(trimmed)) return [];\n  const trimmed = text.trim();\n  // Strip por si acaso llega con BEJA (modo defensivo, funciona en ambos modos):\n  const body_text = trimmed.replace(/^BEJA\\s*/i, '');\n  const participant = key.participant || '';\n  if (!participant) return [];\n  return [{ json: {\n    is_group: true,\n    group_jid: remoteJid,\n    from_lid: participant,                 // se resuelve a tel real en 'Resolver participante'\n    from: '',                              // lo llena 'Aplicar resolucion'\n    respond_to: remoteJid,                 // las respuestas van al grupo\n    message_id: messageId,\n    push_name: data.pushName || null,\n    body: body_text\n  } }];\n}\n\n// 1-a-1: comportamiento normal\nconst from = remoteJid.replace('@s.whatsapp.net', '').replace('@c.us', '');\nif (!from) return [];\nreturn [{ json: {\n  is_group: false,\n  group_jid: '',\n  from_lid: '',\n  from,\n  respond_to: from,\n  message_id: messageId,\n  push_name: data.pushName || null,\n  body: text\n} }];"
+      }
+    },
+    {
+      "id": "node-if-group",
+      "name": "Es grupo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-680, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.is_group }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-resolver-lid",
+      "name": "Resolver participante",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-560, -120],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.EVOLUTION_API_URL }}/group/participants/dev-router?groupJid={{ $json.group_jid }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 8000 }
+      }
+    },
+    {
+      "id": "node-aplicar-lid",
+      "name": "Aplicar resolucion LID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-360, -120],
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nconst norm = $('Normalizar payload').first().json;\nconst lid = norm.from_lid || '';\nconst participants = (resp.participants || []);\nconst match = participants.find(p => p.id === lid);\nif (!match || !match.phoneNumber) {\n  // No pudimos resolver el LID -> descartamos para evitar mensajes ambiguos\n  return [];\n}\nconst tel = String(match.phoneNumber).replace('@s.whatsapp.net','').replace('@c.us','');\nreturn [{ json: { ...norm, from: tel } }];"
+      }
+    },
+    {
+      "id": "node-passthrough-direct",
+      "name": "1-a-1 directo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-360, 120],
+      "parameters": {}
+    },
+    {
+      "id": "node-idem",
+      "name": "Idempotencia",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-660, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\nins AS (\n  INSERT INTO bejauha.mensajes_recibidos (message_id, telefono)\n  SELECT d->>'message_id', d->>'from' FROM inp\n  ON CONFLICT (message_id) DO NOTHING\n  RETURNING message_id\n)\nSELECT\n  (SELECT count(*) FROM ins)::int AS inserted,\n  (d->>'message_id') AS message_id,\n  (d->>'from') AS \"from\",\n  (d->>'respond_to') AS respond_to,\n  (d->>'body') AS body,\n  (d->>'push_name') AS push_name,\n  ((d->>'is_group')::boolean) AS is_group\nFROM inp;",
+        "options": { "queryReplacement": "={{ JSON.stringify($json) }}" }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-rol",
+      "name": "Detectar rol",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-460, 0],
+      "parameters": {
+        "jsCode": "const j = $input.first().json;\n// Admins de Bejauha (Cami, Amanda, Isa + nuevos + linea principal) en E.164 sin +. Si el remitente es uno de ellos -> Agente 2 (admin); si no -> Agente 3 (cliente).\nconst ADMINS = ['573106487951', '573165557803', '573132971212', '573012661158', '573195773214', '573008490289', '573122011349'];\nconst is_admin = ADMINS.includes(j.from);\nreturn [{ json: { ...j, is_admin } }];"
+      }
+    },
+    {
+      "id": "node-if-admin",
+      "name": "Es admin?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-340, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.is_admin }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-exec-admin",
+      "name": "Ejecutar WF02 Admin",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [-120, -120],
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "sILA5Co9FD3JI5eJ", "mode": "id" },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "admin_whatsapp": "={{ $json.from }}",
+            "admin_body": "={{ $json.body }}",
+            "respond_to": "={{ $json.respond_to }}"
+          },
+          "schema": [
+            { "id": "admin_whatsapp", "displayName": "admin_whatsapp", "required": false, "defaultMatch": false, "display": true, "canBeUsedToMatch": true, "type": "string" },
+            { "id": "admin_body", "displayName": "admin_body", "required": false, "defaultMatch": false, "display": true, "canBeUsedToMatch": true, "type": "string" },
+            { "id": "respond_to", "displayName": "respond_to", "required": false, "defaultMatch": false, "display": true, "canBeUsedToMatch": true, "type": "string" }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "each",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-exec-inbound",
+      "name": "Ejecutar WF03 Inbound",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [-120, 120],
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "rctOPl2BpQ4UVjEk", "mode": "id" },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefono": "={{ $json.from }}",
+            "texto": "={{ $json.body }}"
+          },
+          "schema": [
+            { "id": "telefono", "displayName": "telefono", "required": false, "defaultMatch": false, "display": true, "canBeUsedToMatch": true, "type": "string" },
+            { "id": "texto", "displayName": "texto", "required": false, "defaultMatch": false, "display": true, "canBeUsedToMatch": true, "type": "string" }
+          ],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "each",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-nuevo",
+      "name": "Nuevo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-560, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.inserted }}",
+              "rightValue": 1,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-dup",
+      "name": "Duplicado (ignorar)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-360, 160],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Entrada WhatsApp": { "main": [[{ "node": "Normalizar payload", "type": "main", "index": 0 }]] },
+    "Normalizar payload": { "main": [[{ "node": "Es grupo?", "type": "main", "index": 0 }]] },
+    "Es grupo?": { "main": [
+      [{ "node": "Resolver participante", "type": "main", "index": 0 }],
+      [{ "node": "1-a-1 directo", "type": "main", "index": 0 }]
+    ] },
+    "Resolver participante": { "main": [[{ "node": "Aplicar resolucion LID", "type": "main", "index": 0 }]] },
+    "Aplicar resolucion LID": { "main": [[{ "node": "Idempotencia", "type": "main", "index": 0 }]] },
+    "1-a-1 directo": { "main": [[{ "node": "Idempotencia", "type": "main", "index": 0 }]] },
+    "Idempotencia": { "main": [[{ "node": "Nuevo?", "type": "main", "index": 0 }]] },
+    "Nuevo?": { "main": [[{ "node": "Detectar rol", "type": "main", "index": 0 }], [{ "node": "Duplicado (ignorar)", "type": "main", "index": 0 }]] },
+    "Detectar rol": { "main": [[{ "node": "Es admin?", "type": "main", "index": 0 }]] },
+    "Es admin?": { "main": [[{ "node": "Ejecutar WF02 Admin", "type": "main", "index": 0 }], [{ "node": "Ejecutar WF03 Inbound", "type": "main", "index": 0 }]] }
+  }
+}

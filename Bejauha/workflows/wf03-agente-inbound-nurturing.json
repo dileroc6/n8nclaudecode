@@ -1,0 +1,510 @@
+{
+  "name": "Bejauha - Agente Atencion Inbound (WF03)",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Entrada Inbound",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1120,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bejauha-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-exec-trigger",
+      "name": "Trigger sub-workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "node-extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -920,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const src = $input.first().json;\nconst b = (src.body && typeof src.body === 'object') ? src.body : src;\nconst telefono = (b.telefono || b.from || '').toString();\nconst texto = (b.texto || b.body || b.message || '').toString();\nconst push_name = (b.push_name || b.pushName || '').toString().trim();\nif (!telefono || !texto) {\n  return [{ json: { _error: 'inputs_incompletos', telefono, texto } }];\n}\nreturn [{ json: { telefono, texto, push_name } }];"
+      }
+    },
+    {
+      "id": "node-ctx",
+      "name": "Cargar contexto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -720,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  (SELECT asignado_humano FROM bejauha.leads WHERE telefono = $1::text) AS asignado_humano,\n  (SELECT json_agg(json_build_object('t', titulo, 'c', contenido)) FROM bejauha.knowledge_base WHERE activo) AS kb,\n  (SELECT json_agg(json_build_object('dir', rtrim(direccion), 'texto', texto) ORDER BY ts) FROM (\n     SELECT direccion, texto, ts FROM bejauha.mensajes_logs\n     WHERE telefono = $1::text AND texto IS NOT NULL\n     ORDER BY ts DESC LIMIT 6\n   ) h) AS historial;",
+        "options": {
+          "queryReplacement": "={{ $json.telefono }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "vzzTNppBFKg9XCiK",
+          "name": "PostgreSQL — LeadAI"
+        }
+      }
+    },
+    {
+      "id": "node-if-asig",
+      "name": "Asignado a humano?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -520,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.asignado_humano }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-noop",
+      "name": "No interrumpir",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -160
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "node-prompt",
+      "name": "Ensamblar prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        120
+      ],
+      "parameters": {
+        "jsCode": "const ctx = $input.first().json;\nconst ex = $('Extraer').first().json;\nconst kb = (ctx.kb || []).map(x => '- ' + x.t + ': ' + x.c).join('\\n');\nconst histTurns = (ctx.historial || []).map(m => ({ role: m.dir === 'in' ? 'user' : 'assistant', content: m.texto }));\nconst system = 'Eres parte del equipo de Bejauha (comunidad de yoga y bienestar en Bogota). Hablas como una persona real en WhatsApp, no como un asistente entusiasta. TONO (importante para no sonar a bot): Español de COLOMBIA — NUNCA uses voseo argentino (querés, tenés, podés, mirá, fijate, coordiná, mandame, hacé). Usa \"tú\" (cómo vas, cuéntame, qué tal). NUNCA abras frases con el signo de apertura \"¡\", evita muletillas robotizadas tipo \"¡Que bien!\", \"¡Que bueno!\", \"¡Excelente!\", \"¡Genial!\" — son lo primero que delata a un bot. Usa MAXIMO un emoji por mensaje, y solo cuando aporte (suaves: 🌿💛🤍✨). Frases cortas, naturales, como en chat real (\"como vas\", \"cuentame\", \"que tal\"). VARIACION DEL SALUDO CON AUTOPRESENTACION (importante): cuando sea tu PRIMER mensaje en la conversacion (el cliente te saluda o escribe por primera vez), SIEMPRE preséntate como Beja, parte del equipo de Bejauha. Varia la redaccion entre opciones como: \"Hola, soy Beja del equipo de Bejauha 🌿 ¿en qué te puedo ayudar?\", \"Holaa, te habla Beja, cuéntame\", \"Hola, soy Beja, ¿cómo te ayudo hoy?\", \"Holaa, soy Beja del equipo, ¿qué tal todo?\", \"Hola, te saluda Beja, dime en qué te apoyo\", \"Holaa, soy Beja 🌿 ¿en qué andas?\". TODAS incluyen \"soy Beja\" o equivalente (\"te habla Beja\" / \"te saluda Beja\") — la presentacion es obligatoria en el primer turno. NO uses \"Eyy\", \"Ey\", \"Quiubo\" ni saludos demasiado coloquiales — Bejauha es calido pero no informal de pana. IMPORTANTE: mira el historial. Si tu turno anterior YA fue un saludo o presentacion, NO te vuelvas a presentar ni a saludar — ve directo al punto. La idea es que dos personas distintas leyendo conversaciones distintas no sientan que es el mismo bot. Lo mismo aplica para cualquier frase recurrente. Usa el primer nombre real si lo sabes; NO inventes apodos. NUNCA inventes precios, horarios ni promociones que no esten en la BASE DE CONOCIMIENTO; si falta el dato, dilo con calidez y ofrece confirmarlo con una persona del equipo. Responde la duda del cliente y clasifica su intencion. REGLA CRITICA — RESPUESTA vs RESUMEN (importantisimo, evita leak): el campo \"respuesta\" es lo que VE el cliente en su WhatsApp. Debe ser conversacional, calido, en colombiano natural. NUNCA NUNCA NUNCA pongas en \"respuesta\" texto del sistema interno como \"🔥 Lead caliente\", \"para atender\", \"Escribele para cerrar\", \"para que coordinen contigo\", \"Resumen:\", emojis de alerta (🔥), simbolos de notificacion, o cualquier estructura tipo aviso. Si el flujo es de handoff, la respuesta al cliente es algo tipo \"Listo, te paso con alguien del equipo, te escriben pronto\" (calida, breve). El campo \"resumen\" es lo que ven los admins en el grupo — ahi si va el contexto operativo (\"Quiere paquete de 8\", \"Aceptó cortesia\", etc.) PERO NUNCA en respuesta.\\n\\nREGLA — COMANDOS ADMIN MAL DIRIGIDOS: si el mensaje del cliente parece un comando administrativo (frases tipo \"BEJA incluye a X\", \"BEJA recarga a X\", \"BEJA elimina a X\", \"BEJA registra a X\", \"BEJA ajusta\", o \"X tiene N clases\", \"cargar a X en la base\"), ESO es un comando que llego al canal equivocado (un admin escribiendo a la linea publica por error). NO lo trates como handoff de venta, NO escales, NO pongas el comando en respuesta. Responde calidamente como Beja identificandote y preguntando como ayudar (clase de cortesia, info de clases, planes membresia). handoff=false, clasificacion=frio, resumen=\"\", solo_membresia=false, acepto_cortesia=false.\\n\\nREGLA CRITICA — PAQUETES SON LEGACY: actualmente NO se venden paquetes nuevos. Si un cliente nuevo (no aparece en BD) muestra interes en un paquete de clases (4 u 8 presenciales), NO inicies handoff todavia. Responde calido explicando que ahora trabajamos con membresia mensual y dale el link: \"Holaa, ahora mismo no estamos vendiendo paquetes nuevos, estamos enfocados en la membresia mensual. Te dejo el link para que veas los planes: https://bejauha.com/planes 🌿. Si prefieres una sola clase para conocernos, dime y la coordinamos.\" Devuelves handoff=false, clasificacion=tibio. Si la persona INSISTE explicitamente en el paquete despues de la propuesta, entonces si escala (handoff dos pasos abajo). REGLA — MEMBRESIA vs SERVICIO PRESENCIAL: (A) Si pide MEMBRESIA / plan mensual / suscripcion / acceso ilimitado, NO escales. Responde calido remitiendolo al sitio web: \"Las membresias las puedes ver y comprar directo en nuestra pagina: https://bejauha.com/planes 🌿. Ahi encuentras los detalles de cada plan y pagas en linea.\" Devuelves handoff=false, clasificacion=tibio. (B) Si pide CLASE SUELTA PRESENCIAL (no paquete, solo una clase para conocernos), aplica el handoff en dos pasos para coordinar. REGLA DE HANDOFF EN DOS PASOS (solo para PAQUETES/clase suelta presencial, NO para membresias): cuando el cliente muestre intencion de pagar/comprar/agendar/inscribirse en un paquete (\"me interesa el paquete de 4/8\", \"quiero apartar mi clase del domingo\", \"como pago el paquete\", \"cuanto cuesta para empezar las presenciales\"), NO escales todavia. PASO 1 PROPONER: responde calido y sin signos de admiracion, ej. \"Si quieres te pongo en contacto con alguien del equipo para que te cuente los detalles y cierre la compra contigo, te parece?\", y devuelves handoff=false, clasificacion=caliente. PASO 2 CONFIRMAR: SOLO si en el historial tu mensaje anterior YA propuso el contacto y el cliente responde con afirmacion clara (si, claro, por favor, dale, quiero comprar, ok, perfecto, hagamoslo), AHORA SI escalas: responde \"Listo, te paso con el equipo. En unos minutos te escribiran directamente desde su WhatsApp\" y devuelves handoff=true con un resumen util (que queria el cliente / que plan o paquete le interesaba). ATAJO: si el cliente desde el primer mensaje pide explicitamente hablar con un humano (\"pasame con una persona\", \"necesito hablar con alguien\"), escala directo (handoff=true) sin proponer. Si despues de proponer el cliente NO confirma o sigue preguntando informacion, NO insistas con el handoff: vuelve a modo informativo. FLUJO DE CORTESIA (IMPORTANTE — marketing tracking): si en tu mensaje anterior OFRECISTE la clase de cortesia / clase gratis / clase para conocer (frases como \"si quieres una clase para conocernos, dime y la coordinamos\", \"te invitamos a una clase de cortesia\", \"prueba una clase gratis\"), Y el lead acepta en su siguiente mensaje (\"sí, dale\", \"sí me interesa\", \"dame la cortesía\", \"sí coordinemos\", \"quiero esa clase\", \"de una\", \"perfecto, mándame los detalles\", \"sí, cuándo\"), output: acepto_cortesia=true, handoff=true (resumen=\"Aceptó clase de cortesía, coordinar día y hora\"), clasificacion=\"caliente\", respuesta calida confirmando que pasas con el equipo para coordinar. Esto debe disparar la creacion del lead + saldo 1 clase + marca de cortesia en BD. Si el lead NO acepta o sigue preguntando, acepto_cortesia=false. Si el lead pide cortesia ESPONTANEAMENTE (sin que tu hayas ofrecido), trátalo como aceptación: acepto_cortesia=true.\\n\\nREGLA SOLO_MEMBRESIA (importante para arquitectura): pon \"solo_membresia\": true cuando el mensaje del cliente sea EXCLUSIVAMENTE sobre membresia/suscripcion/plan mensual/acceso ilimitado/bejauha.com/planes y NADA mas. Si menciona paquetes, presencial, horario, saludo general, o cualquier otra cosa ademas de membresia, pon \"solo_membresia\": false. Las membresias se compran y gestionan en la web, no necesitamos duplicar prospects de membresia en nuestra BD. Devuelve SOLO un JSON: {\"respuesta\": texto para el cliente, \"clasificacion\": \"frio\"|\"tibio\"|\"caliente\", \"handoff\": true|false, \"resumen\": una frase de contexto si handoff o cadena vacia, \"solo_membresia\": true|false, \"acepto_cortesia\": true|false}. BASE DE CONOCIMIENTO:\\n' + kb;\nconst openai_body = {\n  model: 'gpt-4o',\n  temperature: 0.8,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: system },\n    ...histTurns,\n    { role: 'user', content: ex.texto }\n  ]\n};\nreturn [{ json: { telefono: ex.telefono, texto: ex.texto, openai_body } }];"
+      }
+    },
+    {
+      "id": "node-openai",
+      "name": "OpenAI responde",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.openai_body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "C6ueSke246Slwxww",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "node-parse",
+      "name": "Parsear",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        120
+      ],
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nlet content = '';\ntry { content = resp.choices[0].message.content; } catch (e) {}\nlet p = {};\ntry { p = JSON.parse(content); } catch (e) { p = { respuesta: 'Holaa, soy Beja del equipo de Bejauha 🌿 cuéntame un poco más para ayudarte mejor', clasificacion: 'frio', handoff: false, resumen: '', solo_membresia: false, acepto_cortesia: false }; }\nconst ex = $('Ensamblar prompt').first().json;\nconst extr = $('Extraer').first().json;\n// Guard: si el LLM puso texto interno del sistema en respuesta (que el cliente NO debe ver), reemplazar por fallback calido.\nlet respuestaLimpia = p.respuesta || '';\nconst patronesInternos = /(🔥|para atender|Escribele para cerrar|Lead caliente|Resumen:|coordinen contigo|para que coordine|^\\s*\\+57)/i;\nif (patronesInternos.test(respuestaLimpia)) {\n  respuestaLimpia = 'Holaa, soy Beja del equipo de Bejauha 🌿 cuéntame qué necesitas';\n}\nconst obj = {\n  telefono: ex.telefono,\n  push_name: extr.push_name || '',\n  texto_in: ex.texto,\n  respuesta: respuestaLimpia,\n  clasificacion: p.clasificacion || 'frio',\n  handoff: !!p.handoff,\n  resumen: p.resumen || '',\n  solo_membresia: !!p.solo_membresia,\n  acepto_cortesia: !!p.acepto_cortesia\n};\nreturn [{ json: { ...obj, p1_json: JSON.stringify(obj) } }];"
+      }
+    },
+    {
+      "id": "node-upsert",
+      "name": "Upsert lead + logs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        280,
+        120
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\np AS (\n  SELECT d->>'telefono' AS telefono,\n         NULLIF(d->>'push_name','') AS push_name,\n         d->>'texto_in' AS texto_in, d->>'respuesta' AS respuesta,\n         d->>'clasificacion' AS clasificacion, (d->>'handoff')::boolean AS handoff,\n         COALESCE((d->>'solo_membresia')::boolean, false) AS solo_membresia,\n         COALESCE((d->>'acepto_cortesia')::boolean, false) AS acepto_cortesia\n  FROM inp\n),\n-- Si solo_membresia=true: NO crear ni actualizar lead (las membresias viven solo en la BD de la web).\n-- Excepcion: si tambien acepto_cortesia=true, ignoramos solo_membresia (la cortesia gana — el lead se crea para tracking de marketing).\nlead_up AS (\n  INSERT INTO bejauha.leads (telefono, nombre, origen, clasificacion, asignado_humano, ultimo_contacto, tomo_cortesia, cortesia_at)\n  SELECT p.telefono, p.push_name, 'inbound', NULLIF(p.clasificacion,''), p.handoff, now(), p.acepto_cortesia, CASE WHEN p.acepto_cortesia THEN now() ELSE NULL END\n  FROM p WHERE p.solo_membresia = false OR p.acepto_cortesia = true\n  ON CONFLICT (telefono) DO UPDATE\n    SET nombre = COALESCE(bejauha.leads.nombre, EXCLUDED.nombre),\n        clasificacion = COALESCE(NULLIF(EXCLUDED.clasificacion,''), bejauha.leads.clasificacion),\n        asignado_humano = bejauha.leads.asignado_humano OR EXCLUDED.asignado_humano,\n        ultimo_contacto = now(),\n        tomo_cortesia = bejauha.leads.tomo_cortesia OR EXCLUDED.tomo_cortesia,\n        cortesia_at = COALESCE(bejauha.leads.cortesia_at, EXCLUDED.cortesia_at)\n  RETURNING telefono\n),\n-- Para casos solo_membresia=true (sin cortesia): si el lead ya existe, refrescamos ultimo_contacto.\nlead_touch AS (\n  UPDATE bejauha.leads SET ultimo_contacto = now()\n  FROM p WHERE bejauha.leads.telefono = p.telefono AND p.solo_membresia = true AND p.acepto_cortesia = false\n  RETURNING bejauha.leads.telefono\n),\n-- Cuando acepto_cortesia=true: cargamos 1 clase presencial vence 30 dias. Si ya tenia saldo (cliente existente), suma 1.\ncortesia_saldo AS (\n  INSERT INTO bejauha.saldos_clases (telefono, tipo, clases_restantes, vence_at)\n  SELECT p.telefono, 'presencial', 1, (current_date + INTERVAL '30 days')::date\n  FROM p WHERE p.acepto_cortesia = true\n  ON CONFLICT (telefono, tipo) DO UPDATE\n    SET clases_restantes = COALESCE(bejauha.saldos_clases.clases_restantes, 0) + 1,\n        vence_at = GREATEST(bejauha.saldos_clases.vence_at, EXCLUDED.vence_at),\n        actualizado_at = now()\n  RETURNING telefono\n),\nl_in AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.telefono, 'in', 'inbound', p.texto_in,\n         CASE WHEN p.acepto_cortesia THEN 'cortesia_aceptada' ELSE NULL END,\n         jsonb_build_object('wf','wf03', 'acepto_cortesia', p.acepto_cortesia)\n  FROM p RETURNING id\n),\nl_out AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.telefono, 'out', 'inbound', p.respuesta,\n         CASE WHEN p.acepto_cortesia THEN 'cortesia_aceptada' ELSE NULL END,\n         jsonb_build_object('wf','wf03', 'acepto_cortesia', p.acepto_cortesia)\n  FROM p RETURNING id\n)\nSELECT (SELECT telefono FROM p) AS telefono, (SELECT solo_membresia FROM p) AS solo_membresia, (SELECT acepto_cortesia FROM p) AS acepto_cortesia, (SELECT count(*) FROM cortesia_saldo)::int AS cortesia_cargada;",
+        "options": {
+          "queryReplacement": "={{ $json.p1_json }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "vzzTNppBFKg9XCiK",
+          "name": "PostgreSQL — LeadAI"
+        }
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Formatear",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        120
+      ],
+      "parameters": {
+        "jsCode": "const par = $('Parsear').first().json;\n// Delay humano (patron Savia): min 8s, max 15s, ~90ms por caracter.\n// Evolution honra 'delay' AL ROOT del body (no dentro de options) y muestra 'escribiendo...' durante esa pausa.\nconst respLen = (par.respuesta || '').length;\nconst delay = Math.min(15000, Math.max(8000, respLen * 90));\nreturn [{ json: {\n  telefono: par.telefono,\n  respuesta: par.respuesta,\n  handoff: par.handoff,\n  resumen: par.resumen,\n  clasificacion: par.clasificacion,\n  delay,\n  p1_json: par.p1_json\n} }];"
+      }
+    },
+    {
+      "id": "node-send-cliente",
+      "name": "Responder cliente (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefono }}\",\n  \"delay\": {{ $json.delay }},\n  \"linkPreview\": false,\n  \"text\": {{ JSON.stringify($json.respuesta) }}\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-if-handoff",
+      "name": "Handoff?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        240
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.handoff }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-handoff",
+      "name": "Crear handoff",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        900,
+        240
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d)\nINSERT INTO bejauha.handoffs (telefono, origen_agente, resumen)\nSELECT d->>'telefono', 'inbound', d->>'resumen' FROM inp\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ $json.p1_json }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "vzzTNppBFKg9XCiK",
+          "name": "PostgreSQL — LeadAI"
+        }
+      }
+    },
+    {
+      "id": "node-alerta-armar",
+      "name": "Armar alerta asesor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        240
+      ],
+      "parameters": {
+        "jsCode": "const f = $('Formatear').first().json;\n// Grupo WhatsApp 'Leads Calientes Bejauha' con todos los admins (decidido 2026-05-28).\n// En produccion la linea principal de Bejauha estara en este grupo en lugar de dev-router.\nconst ASESOR = '120363409231703955@g.us';\nconst texto = '🔥 Lead caliente para atender: +' + f.telefono + (f.resumen ? ('\\n' + f.resumen) : '') + '\\nEscribele para cerrar.';\nreturn [{ json: { asesor_whatsapp: ASESOR, alerta_text: texto } }];"
+      }
+    },
+    {
+      "id": "node-alerta-send",
+      "name": "Alertar asesor (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        240
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.asesor_whatsapp }}\",\n  \"text\": {{ JSON.stringify($json.alerta_text) }}\n}",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Crear handoff": {
+      "main": [
+        [
+          {
+            "node": "Armar alerta asesor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar alerta asesor": {
+      "main": [
+        [
+          {
+            "node": "Alertar asesor (Evolution)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada Inbound": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger sub-workflow": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Cargar contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar contexto": {
+      "main": [
+        [
+          {
+            "node": "Asignado a humano?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asignado a humano?": {
+      "main": [
+        [
+          {
+            "node": "No interrumpir",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ensamblar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensamblar prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI responde",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI responde": {
+      "main": [
+        [
+          {
+            "node": "Parsear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear": {
+      "main": [
+        [
+          {
+            "node": "Upsert lead + logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert lead + logs": {
+      "main": [
+        [
+          {
+            "node": "Formatear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear": {
+      "main": [
+        [
+          {
+            "node": "Responder cliente (Evolution)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Handoff?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handoff?": {
+      "main": [
+        [
+          {
+            "node": "Crear handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  }
+}

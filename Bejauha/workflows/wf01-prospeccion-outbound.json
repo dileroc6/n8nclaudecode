@@ -1,0 +1,126 @@
+{
+  "name": "Bejauha - PROSPECCIÓN Outbound (WF01)",
+  "settings": { "executionOrder": "v1", "timezone": "America/Bogota" },
+  "nodes": [
+    {
+      "id": "node-cron",
+      "name": "Cron 4 tandas (9-13-15-17)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1000, 0],
+      "notes": "20 envíos/día = 4 tandas de 5. Horas Bogotá (timezone del WF).\n\n⚠️ WARM-UP OBLIGATORIO al pasar a producción (decisión 2026-05-28, línea única para los 3 agentes — un baneo tumba TODO):\n  Semana 1: LIMIT=1 + 5 tandas (10/12/14/16/18) = 5/día\n  Semana 2: LIMIT=2 + 4 tandas (9/13/15/17)    = 8/día (subir a 10 con LIMIT=3 si va bien)\n  Semana 3+: LIMIT=5 + 4 tandas (config actual) = 20/día\nActivar MODO_PRUEBA=false en 'Personalizar + ciclo' solo cuando se confirme Habeas Data (#8) y verificación de línea (#2).",
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 * * *" },
+            { "field": "cronExpression", "expression": "0 13 * * *" },
+            { "field": "cronExpression", "expression": "0 15 * * *" },
+            { "field": "cronExpression", "expression": "0 17 * * *" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-select",
+      "name": "Seleccionar lote (5)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-780, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "Solo Grupos 2/3 (destino='prospeccion'), canal WhatsApp/ambos, no opt-out, no asignado a humano, ni respondido/descartado. Vencidos por prx_contacto o nunca contactados.",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT l.telefono, l.nombre, l.tipificacion,\n       COALESCE(l.toques_outbound,0) AS toques_outbound,\n       p.texto AS plantilla\nFROM bejauha.leads l\nJOIN bejauha.plantillas_seguimiento p\n  ON p.tipificacion = l.tipificacion\n AND p.destino = 'prospeccion' AND p.activo = true AND p.variante = 1\nWHERE l.canal IN ('whatsapp','ambos')\n  AND l.telefono IS NOT NULL\n  AND l.opt_out_marketing = false\n  AND l.asignado_humano = false\n  AND COALESCE(l.estado_outbound,'') NOT IN ('respondido','descartado')\n  AND (l.prx_contacto IS NULL OR l.prx_contacto <= current_date)\nORDER BY l.prx_contacto ASC NULLS FIRST, l.ultimo_toque ASC NULLS FIRST, l.id\nLIMIT 5;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-personalize",
+      "name": "Personalizar + ciclo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-560, 0],
+      "notes": "MODO_PRUEBA: cambia a false para producción. Calcula prx_contacto según el ciclo eterno (0→+3m, 1→+6m, 2+→+12m).",
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const MODO_PRUEBA = true;\nconst TEST_NUMBER = '573012661158';\n\nconst r = $json;\nconst first = String(r.nombre || '').trim().split(/\\s+/)[0] || '';\nconst texto = String(r.plantilla)\n  .replace(/\\{\\{\\s*nombre\\s*\\}\\}/g, first)\n  .replace(/\\s{2,}/g, ' ')\n  .trim();\n\nconst t = Number(r.toques_outbound || 0);\nconst meses = t <= 0 ? 3 : (t === 1 ? 6 : 12);\nconst d = new Date();\nd.setMonth(d.getMonth() + meses);\nconst prx = d.toISOString().slice(0, 10);\n\nreturn { json: {\n  telefono: r.telefono,\n  numero_envio: MODO_PRUEBA ? TEST_NUMBER : r.telefono,\n  nombre: r.nombre,\n  tipificacion: r.tipificacion,\n  texto,\n  prx_contacto: prx,\n  prueba: MODO_PRUEBA\n} };"
+      }
+    },
+    {
+      "id": "node-send",
+      "name": "Enviar (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-340, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "notes": "batchInterval 4s ≈ envíos dispersos dentro de la tanda (anti-baneo). presence 'composing' simula que está escribiendo.",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.numero_envio }}\",\n  \"text\": {{ JSON.stringify($json.texto) }},\n  \"options\": { \"delay\": 1200, \"presence\": \"composing\" }\n}",
+        "options": { "timeout": 15000, "batching": { "batch": { "batchSize": 1, "batchInterval": 4000 } } }
+      }
+    },
+    {
+      "id": "node-log",
+      "name": "Log mensaje",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-120, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\nSELECT d->>'telefono','out','outbound', d->>'texto', 'prospeccion',\n       jsonb_build_object('tipificacion', d->>'tipificacion', 'prueba', (d->>'prueba')::boolean)\nFROM (SELECT $1::jsonb AS d) x;",
+        "options": { "queryReplacement": "={{ JSON.stringify({ telefono: $('Personalizar + ciclo').item.json.telefono, texto: $('Personalizar + ciclo').item.json.texto, tipificacion: $('Personalizar + ciclo').item.json.tipificacion, prueba: $('Personalizar + ciclo').item.json.prueba }) }}" }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-update",
+      "name": "Reprogramar ciclo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [100, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "notes": "Avanza el ciclo eterno: +1 toque, ultimo_toque=hoy, prx_contacto calculada, estado='enviado'. En modo prueba (prueba=true) la condición WHERE no matchea: 0 filas, no toca leads reales.",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE bejauha.leads l\nSET toques_outbound = l.toques_outbound + 1,\n    ultimo_toque    = current_date,\n    prx_contacto    = (d->>'prx')::date,\n    estado_outbound = 'enviado',\n    ultimo_contacto = now()\nFROM (SELECT $1::jsonb AS d) x\nWHERE l.telefono = d->>'telefono'\n  AND (d->>'prueba')::boolean = false;",
+        "options": { "queryReplacement": "={{ JSON.stringify({ telefono: $('Personalizar + ciclo').item.json.telefono, prx: $('Personalizar + ciclo').item.json.prx_contacto, prueba: $('Personalizar + ciclo').item.json.prueba }) }}" }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    }
+  ],
+  "connections": {
+    "Cron 4 tandas (9-13-15-17)": { "main": [[{ "node": "Seleccionar lote (5)", "type": "main", "index": 0 }]] },
+    "Seleccionar lote (5)": { "main": [[{ "node": "Personalizar + ciclo", "type": "main", "index": 0 }]] },
+    "Personalizar + ciclo": { "main": [[{ "node": "Enviar (Evolution)", "type": "main", "index": 0 }]] },
+    "Enviar (Evolution)": { "main": [[{ "node": "Log mensaje", "type": "main", "index": 0 }]] },
+    "Log mensaje": { "main": [[{ "node": "Reprogramar ciclo", "type": "main", "index": 0 }]] }
+  }
+}

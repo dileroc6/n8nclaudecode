@@ -217,7 +217,7 @@ Google Sheets — keyword con estado "Aprobado"
 
 ### Google Sheets — Master Sheet
 - **ID:** `1dsHuDVuz3XuN9vBGhRuJEN-FZhx5zwZsOj6fvUEaH7s`
-- **Hojas activas:** `Blog` (pipeline principal) · `Redes Sociales` (copies para publicación) · `AEO_Tracking` (citaciones AIO semanales, escrita por WF7) · `GSC_Tracking` (snapshot semanal sitewide, escrita por WF11) · `GSC_Pages_Tracking` (top 30 páginas con Δ pos vs sem anterior, escrita por WF11)
+- **Hojas activas:** `Blog` (pipeline principal) · `AEO_Tracking` (citaciones AIO semanales, escrita por WF7) · `GSC_Tracking` (snapshot semanal sitewide, escrita por WF11) · `GSC_Pages_Tracking` (top 30 páginas con Δ pos vs sem anterior, escrita por WF11). _(`Redes Sociales` ELIMINADA el 2026-05-26 al descontinuar redes.)_
 
 #### Hoja `Blog`
 - **Trigger:** Columna `estado` = `"Aprobado"`
@@ -226,19 +226,15 @@ Google Sheets — keyword con estado "Aprobado"
 - **Columnas activas (A-M + R-S):** `keyword(A) | estado(B) | prioridad(C) | nicho(D) | país(E) | audiencia(F) | intencion(G) | url_post(H) | wordcount(I) | posicion_gsc(J) | fecha_objetivo(K) | fecha_social(L) | fecha_reoptimizado(M) | hub(R) | cluster_parent(S)`
 - **Columnas N-Q (huérfanas):** `copy_instagram(N) | copy_facebook(O) | guion_tiktok(P) | guion_youtube(Q)` — datos viejos pre-reestructuración a `Redes Sociales`. **Ningún workflow las usa**. Quedan como referencia histórica.
 - **`fecha_objetivo`:** Columna K. Solo para keywords estacionales. Fecha en que debe publicarse el blog (2 semanas antes del evento). El pipeline la detecta automáticamente y prioriza.
-- **`fecha_social`:** Columna L. Fecha en que debe publicarse en redes sociales (= fecha del evento para estacionales, vacío para normales). Usada por WF2.
+- **`fecha_social`:** Columna L. (Legado) Fecha del evento para keywords estacionales. La usaba WF2 (eliminado 2026-05-26); hoy sin consumidor activo. Se conserva como referencia histórica.
 - **`fecha_reoptimizado`:** Columna M. Fecha en que WF3 re-optimizó este post. Bloquea re-procesamiento por 90 días.
 - **`hub`:** Columna R. Hub temático del post: `Salud` / `Alimentación` / `Razas` / `Mundo`. Asignada en Sprint 3 (2026-05-04). Usada por WF9 para agrupar clusters por pilar.
 - **`cluster_parent`:** Columna S. Slug del pilar correspondiente: `guia-salud-felina` / `guia-alimentacion-gatos` / `guia-razas-gatos` / `guia-comportamiento-felino`. Permite que WF9 sepa a qué pilar enlazar cada cluster.
 - **Fuente de verdad dual:** actúa como disparador de entrada (filas "Aprobado") e índice de posts publicados (filas "Publicado") para el check de canibalismo y contexto de enlaces internos
 - **Populated:** ✅ 188 keywords clasificadas en 4 hubs (Sprint 3, 2026-05-04): Salud 67 · Mundo 72 · Razas 32 · Alimentación 17. Distribución original: 106 existentes + 4 publicadas + 27 nuevas + 10 estacionales + ideas de WF5 acumuladas.
 
-#### Hoja `Redes Sociales`
-- **Escrita por:** WF2 (tipo=Blog, diario) · WF4 (tipo=Entretenimiento, sábados)
-- **Columnas:** `tipo(A) | keyword(B) | url_post(C) | fecha_social(D) | estado(E) | copy_instagram(F) | copy_facebook(G) | guion_tiktok(H) | guion_youtube(I)`
-- **`tipo`:** `Blog` (copia de artículo publicado) o `Entretenimiento` (situación cómica generada por GPT)
-- **`estado`:** `Pendiente` → `Publicado` — el equipo lo marca manualmente al publicar en cada plataforma
-- **Uso editorial:** filtrar por `tipo` para ver qué publicar; filtrar por `estado=Pendiente` para ver qué está pendiente
+#### Hoja `Redes Sociales` — ❌ DESCONTINUADA (2026-05-26)
+El proyecto descontinuó toda producción para redes sociales. WF2 y WF4 borrados; WF5 quedó blog-only y ya NO lee esta hoja (se le quitó el nodo `Leer Redes Sociales`). **Ningún workflow vivo la referencia.** La pestaña `Redes Sociales` del Master Sheet se elimina manualmente desde la UI de Google Sheets (es seguro: ya nada la lee ni la escribe).
 
 ### OpenAI
 - **Texto:** GPT-4o
@@ -469,47 +465,9 @@ bigotes-felinos/
 | bf-node-009 | Marcar Error en Sheet | Actualiza Sheet: "Error" | ✅ |
 | bf-node-022 | Notificar Error Telegram | Envía keyword + fase + detalle del error al bot | ✅ |
 
-### WF2 — Redes Sociales: `BF - WF2 - Redes Sociales: Generar Copies CapCut`
-- **ID n8n:** `3PWQY3biRhOyN1IA`
-- **Nodos totales:** 11
-- **Estado:** ✅ Activo — inserta filas en la hoja `Redes Sociales` con contenido CapCut-ready. Publicación 100% manual.
-- **Trigger:** Diario a las 10am Colombia (15:00 UTC) — cron `0 15 * * *`
-- **Flujo activo:** bf2-001 → bf2-002 → bf2-002b → bf2-003 → bf2-004 → bf2-005 → bf2-006 → bf2-010 → bf2-015
-- **Video:** Scripts exportados al Sheet para grabación manual en CapCut (TikTok, YouTube Shorts)
+### WF2 — Redes Sociales ❌ ELIMINADO (2026-05-26)
 
-**Campos GPT por plataforma (10 en total):**
-
-| Campo | Plataforma | Uso |
-|-------|-----------|-----|
-| `ig_hook_visual` | Instagram | Texto en pantalla primeros 2-3s del Reel (≤10 palabras) |
-| `ig_tips_body` | Instagram | 3 tips ✅ listos para pantalla o caption |
-| `ig_caption_seo` | Instagram | Caption completo + Stories Poll + hashtags → **se usa para publicar** |
-| `fb_script_narrativo` | Facebook | Guión de voz 30-60s, tono humano y cercano |
-| `fb_copy_aida` | Facebook | Post AIDA escrito + CTA comentarios + link → **se usa para publicar** |
-| `tt_hook_agresivo` | TikTok | Frase impacto 0-2s (≤8 palabras) |
-| `tt_script_fast` | TikTok | Guión completo 30-45s, una frase por línea |
-| `tt_bait_comentarios` | TikTok | Pregunta final para forzar comentarios |
-| `yt_script_storytelling` | YouTube | Guión 50-60s Problema-Solución + bonus |
-| `yt_cta_subs` | YouTube | Frase de cierre ≤15 palabras para suscriptores |
-
-**Formato en el Sheet (CapCut-ready):**
-Cada columna agrupa los campos de su plataforma con separadores visuales (`🎣`, `💡`, `📝`, etc.) para que el editor copie directamente el bloque que necesita en CapCut, sin edición.
-
-| ID | Nodo | Función | Estado |
-|----|------|---------|--------|
-| bf2-001 | Schedule Trigger Diario | Cron `0 15 * * *` (10am Colombia, todos los días) | ✅ |
-| bf2-002 | Leer Posts Publicados | HTTP GET a Sheets API `Blog!A:M` — 1 sola request (evita rate limit del nodo nativo que hace ~N requests internos) | ✅ |
-| bf2-002b | Leer Redes Sociales | HTTP GET a Sheets API `Redes Sociales!A:B` — solo columnas tipo+keyword, 1 request | ✅ |
-| bf2-003 | Filtrar Artículos para Hoy | Code (runOnceForAllItems): parsea formato `values[][]` de Sheets API, cruza `Blog` con `Redes Sociales`, descarta keywords ya procesadas, selecciona **todos** los estacionales con `fecha_social=hoy` + máximo 2 regulares sin `fecha_social` en días L/M/V | ✅ |
-| bf2-004 | Construir Prompt GPT Social | Code: solicita 10 campos granulares por plataforma (3 IG + 2 FB + 3 TT + 2 YT). Cada campo es CapCut-ready | ✅ |
-| bf2-005 | Generar Paquete Social GPT-4o | HTTP + OpenAI credential — devuelve JSON con 10 campos | ✅ |
-| bf2-006 | Parsear JSON Social | Code: mapea 10 campos → 4 columnas formateadas + genera `sheet_append_json` para bf2-010 | ✅ |
-| bf2-010 | Actualizar Sheet Social | HTTP append: inserta nueva fila en `Redes Sociales` (`tipo="Blog"`, keyword, url_post, fecha_social, copies) | ✅ |
-| bf2-015 | Telegram Notificar Éxito Social | Mensaje con keyword + título indicando nueva fila insertada en Redes Sociales | ✅ |
-| bf2-016 | Error Trigger | Captura errores en cualquier nodo | ✅ |
-| bf2-017 | Telegram Notificar Error Social | Notifica fase + detalle del error al bot | ✅ |
-
-**Publicación:** 100% manual. El flujo termina cuando se inserta una nueva fila en `Redes Sociales`. El editor usa ese contenido para publicar manualmente en cada plataforma.
+Workflow `3PWQY3biRhOyN1IA` **borrado permanentemente** de n8n. El proyecto descontinuó toda producción de contenido para redes sociales — solo se mantiene el pipeline de blog. La hoja `Redes Sociales` del Master Sheet queda como dato histórico (ya ningún workflow la escribe).
 
 > **Nota — Google Indexing API (eliminada 2026-04-25):** Se intentó implementar indexación inmediata via Indexing API con JWT RS256 pure-JS. El JWT funciona correctamente pero la GSC UI no acepta emails de service accounts como Owner (error "correo no encontrado"), y la interfaz antigua (`webmasters/verification`) fue deprecada por Google. El sitemap ping (`google.com/ping`) también fue deprecado en enero 2024. La indexación ocurre de forma natural a través del sitemap de Yoast en 1-3 días.
 
@@ -556,33 +514,17 @@ Cada columna agrupa los campos de su plataforma con separadores visuales (`🎣`
 - fd-008: timezone Colombia — `new Date().getTime() + (-5 * 60 - now.getTimezoneOffset()) * 60000`
 - fd-021c: cruza por posición `$input.all()[i]` (respuesta WP tags) con `$('Tags Split WF3').all()[i]` (input original con wp_post_id) — el orden está garantizado porque HTTP Request procesa items en secuencia
 
-### WF4 — Entretenimiento: `BF - WF4 - Entretenimiento Viral: Contenido Humor`
-- **ID n8n:** `ylPUrgrgbL1wLnQ2`
-- **Nodos totales:** 11
-- **Estado:** ✅ Activo — sábados 10am Colombia. Publicación manual.
-- **Trigger:** Cron `0 15 * * 6` (sábados 15:00 UTC = 10am Colombia)
-- **Fuente:** Si hay filas con `tipo="Entretenimiento"` + `estado="Idea"` (generadas por WF5), desarrolla la primera. Si no hay ideas, GPT elige autónomamente una situación nueva.
+### WF4 — Entretenimiento Viral ❌ ELIMINADO (2026-05-26)
 
-| ID | Nodo | Función | Estado |
-|----|------|---------|--------|
-| ent-001 | Schedule Trigger Sábado | Cron `0 15 * * 6` (sábados 15:00 UTC = 10am Colombia) | ✅ |
-| ent-002b | Leer Redes Sociales | GSheets: todas las filas de la hoja `Redes Sociales` — detecta Ideas pendientes y situaciones ya publicadas | ✅ |
-| ent-005 | Construir Prompt GPT | Code (`runOnceForAllItems`): detecta `estado="Idea"`; si hay idea → prompt específico; si no → GPT elige autónomamente. Pasa `has_idea`, `idea_situation`, `idea_row_idx` | ✅ |
-| ent-006 | Generar Contenido GPT-4o | HTTP + OpenAI credential — devuelve JSON con 6 campos (con idea) o 7 campos (autónomo, incluye `situacion`) | ✅ |
-| ent-007 | Parsear JSON Entretenimiento | Code: construye `rowData`, genera `sheet_append_json` + `sheet_update_json`, pasa `has_idea` e `idea_row_number` | ✅ |
-| ent-007b | IF Tiene Idea | IF `has_idea === true` → rama PUT (actualizar fila existente); FALSE → rama append (nueva fila) | ✅ |
-| ent-008b | Actualizar Fila Idea | HTTP PUT: actualiza fila `idea_row_number` en `Redes Sociales` con contenido generado (estado: Pendiente) | ✅ |
-| ent-008 | Actualizar Sheet Entretenimiento | HTTP append: inserta nueva fila en `Redes Sociales` (`tipo="Entretenimiento"`, situacion, copies) | ✅ |
-| ent-009 | Telegram Notificar Éxito | Mensaje con situación + indica si fue idea procesada o nueva generación | ✅ |
-| ent-010 | Error Trigger | Captura errores en cualquier nodo | ✅ |
-| ent-011 | Telegram Notificar Error | Notifica fase + detalle del error al bot | ✅ |
+Workflow `ylPUrgrgbL1wLnQ2` **borrado permanentemente** de n8n. Generaba contenido de humor/viral para redes — descontinuado junto con WF2 al recortar el proyecto a solo blog.
 
-### WF5 — Generador de Ideas: `BF - WF5 - Generador de Ideas: Blog + Entretenimiento`
+### WF5 — Generador de Ideas (solo Blog): `BF - WF5 - Generador de Ideas: Blog + Entretenimiento`
 - **ID n8n:** `yRbv29Y6FiQHn1Qg`
-- **Nodos totales:** 16
-- **Estado:** ⏳ Activo (ejecución manual) — requiere configurar credencial SerpAPI
+- **Nodos totales:** 13 (era 16 — el 2026-05-26 se quitaron `IF Ent Ideas`, `Append Ent Ideas` y `Leer Redes Sociales` al descontinuar redes sociales)
+- **Estado:** ⏳ Activo (ejecución manual) — requiere configurar credencial SerpAPI. **Blog-only**: ya NO genera ni lee nada de entretenimiento/redes.
 - **Trigger:** Manual
 - **Fuente de datos:** GSC API (queries reales ≥3 impresiones) + SerpAPI (PAA + autocomplete) + GPT-4o (síntesis + enriquecimiento)
+- **Limpieza 2026-05-26:** eliminado el nodo `Leer Redes Sociales` (rewire `Leer Blog Sheet → Construir Prompt GPT`); en `Construir Prompt GPT` se quitó la referencia al nodo borrado y el `ent_ideas` del schema GPT. Residuo cosmético: el prompt aún tiene un par de líneas de instrucciones de entretenimiento sin slot de salida (GPT ya no las produce) y el resumen Telegram de `Parsear y Filtrar Ideas` aún muestra "Entretenimiento: 0". Inofensivo.
 
 | ID | Nodo | Función | Estado |
 |----|------|---------|--------|
@@ -593,13 +535,11 @@ Cada columna agrupa los campos de su plataforma con separadores visuales (`🎣`
 | w5-005 | Leer Blog Sheet | HTTP GET Sheets API `Blog!A:A` — solo columna keyword (1 read request vs 60+) | ✅ |
 | w5-006 | Leer Redes Sociales | HTTP GET Sheets API `Redes Sociales!A:B` — solo columnas tipo+keyword (1 read request vs 60+) | ✅ |
 | w5-007 | Construir Prompt GPT | Code (`runOnceForAllItems`): sintetiza GSC + SerpAPI + existentes, construye prompt GPT con contexto completo | ✅ |
-| w5-008 | GPT-4o Generar Ideas | HTTP + OpenAI — genera ideas blog (keyword + metadatos) + ideas entretenimiento (situaciones nuevas) | ✅ |
-| w5-009 | Parsear y Filtrar Ideas | Code (`runOnceForAllItems`): dedup Jaccard ≥50% contra existentes, separa blog vs entretenimiento, genera payloads para append | ✅ |
+| w5-008 | GPT-4o Generar Ideas | HTTP + OpenAI — genera ideas blog (keyword + metadatos). _(El prompt aún puede devolver ideas de entretenimiento pero se descartan: no hay nodo que las escriba.)_ | ✅ |
+| w5-009 | Parsear y Filtrar Ideas | Code (`runOnceForAllItems`): dedup Jaccard ≥50% contra existentes, genera payload de blog para append | ✅ |
 | w5-010 | IF Blog Ideas | IF `blog_count > 0` → append ideas de blog | ✅ |
 | w5-011 | Append Blog Ideas | HTTP POST: inserta filas en hoja `Blog` con `estado="Pendiente"` | ✅ |
-| w5-012 | IF Ent Ideas | IF `ent_count > 0` → append ideas de entretenimiento | ✅ |
-| w5-013 | Append Ent Ideas | HTTP POST: inserta filas en hoja `Redes Sociales` con `tipo="Entretenimiento"`, `estado="Idea"` | ✅ |
-| w5-014 | Telegram Notificar | Mensaje con resumen: N ideas blog + M ideas entretenimiento insertadas | ✅ |
+| w5-014 | Telegram Notificar | Mensaje con resumen de ideas blog insertadas | ✅ |
 | w5-015 | Error Trigger | Captura errores no controlados | ✅ |
 | w5-016 | Telegram Error | Notifica error al bot | ✅ |
 
@@ -615,13 +555,12 @@ Preparar Fechas GSC → GSC Query → SerpAPI (continueOnFail)
 Leer Blog Sheet + Leer Redes Sociales
     ↓
 Construir Prompt GPT → GPT-4o → Parsear y Filtrar Ideas
-    ↓                                       ↓                    ↓
-IF Blog Ideas → Append Blog!A:M      IF Ent Ideas → Append RS!A:I    Telegram
-(estado=Pendiente)                   (tipo=Entretenimiento, estado=Idea)
+    ↓                                       ↓
+IF Blog Ideas → Append Blog!A:M           Telegram
+(estado=Pendiente)
 ```
 
-**Integración WF5 → WF4:**
-Las ideas de entretenimiento que WF5 inserta con `estado="Idea"` son consumidas por WF4 el siguiente sábado. WF4 detecta la primera fila con `tipo="Entretenimiento"` + `estado="Idea"`, genera el contenido viral para esa situación específica, y actualiza la fila (estado: `Pendiente`, contenido completo).
+> La rama de entretenimiento (`IF Ent Ideas → Append RS`) fue eliminada el 2026-05-26 junto con WF4. WF5 ahora solo alimenta keywords de blog.
 
 ### WF7 — AEO Monitor: `BF - WF7 - AEO Monitor: Detectar citas en Google AI Overview`
 - **ID n8n:** `73UFpj4m2vke6IPk`
@@ -787,6 +726,34 @@ WoW (vs sem anterior):
 - `GSC_Pages_Tracking` — columnas A-H: `sem_inicio | url | impresiones | clicks | ctr | pos | delta_pos_vs_prev | delta_clicks_vs_prev`
 
 **Análisis de gráficos:** Las hojas son fuente para gráficos nativos de Google Sheets (Insertar → Gráfico → Línea). No requiere dashboard externo.
+
+---
+
+### Webhook Recovery Infrastructure (2026-05-18) — Disparo manual remoto de los 5 workflows con cron
+
+Cada workflow con Schedule Trigger tiene además un **Webhook Trigger paralelo** que permite dispararlo on-demand sin tocar la UI de n8n. Útil para recovery rápido cuando hay incidentes (credencial caída, refusal de OpenAI, etc.) o para forzar una ejecución fuera del horario natural. El Schedule sigue siendo la fuente normal — el webhook es solo para invocación manual.
+
+| Workflow | URL | Conecta a (mismo entry node que el Schedule) |
+|----------|-----|-----------------------------------------------|
+| WF1 Blog SEO | `POST https://n8n.srv1398596.hstgr.cloud/webhook/bf-trigger-wf1` | `Leer Estacionales Pendientes` |
+| WF7 AEO Monitor | `POST https://n8n.srv1398596.hstgr.cloud/webhook/bf-trigger-wf7` | `Leer Master Sheet` |
+| WF9 Pilares Auto-Sync | `POST https://n8n.srv1398596.hstgr.cloud/webhook/bf-trigger-wf9` | `Leer Blog Sheet` |
+| WF11 GSC Weekly | `POST https://n8n.srv1398596.hstgr.cloud/webhook/bf-trigger-wf11` | `Build Queries` |
+
+**Comportamiento:**
+- Node name dentro de cada workflow: `Webhook Recovery` (type `n8n-nodes-base.webhook` v2).
+- `responseMode: onReceived` → responde HTTP 200 inmediato con `{"message":"Workflow was started"}` y dispara el workflow en background. Sin polling.
+- Body vacío (`{}`) basta. No requiere params.
+
+**Invocación:**
+```bash
+curl -X POST "https://n8n.srv1398596.hstgr.cloud/webhook/bf-trigger-wf1" \
+  -H "Content-Type: application/json" -d '{}'
+```
+
+**Origen:** incidente 2026-05-18 — credencial OAuth Google Sheets revocada por segunda vez tras la del 2026-05-09, dejó WF1/WF2/WF7/WF9/WF11 caídos desde el 17 may. Después del reauth manual de la credencial, hubo que disparar los 5 para recuperar el día (publicar el blog del lunes, los snapshots semanales de AEO y GSC, social copies, sync de pilares). Antes había que ir a la UI a hacer click en "Execute Workflow" en cada uno; ahora se hace con un curl desde cualquier lado (incluida sesión de Claude Code vía Bash). El próximo incidente similar se resuelve sin tocar la UI.
+
+**Gotcha conocido:** justo después de agregar el webhook node vía API (`n8n_update_partial_workflow`), hay ~1-2s de race condition donde el primer disparo puede responder 200 pero NO crear ejecución (el webhook router aún no terminó de registrar el path). El segundo disparo siempre funciona. Solo afecta el momento de creación del webhook; en uso normal no se reproduce.
 
 ---
 
@@ -1119,6 +1086,9 @@ _aeo/
 | **WF-Diag — Credential Health Monitor** | 🟠 Media | Workflow nuevo con cron `0 */12 * * *` (cada 12h) que hace 1 read trivial al Master Sheet + 1 GET a GSC API + 1 GET a WP REST. Si alguno falla → Telegram con alerta inmediata. **Por qué:** detectar credenciales caídas en 12h máximo en lugar de 36h+ (que fue el delay del incidente del 2026-05-09 — la cred se cayó en algún momento entre 8 may y 9 may 6am). 1 alerta proactiva > esperar al cron crítico del lunes. Costo $0 (3 calls cada 12h). |
 | **Documentar regla operativa: no revocar app n8n desde Google Account** | 🟡 Baja | Anotar en `CLAUDE.md` y `_contexto/CREDENCIALES_Y_COSTOS.md` que `myaccount.google.com/permissions` no debe usarse para "limpiar" la app n8n a menos que sea estrictamente necesario, porque revoca todos los refresh tokens del proyecto BF (Sheets, GSC, Drive). Si se revoca, listar el procedimiento de reauth de las 2-3 credenciales afectadas en orden. |
 | **Cuenta Google secundaria con OAuth alternativo (failover)** | 🟢 Opcional | Configurar credenciales OAuth duplicadas en n8n vinculadas a una segunda cuenta Google con acceso al Master Sheet. Si la primaria falla, intercambias el ID de credencial en los nodos críticos como hotfix de 5 min vs. esperar a reauth. Solo vale la pena si Service Account no se hace (que es la solución superior). |
+| **Descontinuar redes sociales — proyecto pasa a solo-blog** | ✅ 2026-05-26 | Decisión del cliente: eliminar toda producción de contenido para redes sociales, mantener solo el pipeline de blog. Acciones: (a) **WF2** (`3PWQY3biRhOyN1IA`, Redes Sociales CapCut) borrado permanente; (b) **WF4** (`ylPUrgrgbL1wLnQ2`, Entretenimiento Viral) borrado permanente; (c) **WF5** (`yRbv29Y6FiQHn1Qg`) recortado a blog-only (16→13 nodos): quitados `IF Ent Ideas`, `Append Ent Ideas` y `Leer Redes Sociales`; rewire `Leer Blog Sheet → Construir Prompt GPT`; en `Construir Prompt GPT` se removió la ref a `$('Leer Redes Sociales')` y el `ent_ideas` del schema GPT. Solo queda `IF Blog Ideas → Append Blog Ideas`; (d) webhook `bf-trigger-wf2` desaparece con WF2; (e) hoja `Redes Sociales` del Master Sheet: ya ningún workflow la referencia → pestaña eliminada manualmente desde la UI de Sheets. Pipeline restante: WF1 (blog), WF3 (re-optim), WF5 (ideas blog), WF6 (pilares), WF7 (AEO monitor), WF8 (bulk AEO), WF9 (sync pilares), WF11 (GSC weekly) + WF-Utils. |
+| **Migración credencial Sheets OAuth → Service Account COMPLETA** | ✅ 2026-06-03 | Migración completa de TODOS los workflows BF que tocaban Sheets a la credencial SA `kfmx1gj6KPrgmj2E` ("BF - Sheets Service Account", tipo `googleApi`). Pattern replicado de BC (que llevaba semanas sin caerse). **Nodos migrados por workflow:** WF1 8 nodos (3 nativos→`auth=serviceAccount` + 5 HTTP→`nodeCredentialType=googleApi`, ya estaba desde 26 may), WF3 2 (1 nativo + 1 HTTP), WF5 2 (HTTP), WF7 2 (HTTP), WF8 2 (1 nativo + 1 HTTP), WF9 1 (HTTP), WF11 2 (HTTP), WF-Util Force Reopt 2 (HTTP). **Total: 21 nodos.** WF-Util Publish Interactive / Update Page / Páginas Legales NO tocan Sheets — no se migraron. **Validación**: triggers via webhook a WF7 (31s ✅), WF9 (3.5s ✅), WF11 (2.1s ✅) tras migración, todos exitosos. La OAuth `70heM3IFsNK9Cyak` queda muerta (ningún nodo BF la usa). Tercera revocación del OAuth en 17 días (9→18→26 may) detonó la decisión; con SA el problema desaparece para siempre. **Gotcha clave** (sigue vigente para futuros workflows): credencial `googleApi` requiere activar "Set up for use in HTTP Request node" + scope `https://www.googleapis.com/auth/spreadsheets`, si no los nodos HTTP dan 401 CREDENTIALS_MISSING. **Bloqueo separado:** cuenta OpenAI sin saldo (429 insufficient_quota) sigue frenando publicación de WF1 hasta recargar billing. |
+| **Incidente OAuth Sheets 2026-05-18 + Webhook Recovery infra** | ✅ 2026-05-18 | Segunda revocación del refresh token de `BF - Google Sheets` (`70heM3IFsNK9Cyak`) en 10 días — tumbó WF1 + WF2 + WF7 + WF9 + WF11 desde el 17 may. Telegram NO avisó porque el Error Trigger interno también falla (bug del expression `$('Leer Keywords Aprobadas').first()` que no funciona desde contexto Error Trigger). **Recovery:** (a) usuario re-autenticó la credencial en n8n UI; (b) agregado **Webhook Trigger** paralelo al Schedule en los 5 workflows críticos (`bf-trigger-wfN` POST → mismo entry node que el cron); (c) disparados los 5 vía curl autónomamente desde sesión Claude Code para recuperar el día — blog del lunes (WF1 publicó "día internacional del gato 8 de agosto" post 2912 priorizando keyword estacional con `fecha_objetivo` próxima), AEO Monitor snapshot semanal (WF7), GSC Weekly snapshot (WF11), social copies (WF2), pilar cluster sync (WF9); (d) infra documentada en sección "Webhook Recovery Infrastructure". Próximo incidente similar se resuelve sin tocar la UI. **Pendientes upstream:** migrar a Service Account (sigue 🔴 Alta — segunda caída en 10 días); fix bug del Error Trigger Telegram expression (necesita reescribirse para extraer keyword del `$('Error Trigger').first().json.execution.error` en vez de del workflow principal). |
 | **AdSense reconfiguración completa — Auto Ads → 4 slots manuales + brand safety + 4 páginas legales + banner GDPR + sidebar Astra activado + CCPA mensaje + decisión arquitectónica sin CMP plugin (2026-05-11)** | ✅ 2026-05-11 | Migración full de monetización: (a) Auto Ads apagado, **4 slots manuales** (in-article #1 párrafo 3, in-article #2 párrafo 10, **sidebar sticky desktop**, pre-FAQ párrafo 20) con `data-loading-strategy="lazy"` nativo; (b) brand safety: 11 categorías estándar + 2 restringidas bloqueadas en AdSense; (c) banner GDPR Funding Choices con botones Accept/Reject/Manage activos (TCF v2.2) — publicado y verificado vía marcadores `__tcfapi`; (d) 4 páginas legales publicadas (`/privacy-policy/` preexistente + `/terminos-y-condiciones/` + `/aviso-legal/` + `/politica-de-cookies/`) cubriendo Ley 1581 + Decreto 1377 + GDPR + ePrivacy; (e) footer con enlaces a las 4 páginas vía bloque HTML personalizado en Pie de página 1; (f) CSS branded (.bf-ad-*) con etiqueta "Publicidad" + bordes sutiles + sticky desktop only; (g) **layout sidebar de Astra activado** vía Personalizar → Post Types → Posts → Right Sidebar — posts ahora renderizan `ast-right-sidebar` + `ast-two-container`, slot `7324202730` inyectando en columna lateral. **Workflow:** `BF - WF-Util - Publicar Páginas Legales` (`fmdlcPbN8juFuCMN`) construido y ejecutado para crear las 3 pages. **Plugin:** Ad Inserter Free 2.8.15. **Slot IDs:** in-article-1 `6261282948`, in-article-2 `8251391154`, sidebar `7324202730` (✅ ACTIVO), pre-FAQ `1211888823`. Documentación completa en [`_config/adsense/SETUP_COMPLETO.md`](_config/adsense/SETUP_COMPLETO.md). Score Monetización 5/10 → 8/10. **Decisión arquitectónica 2026-05-11 (sesión follow-up):** se probó instalar Complianz Free como CMP para tráfico Colombia/LATAM (configuración completa vía wizard, Google Consent Mode v2, registros de consent, traducción ES-CO con menciones Ley 1581). Auditoría en vivo reveló que Complianz interceptaba el `__tcfapi` de Funding Choices nativo de Google → script real de FC no cargaba → pierdes TCF v2.2 EU premium inventory sin ganar nada para LATAM (porque las páginas legales ya cumplen Ley 1581 técnicamente). **Resolución final:** desinstalar Complianz. CookieYes también descartado. Setup final: 4 slots AdSense + Funding Choices nativo (TCF v2.2) + mensaje CCPA en AdSense Privacy & messaging + 4 páginas legales como cumplimiento Ley 1581. Cero plugins CMP adicionales. **Pendientes derivados:** bloquear endpoint `/wp-json/wp/v2/users` para no autenticados; probar Funding Choices con VPN europea. |
 | **Calculadora interactiva del costo anual de un gato en Colombia — publicada como page WP** | ✅ 2026-05-07 | Page ID 2878 en `/cuanto-cuesta-tener-un-gato-en-colombia/`. Stack completo: HTML+CSS+JS vanilla embebido, imagen destacada generada por nano banana, 3 schemas JSON-LD (WebApplication + FAQPage + Article), Yoast meta. Entregables versionados en `_recursos/calculadora-costo-anual-gato/` (calculadora.html, post.md, outreach.md de 30 destinatarios + plan social, schema.md con justificación). Es un backlink-bait y la primera **page** (no post) interactiva del catálogo. |
 | **WF-Util — Publish Interactive Page (Calculadora)** | ✅ 2026-05-07 | Workflow `bWYAwFDRlU7bIYRH` (9 nodos). Webhook POST `/publish-calc-bf` con payload completo (title, slug, content, excerpt, yoast_*, image_prompt, image_filename) → genera imagen → sube a WP Media → set alt text → crea page → Telegram. Reusable para futuros widgets interactivos. ~13 s wall time, ~$0.04/ejecución. |

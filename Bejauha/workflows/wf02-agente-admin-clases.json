@@ -1,0 +1,594 @@
+{
+  "name": "Bejauha - Agente Admin Control de Clases (WF02)",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Entrada Admin",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bejauha-admin-clases",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-exec-trigger",
+      "name": "Trigger sub-workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "node-prep",
+      "name": "Preparar prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -820,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Solo extrae datos del admin. La construccion del prompt completo (con memoria) se hace en 'Armar prompt completo'.\nconst src = $input.first().json;\nconst b = (src.body && typeof src.body === 'object') ? src.body : src;\nconst admin_whatsapp = b.admin_whatsapp || b.from || '';\nconst admin_body = b.admin_body || b.text || b.message || '';\n// respond_to = a donde el bot responde. En 1-a-1 es el mismo admin. En grupo, es el JID del grupo.\nconst respond_to = b.respond_to || admin_whatsapp;\nif (!admin_whatsapp || !admin_body) {\n  return [{ json: { _error: 'inputs_incompletos', admin_whatsapp, admin_body } }];\n}\nreturn [{ json: { admin_whatsapp, admin_body, respond_to } }];"
+      }
+    },
+    {
+      "id": "node-mem",
+      "name": "Cargar memoria admin",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-720, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT json_agg(json_build_object('dir', rtrim(direccion), 'texto', texto) ORDER BY ts) AS historial FROM ( SELECT direccion, texto, ts FROM bejauha.mensajes_logs WHERE telefono = $1::text AND texto IS NOT NULL AND ts > now() - INTERVAL '10 minutes' ORDER BY ts DESC LIMIT 6 ) h;",
+        "options": {
+          "queryReplacement": "={{ $json.admin_whatsapp }}"
+        }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-armar",
+      "name": "Armar prompt completo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-660, 0],
+      "parameters": {
+        "jsCode": "const mem = $input.first().json;\nconst prep = $('Preparar prompt').first().json;\nconst admin_whatsapp = prep.admin_whatsapp;\nconst admin_body = prep.admin_body;\nconst hist = mem.historial || [];\nconst histTurns = hist.map(m => ({ role: m.dir === 'in' ? 'user' : 'assistant', content: m.texto }));\n\nconst system = 'Eres el motor de interpretacion del Agente Admin de Bejauha (estudio de yoga en Bogota). Un admin escribe en lenguaje natural para gestionar clientes. Tienes el historial reciente para entender confirmaciones de comandos. TONO: español de COLOMBIA, no Argentina ni España. Usa \"tú\" (tu) o tercera persona, NO uses voseo (querés, tenés, podés, dale, hacé, mirá, coordiná, mandame, fijate). Ejemplos correctos: \"¿quieres aplicar 4 o 8?\", \"coordina el cobro\", \"mándame los nombres\", \"reenvíame la lista\".\\n\\nACCIONES POSIBLES:\\n- asistencia: el admin reporta que un cliente vino a clase. Ej. \"Mariana asistio\", \"vino Laura\".\\n- recarga: el admin recargo el paquete de un cliente. Ej. \"recarga 4 a Laura\", \"Pedro pago 8 clases\".\\n- recarga_y_asistencia: el admin reporta que un cliente pago SU paquete Y ADEMAS tomo la clase ese mismo dia. Ej. \"Laura pago y tomo clase\", \"Pedro pago 8 y vino hoy\", \"Carolina recargo y asistio\", \"Andrea pago el paquete y la registro\". Reglas: cantidad es la del paquete (4 u 8), tipo presencial por defecto. Si no especifican cantidad, el sistema preguntara \"¿4 u 8?\" y luego ejecuta ambas acciones (recarga + asistencia) atomicamente.\\n- consulta: el admin pregunta el saldo. Ej. \"cuantas le quedan a Ana?\".\\n- pausa: el admin pide pausar el paquete de un cliente. Ej. \"pausa el paquete de Laura\", \"pausar a Pedro\", \"Camila pidio pausa\".\\n- despausa: el admin pide despausar / reactivar el paquete. Ej. \"despausa a Laura\", \"reactiva el paquete de Pedro\", \"Camila vuelve\".\\n- ajustar_saldo: el admin pide CORREGIR o AJUSTAR manualmente el saldo de un cliente (porque hay un error en el conteo). Ej. \"ajusta a 1 las clases de Ximena\", \"Ximena tiene 1 clase no 3\", \"corrige el saldo de Pedro a 4\", \"actualiza las clases de Ana a 2\", \"ponle 5 clases a Laura\". Output: cliente=X, cantidad=N (el nuevo total, NO el delta), tipo=presencial/virtual. REQUIERE CONFIRMACION antes de aplicar.\\n- edit_lead: el admin quiere editar un campo de un cliente. REQUIERE CONFIRMACION antes de aplicar.\\n- delete_lead: el admin pide ELIMINAR / BORRAR / QUITAR a un cliente de la base. Puede identificar al cliente por TELEFONO o por NOMBRE. Ej. \"elimina al 573001112233\" (tel) o \"borra a Laura Martinez\" (nombre) o \"quita a Pedro Gomez\". Output: accion=delete_lead, telefono=<digitos si los menciona o vacio>, cliente=<nombre si lo menciona o vacio>. El sistema decidira: con tel hace lookup directo; con nombre hace busqueda — si encuentra 1 unico match procede, si encuentra varios lista las opciones con sus telefonos para que el admin elija, si no encuentra nada avisa. Si admin no da ni tel ni nombre, el sistema le pide uno. REQUIERE CONFIRMACION antes de aplicar.\\n- bulk_load: el admin pega una LISTA de clientes nuevos para cargar a la base. Detecta frases tipo \"carga estos clientes\", \"agrega estos\", \"añade esta lista\", \"crea estos leads\" seguido de varias lineas con telefonos y nombres. REQUIERE CONFIRMACION antes de aplicar. El sistema parsea telefonos con regex (NO los inventes tu). PERO tu SI debes incluir en el JSON output un campo leads_propuestos: [{telefono: \"<solo digitos>\", nombre: \"<NOMBRE LIMPIO de la persona, SIN palabras de comando como carga este cliente, incluye al, agrega, estos, cliente, etc.>\"}, ...]. Esto evita que entren basura textual a los nombres. Si el lead trae info extra que no es nombre (\"le quedan 3 clases\", \"asistio ayer\", \"tiene saldo 5\"), NO la incluyas en el nombre — solo el nombre real.\\n- bulk_delete: el admin pide ELIMINAR VARIOS clientes a la vez (no uno solo). Detecta cuando pega una lista con frases tipo \"elimina estos clientes\", \"borra estos\", \"quita estos leads\", \"saca a estos de la base\" seguido de varias lineas con telefonos. Output: accion=bulk_delete, confirmado=false + leads_propuestos con [{telefono, nombre}] limpio (mismo formato que bulk_load). REQUIERE CONFIRMACION antes de aplicar (destructivo).\\n- bulk_asistencia: el admin registra asistencia de VARIAS personas a la vez (CASO TIPICO: despues de una clase domingo). Detecta cuando hay varios nombres SIN telefonos, ya sea uno por linea o frases tipo \"asistieron: X, Y, Z\", \"vinieron X, Y\", \"hoy estuvieron Mariana Pedro Pablo\". REQUIERE CONFIRMACION antes de aplicar. El sistema parsea los nombres y hace lookup en BD.\\n- sin_accion: no aplica o no se entiende.\\n\\nFLUJO DE ACLARACION POR TELEFONO (importante): si tu mensaje previo (assistant) fue \"No encontré a X en la base. ¿Me confirmas el nombre o el celular?\" o cualquier mensaje de tipo \"no encontre\" y el admin responde con un TELEFONO (digitos o formato \"+57 300 1234567\", con o sin nombre), debes REUSAR la accion original del historial (asistencia, recarga, consulta, pausa, despausa, ajustar_saldo, edit_lead, delete_lead, recarga_y_asistencia) con telefono=<solo digitos del numero que mando el admin>. NO necesitas incluir cliente — el sistema buscara por telefono directo. Para acciones que requieren mas datos (recarga necesita cantidad, ajustar_saldo necesita cantidad, edit_lead necesita campo+nuevo_valor), extraelos del historial del comando original. Ej.: bot dijo \"No encontré a Pedro\", admin responde \"+57 311 1234567\" → output accion=<original>, telefono=\"573111234567\".\\n\\nREGLA DE ACLARACION (importante): si en TU mensaje anterior (assistant) hiciste una pregunta de aclaracion (ej. \"Encontre varias personas con ese nombre: X, Y, Z. A cual te refieres?\") y el admin responde con SOLO un nombre, apellido completo o numero de telefono (mensaje breve, sin verbo de accion), debes REUSAR el contexto del comando original que aparece justo antes en el historial. Ej.: si el comando original era \"cuantas le quedan a Laura Gomez\" y el admin ahora dice \"Laura Gomez (test)\", interpretalo como \"cuantas le quedan a Laura Gomez (test)\" (accion=consulta, cliente=\"Laura Gomez (test)\"). Lo mismo aplica para asistencia y recarga: si pediste aclaracion sobre un comando de asistencia y el admin solo dice un nombre, output accion=asistencia con el cliente aclarado. Esto vale solo si tu mensaje previo fue una pregunta de homonimos.\\n\\nFLUJO DE CONFIRMACION para ajustar_saldo (CRITICO):\\nPRIMER TURNO: el admin dice algo como \"ajusta a 1 las clases de Ximena\", \"Ximena tiene 1 clase no 3\", \"corrige el saldo de Pedro a 4\". Tu output: accion=ajustar_saldo, cliente=\"Ximena Espitia\", cantidad=1, tipo=\"presencial\" (default), confirmado=false. El sistema mostrara saldo actual y propuesto, pidiendo confirmacion.\\nSEGUNDO TURNO: si en tu mensaje previo (assistant) propusiste ajustar saldo de X a N clases, y el admin responde con afirmacion clara (si, dale, ok, confirmo) → output: accion=ajustar_saldo, cliente=X (extraido del historial), cantidad=N (extraido del historial), tipo=presencial/virtual segun historial, confirmado=true. Si el admin niega → accion=sin_accion. La cantidad es el NUEVO TOTAL, no el delta — si saldo era 3 y admin dice \"corrige a 1\", cantidad=1 (no -2).\\n\\nFLUJO DE CONFIRMACION para delete_lead (CRITICO — destructivo):\\nPRIMER TURNO: admin pide eliminar. Si dio el numero de telefono, tu output: accion=delete_lead, telefono=<digitos>, confirmado=false → el sistema mostrara advertencia destructiva con confirmacion. Si admin SOLO dio el NOMBRE (sin numero), output igual: accion=delete_lead, telefono=\"\", confirmado=false → el sistema le pedira el numero de telefono.\\nSEGUNDO TURNO: si tu mensaje previo (assistant) fue la advertencia destructiva \"Vas a ELIMINAR a X (telefono)...\" y admin afirma (si, claro, dale, ok, confirmo), output accion=delete_lead, telefono=<el del historial>, confirmado=true. Si admin niega, accion=sin_accion.\\n\\nFLUJO DE CONFIRMACION para edit_lead (CRITICO):\\nPRIMER TURNO: el admin puede identificar al cliente por TELEFONO o por NOMBRE. Ej. con tel: \"actualiza el nombre del 573001112233 a Pepito Perez\" / \"cambia el email del 573XXX a x@y.com\". Ej. con nombre: \"actualiza el nombre de Tatiana Forero le quedan 3 clases por Tatiana Forero\" / \"cambia el nombre de Mari De La Hoz a Maria de la Oz\" / \"actualiza el email de Pedro Garcia a x@y.com\". Output base: accion=edit_lead, campo=<nombre|email|...>, nuevo_valor=<valor nuevo>, confirmado=false. Para identificar al cliente: si admin dio TELEFONO → telefono=<digitos>, cliente=\"\". Si admin solo dio NOMBRE actual (sin tel) → telefono=\"\", cliente=<nombre actual tal cual lo menciona el admin, COMPLETO si es ambiguo>. El sistema decidira: con tel hace lookup directo; con nombre busca — si encuentra 1 unico match procede, si encuentra varios lista las opciones para que el admin elija, si no encuentra nada avisa.\\nSEGUNDO TURNO: si en tu mensaje previo (assistant) propusiste cambiar X campo a Y valor de un cliente identificado por tel Z o nombre N, y el admin responde con afirmacion clara (si, claro, dale, ok, perfecto, confirmo) → output: accion=edit_lead, telefono=Z (o vacio si era por nombre), cliente=N (o vacio si era por tel), campo=X, nuevo_valor=Y, confirmado=true. EXTRAES los valores del historial. Si admin niega → accion=sin_accion.\\n\\nFLUJO DE CONFIRMACION para bulk_load:\\nPRIMER TURNO: el admin pega lista. Tu output: accion=bulk_load, confirmado=false + leads_propuestos (con nombres limpios). El sistema muestra preview al admin.\\nSEGUNDO TURNO: si en tu mensaje previo (assistant) mostraste \"Voy a crear N leads nuevos: ...\" y el admin afirma (si/claro/dale/ok), output: accion=bulk_load, confirmado=true. Re-incluye leads_propuestos con los mismos nombres limpios. Si el admin niega, accion=sin_accion.\\n\\nFLUJO DE CONFIRMACION para bulk_delete (CRITICO — destructivo):\\nPRIMER TURNO: admin pega lista a eliminar. Tu output: accion=bulk_delete, confirmado=false + leads_propuestos. Sistema muestra preview destructivo listando todos.\\nSEGUNDO TURNO: si tu mensaje previo (assistant) fue advertencia destructiva listando N clientes a eliminar y admin afirma, output: accion=bulk_delete, confirmado=true. Re-incluye leads_propuestos. Si admin niega, accion=sin_accion.\\n\\nFLUJO DE CONFIRMACION para bulk_asistencia:\\nPRIMER TURNO: admin pega lista de nombres (sin telefonos). Tu output: accion=bulk_asistencia, confirmado=false. El sistema busca cada nombre en BD y muestra preview con marcadores ✓ (unico), ⚠️ (varios homonimos), ✗ (no encontrado).\\nACLARACIONES: si tu mensaje previo (assistant) mostro \"Encontre problemas en la lista...\" listando nombres ambiguos o no encontrados, y el admin responde con la lista corregida (con nombres mas especificos o nombres completos), output OTRA VEZ: accion=bulk_asistencia, confirmado=false. El sistema vuelve a hacer lookup. Esto puede repetirse hasta que la lista este limpia.\\nSEGUNDO TURNO FINAL: cuando tu mensaje previo mostro \"Voy a registrar asistencia de: ✓ Nombre1 (tel1) ✓ Nombre2 (tel2) ¿Confirmas?\" y el admin afirma (si/dale/ok), output: accion=bulk_asistencia, confirmado=true. El sistema extrae los pares (nombre, telefono) del historial. Tu NO incluyes la lista en el JSON.\\nCONFIRMACION PARCIAL: si tu mensaje previo fue \"Encontré problemas en la lista...\" (con ítems ✓ encontrados y ✗ no encontrados o ⚠️ ambiguos), y el admin responde algo como \"sí registra los encontrados\", \"registra los ✓\", \"registra los que sí\", \"sigue con los encontrados\", \"dale con los que están\", output accion=bulk_asistencia, confirmado=true. El sistema solo procesara los ✓ del mensaje previo (ignora los ✗ y ⚠️) y devuelve la asistencia de los encontrados. Si admin niega, accion=sin_accion.\\n\\nWHITELIST de campos editables (solo estos): nombre, instagram, email, paquete, tipificacion, opt_out_marketing. Cualquier otro campo → accion=sin_accion.\\nFORMATO TELEFONO: extraer solo digitos (E.164 sin +), ej. \"+57 300 111 2233\" → \"573001112233\".\\n\\nMODALIDAD (CRITICO): detecta la modalidad del mensaje del admin. Si menciona \"virtual\", \"online\", \"remot[oa]\" o \"a distancia\" → tipo=\"virtual\". Si menciona \"presencial\", \"fisica\", \"en sede\", \"en estudio\", \"en salon\" → tipo=\"presencial\". Si NO menciona modalidad explicitamente, usa \"presencial\" por defecto (es lo mas comun). REGLA APLICA TAMBIEN para bulk_asistencia: si el mensaje dice cosas como \"asisten a clase virtual\", \"asistencias virtuales\", \"registra virtual de:\", \"virtual de hoy\", entonces tipo=\"virtual\" para TODA la lista. Igual para recarga: \"pago 8 clases virtuales\" → tipo=virtual. CANTIDAD: 1 para asistencia, para recarga extrae EXACTAMENTE la cantidad que diga el admin (cualquier entero positivo: 4, 5, 8, 10, 12, 20, etc. — NO la limites a 4 u 8). Si no la menciona, deja cantidad=0 y el sistema preguntara aclaracion. Consulta = 0.\\n\\nFLUJO DE ACLARACION para recarga sin cantidad: si tu mensaje anterior (assistant) pregunto \"¿Cuántas clases vas a recargar a X?\" y el admin responde con un numero entero positivo (ej. \"4\", \"8\", \"12\", \"BEJA 5\", \"5 clases\", \"el de 10\"), output accion=recarga, cliente=X (extraido del historial), cantidad=N (el numero que diga). IMPORTANTE: si tu mensaje previo MENCIONABA \"le resto la clase de hoy\", \"y asistencia\" o \"recarga + asistencia\" (o sea, era el flujo combo), output accion=recarga_y_asistencia (no solo recarga) con la misma cantidad. Si el admin responde otra cosa o cancela, accion=sin_accion.\\n\\nCANCELACION (importante): si tu mensaje anterior fue una pregunta de confirmacion (\"¿Confirmas? (responde sí o no)\" o similar) y el admin responde \"no\", \"no quiero\", \"cancela\", \"mejor no\", \"cancelar\", \"mejor luego\" o variantes, output accion=\"sin_accion\" Y rellena respuesta_libre con una variante de \"Listo, cancelado. Si necesitas algo más, dime\". MENSAJES SOCIALES: si el admin escribe un saludo (hola, buenas, qu[eé] tal, ey), agradecimiento (gracias, mil gracias, listo, ok, perfecto), despedida (chao, hasta luego, nos vemos) o cualquier mensaje conversacional sin accion concreta → output accion=\"sin_accion\" Y rellena respuesta_libre con una respuesta natural en español de Colombia, calida, breve (2-3 lineas maximo). Si es saludo, menciona brevemente que estas ahi para apoyar con asistencias, recargas y consultas — puedes variar la redaccion para no sonar repetitivo. Si es agradecimiento o despedida, responde corto y amable. Para mensajes no-sociales que tampoco son acciones (cosas raras o ambiguas), deja respuesta_libre=\"\" (vacio) y el sistema usara un mensaje fijo.\\n\\nDevuelve SOLO un JSON con estas claves:\\n{\"accion\": \"asistencia\"|\"recarga\"|\"recarga_y_asistencia\"|\"consulta\"|\"pausa\"|\"despausa\"|\"edit_lead\"|\"delete_lead\"|\"bulk_delete\"|\"ajustar_saldo\"|\"sin_accion\", \"cliente\": \"nombre tal cual lo menciona el admin o vacio\", \"tipo\": \"presencial\"|\"virtual\"|\"membresia\"|\"\", \"cantidad\": entero, \"telefono\": \"digitos\", \"campo\": \"nombre|instagram|email|paquete|tipificacion|opt_out_marketing|\", \"nuevo_valor\": \"string\", \"confirmado\": true|false, \"respuesta_libre\": \"string vacio o respuesta natural si es social\", \"leads_propuestos\": [{\"telefono\":\"digitos\",\"nombre\":\"nombre limpio\"}] (solo para bulk_load y bulk_delete, sino arreglo vacio)}';\n\nconst openai_body = {\n  model: 'gpt-4o',\n  temperature: 0,\n  response_format: { type: 'json_object' },\n  messages: [\n    { role: 'system', content: system },\n    ...histTurns,\n    { role: 'user', content: admin_body }\n  ]\n};\nreturn [{ json: { admin_whatsapp, admin_body, openai_body } }];"
+      }
+    },
+    {
+      "id": "node-openai",
+      "name": "OpenAI interpreta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.openai_body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "C6ueSke246Slwxww",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "id": "node-parse",
+      "name": "Parsear intencion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const resp = $input.first().json;\nlet content = '';\ntry { content = resp.choices[0].message.content; } catch (e) {}\nlet parsed = {};\ntry { parsed = JSON.parse(content); } catch (e) { parsed = { accion: 'sin_accion', cliente: '', tipo: '', cantidad: 0 }; }\nconst prep = $('Preparar prompt').first().json;\nconst memCtx = $('Cargar memoria admin').first().json;\nconst hist = memCtx.historial || [];\nconst CAMPOS_OK = ['nombre','instagram','email','paquete','tipificacion','opt_out_marketing'];\nconst telDigits = String(parsed.telefono || '').replace(/\\D/g, '');\nconst campo = String(parsed.campo || '').toLowerCase();\nconst campoValido = CAMPOS_OK.includes(campo);\nlet accion = parsed.accion || 'sin_accion';\nlet confirmado = !!parsed.confirmado;\nif (accion === 'edit_lead' && !campoValido) accion = 'sin_accion';\nif (accion === 'edit_lead' && !telDigits && !(parsed.cliente || '').trim()) accion = 'sin_accion';\nif (accion === 'delete_lead' && !telDigits && !(parsed.cliente || '').trim()) accion = 'delete_lead_sin_tel';\n// Recarga sin cantidad valida (0 o negativa) -> pedir aclaracion. Cualquier entero positivo es aceptado.\nconst cantidadValida = Number.isInteger(parsed.cantidad) && parsed.cantidad > 0;\nif (accion === 'recarga' && !cantidadValida) accion = 'recarga_pendiente';\nif (accion === 'recarga_y_asistencia' && !cantidadValida) accion = 'recarga_y_asistencia_pendiente';\nif (accion === 'ajustar_saldo') {\n  const c = Number(parsed.cantidad);\n  if (!Number.isInteger(c) || c < 0 || c > 999) accion = 'sin_accion';\n}\n\n// Parser de lista para bulk_load (regex, no LLM). Soporta: '573XXX Nombre', '+57 300 123 4567 Nombre @ig email@x.com'.\nfunction parseList(text) {\n  if (!text) return [];\n  const lines = text.split('\\n').map(l => l.trim()).filter(Boolean);\n  const out = [];\n  for (const line of lines) {\n    // Saltar lineas de comando o header (sin telefono): \"carga estos clientes:\", \"nuevos leads:\", etc.\n    if (!/\\d/.test(line) && /(carga|agrega|a\\u00f1ade|anade|incluye|nuevos|estos|esta|esos|esas|clientes|leads?|persona|lista)/i.test(line)) continue;\n    const telMatch = line.match(/\\+?\\d[\\d\\s\\-]{7,18}\\d/);\n    if (!telMatch) continue;\n    let tel = telMatch[0].replace(/\\D/g, '');\n    // Normalizar Colombia: 10 digitos que arrancan en 3 -> 57+\n    if (tel.length === 10 && tel[0] === '3') tel = '57' + tel;\n    if (tel.length < 10) continue;\n    const igMatch = line.match(/@([\\w._]+)/);\n    const ig = igMatch ? igMatch[1] : '';\n    const emailMatch = line.match(/[\\w.+-]+@[\\w.-]+\\.\\w{2,}/);\n    const email = emailMatch ? emailMatch[0] : '';\n    let nombre = line\n      .replace(telMatch[0], '')\n      .replace(/@[\\w._]+/g, '')\n      .replace(emailMatch ? emailMatch[0] : '', '')\n      .replace(/[\\s,;]+/g, ' ')\n      .trim();\n    // Strip de prefijos de comando que el admin haya escrito en la misma linea (\"carga este cliente NombreReal\")\n    nombre = nombre\n      .replace(/^(carga|agrega|a\\u00f1ade|anade|incluye|incluye[au]?|registra|crea|cr[eé]al[oa]?)\\s+(este|esos|estos|esa|esas|los|las|al|a)?\\s*(cliente|clientes|lead|leads|persona|personas|nuevo|nueva|miembro)?\\s+/i, '')\n      .replace(/^(este|esos|estos|esa|esas)\\s+(cliente|clientes|lead|leads|persona|personas)\\s+/i, '')\n      .replace(/^(a|al|para|de)\\s+/i, '')\n      .trim();\n    // Limpiar comentarios/data extra que el admin haya metido junto al nombre\n    nombre = nombre\n      .replace(/\\s+le\\s+(quedan?|falta[n]?|tiene[n]?)\\s+\\d+\\s+clase[s]?.*$/i, '')\n      .replace(/\\s+(tiene|trae)\\s+\\d+\\s+clase[s]?.*$/i, '')\n      .replace(/\\s+(asisti[oó]|vino|pag[oó]|pagaron|recarg[oó])\\b.*$/i, '')\n      .replace(/\\s+saldo\\s+\\d+.*$/i, '')\n      .replace(/[\\s,;.:]+$/g, '')\n      .trim();\n    if (!nombre || nombre.length < 2) continue;\n    out.push({ tel, nombre, ig, email });\n  }\n  return out;\n}\n\n// Parser de nombres para bulk_asistencia: una linea o coma por nombre, sin telefonos.\n// Rechaza lineas que parecen prosa (verbos conjugados, conectores comunes) — solo acepta lineas tipo nombre.\nfunction looksLikeName(s) {\n  const words = s.split(/\\s+/).filter(Boolean);\n  if (words.length === 0 || words.length > 5) return false;\n  // Verbos conjugados o particulas que indican prosa\n  if (/\\b(es|son|fue|fueron|tiene|tienen|hubo|hay|pag[oóa]|pagaron|toma|tomaron|asisti[oó]|asistieron|consumi[oó]|consumieron|quier[oea]|necesit[oa]|paso|pasaron|incluy[ea]|inclu[íi]?yel|agreg[ae]|registr[ae]|registra|registro|registrar|cambi[oa]|cambia|corrige|corrig[ió]|ajust[ae]|ajusta|cancela|cancel[oó]|gracias|hola|listo|sirve|sirven|fueron)\\b/i.test(s)) return false;\n  // Conectores y frases de prosa\n  if (/\\b(por\\s+favor|cu[áa]ntas?|cu[áa]nt[oa]s|qu[eé]\\s+(personas|clientes)|de\\s+las\\s+cuales|de\\s+los\\s+cuales|el\\s+n[uú]mero|tel[eé]fono|le\\s+(quedan?|dist[eé])|ya\\s+(consum|gast)|para\\s+que)\\b/i.test(s)) return false;\n  return true;\n}\nfunction parseNombres(text) {\n  if (!text) return [];\n  // Quita encabezados tipo 'asistieron:', 'vinieron:' al inicio\n  const cleaned = text.replace(/^(BEJA\\s+)?(asistieron|vinieron|estuvieron|hoy|presentes|registro)\\s*:?\\s*/i, '').trim();\n  // Split por linea; comas se procesan dentro de cada linea\n  const lines = cleaned.split(/[\\n;]+/).map(l => l.trim()).filter(Boolean);\n  const out = [];\n  for (const line of lines) {\n    // Saltar lineas que terminan en ':' (son encabezados/preambulos tipo \"Ayer asistieron a clase:\")\n    if (line.endsWith(':')) continue;\n    if (/^(BEJA|registra|consulta|recarga|asistencia[s]?|asistieron|vinieron)$/i.test(line)) continue;\n    if (/^\\d+$/.test(line.replace(/\\s/g, ''))) continue;\n    if (line.length < 2) continue;\n    // Dentro de la linea, separar por comas (caso 'Maria, Juan, Pedro')\n    const parts = line.split(',').map(p => p.trim()).filter(Boolean);\n    for (const p of parts) {\n      if (p.length < 2) continue;\n      if (/^\\d+$/.test(p.replace(/\\s/g, ''))) continue;\n      // Filtro final: la parte debe parecer un nombre, no una oracion\n      if (!looksLikeName(p)) continue;\n      out.push(p);\n    }\n  }\n  return out;\n}\n\nlet nombres_array = [];\nlet asistencias_array = [];\nif (accion === 'bulk_asistencia') {\n  if (!confirmado) {\n    nombres_array = parseNombres(prep.admin_body).slice(0, 30);\n    if (nombres_array.length === 0) accion = 'sin_accion';\n  } else {\n    // Reconstruir asistencias_array desde el ultimo mensaje 'out' del bot que liste asistencias.\n    // Acepta 'Voy a registrar asistencia' (todos ✓) o 'Encontré problemas en la lista' (confirmacion parcial, solo los ✓).\n    // Soporta nombres con parentesis internos como 'Andrea Mendez (test)' anclando al ultimo (telefono) al final de linea.\n    const botMsgs = hist.filter(m => m.dir === 'out');\n    for (let i = botMsgs.length - 1; i >= 0; i--) {\n      const t = botMsgs[i].texto || '';\n      if ((/Voy a registrar asistencia/i.test(t) || /Encontré problemas en la lista/i.test(t)) && /\\((\\d{10,})\\)/.test(t)) {\n        const lines = t.split('\\n');\n        for (const line of lines) {\n          const phoneMatch = line.match(/\\((\\d{10,})\\)\\s*$/);\n          if (!phoneMatch) continue;\n          const telefono = phoneMatch[1];\n          let nombre = line.slice(0, phoneMatch.index).trim();\n          nombre = nombre.replace(/^[^A-Za-zÀ-ÿ]+/, '').trim();   // strip emojis/simbolos al inicio\n          if (nombre) asistencias_array.push({ nombre, telefono });\n        }\n        break;\n      }\n    }\n    if (asistencias_array.length === 0) accion = 'sin_accion';\n  }\n}\n\nlet leads_array = [];\n// Helper: merge LLM-cleaned names into regex-extracted phones\nfunction mergeLLMNames(regexLeads, llmProposed) {\n  if (!Array.isArray(llmProposed) || llmProposed.length === 0) return regexLeads;\n  const cleanByTel = {};\n  for (const lp of llmProposed) {\n    const tel = String(lp.telefono || '').replace(/\\D/g, '');\n    const nombre = String(lp.nombre || '').trim();\n    if (tel.length >= 10 && nombre.length >= 2) cleanByTel[tel] = nombre;\n  }\n  return regexLeads.map(l => cleanByTel[l.tel] ? { ...l, nombre: cleanByTel[l.tel] } : l);\n}\nif (accion === 'bulk_load' || accion === 'bulk_delete') {\n  let raw = '';\n  if (!confirmado) {\n    raw = prep.admin_body;\n  } else {\n    // Buscar el mensaje del admin (rol 'user') mas reciente con telefonos o palabras de bulk\n    const userMsgs = hist.filter(m => m.dir === 'in');\n    for (let i = userMsgs.length - 1; i >= 0; i--) {\n      const t = userMsgs[i].texto || '';\n      const phones = (t.match(/\\+?\\d[\\d\\s\\-]{7,18}\\d/g) || []).length;\n      if (phones >= 1 || /carga|agrega|a\\u00f1ade|leads?:|clientes:|elimina|borra|quita/i.test(t)) {\n        raw = t;\n        break;\n      }\n    }\n  }\n  leads_array = parseList(raw).slice(0, 50); // tope seguro de 50 por operacion\n  // Mezclar nombres limpios del LLM cuando coinciden por telefono\n  leads_array = mergeLLMNames(leads_array, parsed.leads_propuestos);\n  if (leads_array.length === 0 && accion === 'bulk_load') {\n    accion = 'bulk_load_sin_tel';\n    nombres_array = parseNombres(raw).slice(0, 30);\n  } else if (leads_array.length === 0 && accion === 'bulk_delete') {\n    accion = 'sin_accion';\n  }\n}\n\nconst p = {\n  accion,\n  cliente: (parsed.cliente || '').trim(),\n  tipo: parsed.tipo || 'presencial',\n  cantidad: Number.isInteger(parsed.cantidad) ? parsed.cantidad : 0,\n  telefono: telDigits,\n  campo: campoValido ? campo : '',\n  nuevo_valor: String(parsed.nuevo_valor || ''),\n  confirmado,\n  leads_array,\n  nombres_array,\n  asistencias_array,\n  admin: prep.admin_whatsapp\n};\nconst respuesta_libre = String(parsed.respuesta_libre || '').trim();\nreturn [{ json: { admin_whatsapp: prep.admin_whatsapp, p1_json: JSON.stringify(p), accion, confirmado, campo: p.campo, telefono: p.telefono, nuevo_valor: p.nuevo_valor, leads_array, nombres_array, asistencias_array, bulk_count: leads_array.length, bulk_asis_count: nombres_array.length || asistencias_array.length, respuesta_libre } }];"
+      }
+    },
+    {
+      "id": "node-sql",
+      "name": "Ejecutar SQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -160,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\nparams AS (\n  SELECT\n    d->>'accion' AS accion,\n    d->>'cliente' AS cliente,\n    COALESCE(NULLIF(d->>'tipo',''),'presencial') AS tipo,\n    COALESCE((d->>'cantidad')::int,0) AS cantidad,\n    d->>'telefono' AS telefono_edit,\n    d->>'campo' AS campo,\n    d->>'nuevo_valor' AS nuevo_valor,\n    (d->>'confirmado')::boolean AS confirmado,\n    COALESCE(d->'leads_array', '[]'::jsonb) AS leads_array,\n    COALESCE(d->'nombres_array', '[]'::jsonb) AS nombres_array,\n    COALESCE(d->'asistencias_array', '[]'::jsonb) AS asistencias_array,\n    d->>'admin' AS admin\n  FROM inp\n),\nmatches AS (\n  -- (a) Lookup por nombre: flexible con %palabra% para tolerar typos entre palabras\n  SELECT DISTINCT l.telefono, l.nombre\n  FROM bejauha.leads l, params p\n  WHERE p.cliente <> '' AND (\n    l.nombre ILIKE '%'||p.cliente||'%'\n    OR l.nombre ILIKE '%' || regexp_replace(trim(p.cliente), '\\s+', '%', 'g') || '%'\n  )\n  UNION\n  -- (b) Lookup por telefono directo: cuando admin da tel como follow-up a \"no encontré\".\n  -- Aplica para acciones single-client (no para edit_lead ni delete_lead que tienen su propio path).\n  SELECT DISTINCT l.telefono, l.nombre\n  FROM bejauha.leads l, params p\n  WHERE p.telefono_edit <> ''\n    AND l.telefono = p.telefono_edit\n    AND p.accion NOT IN ('edit_lead','delete_lead','bulk_delete','bulk_load','bulk_load_sin_tel','delete_lead_sin_tel')\n  ORDER BY 2\n),\nsugerencias_nombre AS (\n  -- Cuando matches viene vacio (0 coincidencias estrictas/flexibles), buscar nombres similares:\n  -- al menos UNA palabra del cliente (de 3+ chars) coincide con el nombre del lead.\n  -- Sirve para typos dentro de palabra ('Luiis' vs 'Luis'), apellidos cambiados, etc.\n  SELECT DISTINCT l.telefono, l.nombre\n  FROM bejauha.leads l, params p\n  CROSS JOIN LATERAL regexp_split_to_table(trim(p.cliente), '\\s+') AS palabra\n  WHERE p.cliente <> '' \n    AND length(palabra) >= 3\n    AND l.nombre ILIKE '%' || palabra || '%'\n    AND NOT EXISTS (SELECT 1 FROM matches m WHERE m.telefono = l.telefono)\n  ORDER BY l.nombre\n  LIMIT 5\n),\nmatch AS (\n  SELECT telefono, nombre FROM matches WHERE (SELECT count(*) FROM matches) = 1 LIMIT 1\n),\n-- Saldo previo para detectar deudor (saldo ya en 0 antes de esta asistencia).\n-- IMPORTANTE: usar JOIN explicito para que el LEFT JOIN pueda ver 'm' (sino el comma-list rompe precedencia)\nsaldo_prev_asis AS (\n  SELECT m.telefono, COALESCE(s.clases_restantes, 0) AS prev\n  FROM match m\n  JOIN params p ON p.accion='asistencia'\n  LEFT JOIN bejauha.saldos_clases s ON s.telefono=m.telefono AND s.tipo=p.tipo\n),\nasis_log AS (\n  INSERT INTO bejauha.asistencias (telefono, tipo, admin, sin_saldo)\n  SELECT m.telefono, p.tipo, p.admin,\n         COALESCE((SELECT prev FROM saldo_prev_asis WHERE telefono=m.telefono), 0) <= 0\n  FROM match m, params p\n  WHERE p.accion='asistencia'\n  RETURNING telefono\n),\nasis_upd AS (\n  -- Solo descuenta saldo si HABIA saldo > 0; si estaba en 0, la asistencia queda marcada sin_saldo y no afecta el saldo.\n  UPDATE bejauha.saldos_clases s\n  SET clases_restantes = s.clases_restantes - 1, actualizado_at=now()\n  FROM match m, params p\n  WHERE p.accion='asistencia' AND s.telefono=m.telefono AND s.tipo=p.tipo\n    AND s.clases_restantes > 0\n  RETURNING s.clases_restantes\n),\nrec_log AS (\n  INSERT INTO bejauha.recargas (telefono, tipo, paquete, clases, vence_at, admin)\n  SELECT m.telefono, p.tipo, p.cantidad::text||'_'||p.tipo, p.cantidad,\n         (current_date + (CASE WHEN p.cantidad >= 8 THEN INTERVAL '3 months' ELSE INTERVAL '2 months' END))::date,\n         p.admin FROM match m, params p\n  WHERE p.accion='recarga'\n  RETURNING telefono\n),\nrec_upd AS (\n  INSERT INTO bejauha.saldos_clases (telefono, tipo, clases_restantes, vence_at)\n  SELECT m.telefono, p.tipo, p.cantidad,\n         (current_date + (CASE WHEN p.cantidad >= 8 THEN INTERVAL '3 months' ELSE INTERVAL '2 months' END))::date\n  FROM match m, params p\n  WHERE p.accion='recarga'\n  ON CONFLICT (telefono, tipo) DO UPDATE\n    SET clases_restantes = COALESCE(bejauha.saldos_clases.clases_restantes,0) + EXCLUDED.clases_restantes,\n        vence_at = EXCLUDED.vence_at,\n        actualizado_at=now()\n  RETURNING clases_restantes, vence_at\n),\n-- Lookup del lead a editar (por telefono si admin dio numero; por match de nombre si solo dio nombre)\nedit_lead_row AS (\n  -- (a) por telefono\n  SELECT l.telefono, l.nombre, l.instagram, l.email, l.paquete, l.tipificacion, l.opt_out_marketing\n  FROM bejauha.leads l, params p\n  WHERE p.accion='edit_lead' AND p.telefono_edit <> '' AND l.telefono = p.telefono_edit\n  UNION\n  -- (b) por nombre via match (solo populado si n_matches=1)\n  SELECT l.telefono, l.nombre, l.instagram, l.email, l.paquete, l.tipificacion, l.opt_out_marketing\n  FROM bejauha.leads l, match m, params p\n  WHERE p.accion='edit_lead' AND (p.telefono_edit IS NULL OR p.telefono_edit = '') AND p.cliente <> '' AND l.telefono = m.telefono\n),\n-- Aplica UPDATE solo si accion=edit_lead AND confirmado AND el campo esta en whitelist.\n-- Hardcode de cada campo via CASE WHEN para evitar SQL dinamico.\nedit_upd AS (\n  UPDATE bejauha.leads l\n  SET\n    nombre            = CASE WHEN p.campo='nombre'            THEN p.nuevo_valor ELSE l.nombre END,\n    instagram         = CASE WHEN p.campo='instagram'         THEN p.nuevo_valor ELSE l.instagram END,\n    email             = CASE WHEN p.campo='email'             THEN p.nuevo_valor ELSE l.email END,\n    paquete           = CASE WHEN p.campo='paquete'           THEN p.nuevo_valor ELSE l.paquete END,\n    tipificacion      = CASE WHEN p.campo='tipificacion'      THEN p.nuevo_valor ELSE l.tipificacion END,\n    opt_out_marketing = CASE WHEN p.campo='opt_out_marketing' THEN (lower(p.nuevo_valor) IN ('true','si','sí','yes','1','x')) ELSE l.opt_out_marketing END,\n    ultimo_contacto   = now()\n  FROM params p, edit_lead_row elr\n  WHERE p.accion='edit_lead' AND p.confirmado = true\n    AND l.telefono = elr.telefono\n    AND p.campo IN ('nombre','instagram','email','paquete','tipificacion','opt_out_marketing')\n  RETURNING l.telefono, l.nombre\n),\nedit_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT COALESCE((SELECT telefono FROM edit_lead_row LIMIT 1), p.telefono_edit), 'out', 'sistema',\n         'edit_lead campo=' || p.campo || ' nuevo_valor=' || left(p.nuevo_valor,80),\n         'edit_lead',\n         jsonb_build_object('admin', p.admin, 'campo', p.campo, 'nuevo_valor', p.nuevo_valor, 'telefono_resuelto', (SELECT telefono FROM edit_lead_row LIMIT 1), 'confirmado', true)\n  FROM params p WHERE p.accion='edit_lead' AND p.confirmado = true AND EXISTS (SELECT 1 FROM edit_upd)\n  RETURNING id\n),\n-- Bulk insert: solo cuando accion=bulk_load AND confirmado=true. Idempotente por telefono.\nbulk_ins AS (\n  INSERT INTO bejauha.leads (telefono, nombre, instagram, email, origen, canal, clasificacion)\n  SELECT x.tel, x.nombre, NULLIF(x.ig,''), NULLIF(x.email,''), 'import', 'whatsapp', 'frio'\n  FROM params p,\n       jsonb_to_recordset(p.leads_array) AS x(tel text, nombre text, ig text, email text)\n  WHERE p.accion='bulk_load' AND p.confirmado = true\n  ON CONFLICT (telefono) DO NOTHING\n  RETURNING telefono\n),\nbulk_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.admin, 'out', 'sistema',\n         'bulk_load: ' || (SELECT count(*) FROM bulk_ins) || ' leads creados de ' || jsonb_array_length(p.leads_array) || ' intentados',\n         'bulk_load',\n         jsonb_build_object('admin', p.admin, 'leads_intentados', jsonb_array_length(p.leads_array), 'leads_creados', (SELECT count(*) FROM bulk_ins))\n  FROM params p WHERE p.accion='bulk_load' AND p.confirmado = true\n  RETURNING id\n),\n-- bulk_delete: cascada manual de borrado para varios leads a la vez (cuando confirmado=true)\nbulk_del_tels AS (\n  SELECT (x.tel)::text AS telefono\n  FROM params p, jsonb_to_recordset(p.leads_array) AS x(tel text, nombre text, ig text, email text)\n  WHERE p.accion='bulk_delete' AND p.confirmado = true\n),\nbulk_del_lookup AS (\n  -- nombres reales antes de borrar (para audit y respuesta)\n  SELECT l.telefono, l.nombre\n  FROM bejauha.leads l\n  WHERE l.telefono IN (SELECT telefono FROM bulk_del_tels)\n),\nbulk_del_saldos AS (\n  DELETE FROM bejauha.saldos_clases s WHERE s.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING s.telefono\n),\nbulk_del_asis AS (\n  DELETE FROM bejauha.asistencias a WHERE a.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING a.id\n),\nbulk_del_rec AS (\n  DELETE FROM bejauha.recargas r WHERE r.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING r.id\n),\nbulk_del_ho AS (\n  DELETE FROM bejauha.handoffs h WHERE h.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING h.id\n),\nbulk_del_logs AS (\n  DELETE FROM bejauha.mensajes_logs ml WHERE ml.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING ml.id\n),\nbulk_del_recv AS (\n  DELETE FROM bejauha.mensajes_recibidos mr WHERE mr.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING mr.message_id\n),\nbulk_del_main AS (\n  DELETE FROM bejauha.leads l WHERE l.telefono IN (SELECT telefono FROM bulk_del_tels) RETURNING l.telefono, l.nombre\n),\nbulk_del_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.admin, 'out', 'sistema',\n         'bulk_delete: ' || (SELECT count(*) FROM bulk_del_main) || ' clientes eliminados',\n         'bulk_delete',\n         jsonb_build_object('admin', p.admin, 'eliminados', (SELECT jsonb_agg(jsonb_build_object('tel', telefono, 'nombre', nombre)) FROM bulk_del_main))\n  FROM params p WHERE p.accion='bulk_delete' AND p.confirmado = true AND EXISTS (SELECT 1 FROM bulk_del_main)\n  RETURNING id\n),\n-- delete_lead: lookup del lead a eliminar (por tel o por nombre via match) + cascada manual de dependientes\ndelete_lead_lookup AS (\n  -- (a) por telefono: si admin dio numero, lookup directo\n  SELECT l.telefono, l.nombre\n  FROM bejauha.leads l, params p\n  WHERE p.accion='delete_lead' AND p.telefono_edit <> '' AND l.telefono = p.telefono_edit\n  UNION\n  -- (b) por nombre: si admin solo dio cliente, usar match (solo populado si n_matches=1)\n  SELECT m.telefono, m.nombre\n  FROM match m, params p\n  WHERE p.accion='delete_lead' AND (p.telefono_edit IS NULL OR p.telefono_edit = '') AND p.cliente <> ''\n),\ndelete_lead_del_saldos AS (\n  DELETE FROM bejauha.saldos_clases s USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND s.telefono = dl.telefono\n  RETURNING s.telefono\n),\ndelete_lead_del_asis AS (\n  DELETE FROM bejauha.asistencias a USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND a.telefono = dl.telefono\n  RETURNING a.id\n),\ndelete_lead_del_rec AS (\n  DELETE FROM bejauha.recargas r USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND r.telefono = dl.telefono\n  RETURNING r.id\n),\ndelete_lead_del_ho AS (\n  DELETE FROM bejauha.handoffs h USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND h.telefono = dl.telefono\n  RETURNING h.id\n),\ndelete_lead_del_logs AS (\n  DELETE FROM bejauha.mensajes_logs ml USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND ml.telefono = dl.telefono\n  RETURNING ml.id\n),\ndelete_lead_del_recv AS (\n  DELETE FROM bejauha.mensajes_recibidos mr USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND mr.telefono = dl.telefono\n  RETURNING mr.message_id\n),\ndelete_lead_del_main AS (\n  DELETE FROM bejauha.leads l USING params p, delete_lead_lookup dl\n  WHERE p.accion='delete_lead' AND p.confirmado = true AND l.telefono = dl.telefono\n  RETURNING l.telefono, l.nombre\n),\ndelete_lead_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.admin, 'out', 'sistema',\n         'delete_lead telefono=' || COALESCE((SELECT telefono FROM delete_lead_lookup),'') || ' nombre=' || COALESCE((SELECT nombre FROM delete_lead_lookup),''),\n         'delete_lead',\n         jsonb_build_object('admin', p.admin, 'telefono_eliminado', (SELECT telefono FROM delete_lead_lookup), 'nombre_eliminado', (SELECT nombre FROM delete_lead_lookup), 'saldos_eliminados', (SELECT count(*) FROM delete_lead_del_saldos), 'asistencias_eliminadas', (SELECT count(*) FROM delete_lead_del_asis), 'recargas_eliminadas', (SELECT count(*) FROM delete_lead_del_rec), 'handoffs_eliminados', (SELECT count(*) FROM delete_lead_del_ho))\n  FROM params p WHERE p.accion='delete_lead' AND p.confirmado = true AND EXISTS (SELECT 1 FROM delete_lead_del_main)\n  RETURNING id\n),\n-- bulk_load_sin_tel: lookup de nombres en DB para indicar cuales ya existen (con su tel) vs cuales son nuevos\nbulk_load_nombres AS (\n  SELECT row_number() OVER () AS idx, jsonb_array_elements_text(p.nombres_array) AS nombre_buscado\n  FROM params p WHERE p.accion='bulk_load_sin_tel'\n),\nbulk_load_lookup AS (\n  SELECT \n    bn.idx,\n    bn.nombre_buscado,\n    jsonb_agg(jsonb_build_object('telefono', l.telefono, 'nombre', l.nombre) ORDER BY l.nombre) FILTER (WHERE l.telefono IS NOT NULL) AS matches,\n    count(l.telefono)::int AS n_matches\n  FROM bulk_load_nombres bn\n  LEFT JOIN bejauha.leads l ON l.nombre ILIKE '%'||bn.nombre_buscado||'%'\n  GROUP BY bn.idx, bn.nombre_buscado\n),\n-- bulk_asistencia FASE PREVIEW: lookup de cada nombre cuando NO confirmado\nbulk_asis_nombres AS (\n  SELECT row_number() OVER () AS idx, jsonb_array_elements_text(p.nombres_array) AS nombre_buscado\n  FROM params p WHERE p.accion='bulk_asistencia' AND p.confirmado = false\n),\nbulk_asis_lookup AS (\n  SELECT \n    bn.idx,\n    bn.nombre_buscado,\n    jsonb_agg(jsonb_build_object('telefono', l.telefono, 'nombre', l.nombre) ORDER BY l.nombre) FILTER (WHERE l.telefono IS NOT NULL) AS matches,\n    count(l.telefono)::int AS n_matches\n  FROM bulk_asis_nombres bn\n  LEFT JOIN bejauha.leads l ON l.nombre ILIKE '%'||bn.nombre_buscado||'%'\n  GROUP BY bn.idx, bn.nombre_buscado\n),\n-- bulk_asistencia FASE EJECUCION: registra asistencias y descuenta saldos\n-- Saldo previo por telefono para bulk: detectar quienes ya estaban en 0 (deudor)\nsaldo_prev_bulk AS (\n  SELECT (a->>'telefono') AS telefono, COALESCE(s.clases_restantes, 0) AS prev\n  FROM params p\n  CROSS JOIN LATERAL jsonb_array_elements(p.asistencias_array) AS a\n  LEFT JOIN bejauha.saldos_clases s ON s.telefono=(a->>'telefono') AND s.tipo=p.tipo\n  WHERE p.accion='bulk_asistencia' AND p.confirmado = true\n),\nbulk_asis_log AS (\n  INSERT INTO bejauha.asistencias (telefono, tipo, admin, sin_saldo)\n  SELECT (a->>'telefono'), p.tipo, p.admin,\n         COALESCE((SELECT prev FROM saldo_prev_bulk WHERE telefono=(a->>'telefono')), 0) <= 0\n  FROM params p, jsonb_array_elements(p.asistencias_array) AS a\n  WHERE p.accion='bulk_asistencia' AND p.confirmado = true\n  RETURNING telefono\n),\nbulk_asis_upd AS (\n  UPDATE bejauha.saldos_clases s\n  SET clases_restantes = s.clases_restantes - 1, actualizado_at = now()\n  FROM params p, jsonb_array_elements(p.asistencias_array) AS a\n  WHERE p.accion='bulk_asistencia' AND p.confirmado = true \n    AND s.telefono = (a->>'telefono') AND s.tipo = p.tipo\n    AND s.clases_restantes > 0\n  RETURNING s.telefono, s.clases_restantes\n),\nbulk_asis_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.admin, 'out', 'sistema',\n         'bulk_asistencia: ' || (SELECT count(*) FROM bulk_asis_log) || ' asistencias registradas',\n         'bulk_asistencia',\n         jsonb_build_object('admin', p.admin, 'count', (SELECT count(*) FROM bulk_asis_log), 'tipo', p.tipo)\n  FROM params p WHERE p.accion='bulk_asistencia' AND p.confirmado = true\n  RETURNING id\n),\n-- recarga_y_asistencia: combo atomico. Aplica recarga (cantidad) y descuenta 1 por asistencia, todo en una operacion.\ncombo_rec_log AS (\n  INSERT INTO bejauha.recargas (telefono, tipo, paquete, clases, vence_at, admin)\n  SELECT m.telefono, p.tipo, p.cantidad::text||'_'||p.tipo, p.cantidad,\n         (current_date + (CASE WHEN p.cantidad >= 8 THEN INTERVAL '3 months' ELSE INTERVAL '2 months' END))::date,\n         p.admin\n  FROM match m, params p\n  WHERE p.accion='recarga_y_asistencia'\n  RETURNING telefono\n),\ncombo_rec_upd AS (\n  INSERT INTO bejauha.saldos_clases (telefono, tipo, clases_restantes, vence_at)\n  SELECT m.telefono, p.tipo, p.cantidad - 1,\n         (current_date + (CASE WHEN p.cantidad >= 8 THEN INTERVAL '3 months' ELSE INTERVAL '2 months' END))::date\n  FROM match m, params p\n  WHERE p.accion='recarga_y_asistencia'\n  ON CONFLICT (telefono, tipo) DO UPDATE\n    SET clases_restantes = COALESCE(bejauha.saldos_clases.clases_restantes,0) + EXCLUDED.clases_restantes,\n        vence_at = EXCLUDED.vence_at,\n        actualizado_at = now()\n  RETURNING clases_restantes, vence_at\n),\ncombo_asis_log AS (\n  INSERT INTO bejauha.asistencias (telefono, tipo, admin, sin_saldo)\n  SELECT m.telefono, p.tipo, p.admin, false\n  FROM match m, params p\n  WHERE p.accion='recarga_y_asistencia'\n  RETURNING telefono\n),\n-- Saldo previo y propuesta para ajustar_saldo (preview cuando NO confirmado, ejecucion cuando confirmado)\najuste_prev AS (\n  SELECT m.telefono, p.tipo, p.cantidad AS nueva_cantidad, COALESCE(s.clases_restantes, 0) AS saldo_actual, EXISTS(SELECT 1 FROM bejauha.saldos_clases s2 WHERE s2.telefono=m.telefono AND s2.tipo=p.tipo) AS existia\n  FROM match m\n  JOIN params p ON p.accion='ajustar_saldo'\n  LEFT JOIN bejauha.saldos_clases s ON s.telefono=m.telefono AND s.tipo=p.tipo\n),\najuste_upd AS (\n  INSERT INTO bejauha.saldos_clases (telefono, tipo, clases_restantes, vence_at)\n  SELECT m.telefono, p.tipo, p.cantidad,\n         COALESCE((SELECT vence_at FROM bejauha.saldos_clases s WHERE s.telefono=m.telefono AND s.tipo=p.tipo),\n                  (current_date + INTERVAL '2 months')::date)\n  FROM match m, params p\n  WHERE p.accion='ajustar_saldo' AND p.confirmado = true\n  ON CONFLICT (telefono, tipo) DO UPDATE\n    SET clases_restantes = EXCLUDED.clases_restantes,\n        actualizado_at = now()\n  RETURNING telefono, clases_restantes\n),\najuste_audit AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT p.admin, 'out', 'sistema',\n         'ajustar_saldo cliente=' || COALESCE((SELECT nombre FROM match),'') || ' antes=' || (SELECT saldo_actual FROM ajuste_prev) || ' despues=' || p.cantidad,\n         'ajustar_saldo',\n         jsonb_build_object('admin', p.admin, 'cliente', (SELECT nombre FROM match), 'telefono', (SELECT telefono FROM match), 'tipo', p.tipo, 'antes', (SELECT saldo_actual FROM ajuste_prev), 'despues', p.cantidad)\n  FROM params p WHERE p.accion='ajustar_saldo' AND p.confirmado = true AND EXISTS (SELECT 1 FROM ajuste_upd)\n  RETURNING id\n),\n-- Estado previo del saldo (para validar pausa/despausa) y para el output\nsaldo_prev_pausa AS (\n  SELECT s.telefono, s.pausado, s.pausa_inicio, s.pausa_count, s.clases_restantes, s.vence_at\n  FROM match m\n  JOIN params p ON p.accion IN ('pausa','despausa')\n  JOIN bejauha.saldos_clases s ON s.telefono=m.telefono AND s.tipo=p.tipo\n),\n-- Pausar: solo si NO pausado AND pausa_count < 1 AND saldo > 0\npausa_upd AS (\n  UPDATE bejauha.saldos_clases s\n  SET pausado = true, pausa_inicio = current_date, pausa_count = s.pausa_count + 1, actualizado_at = now()\n  FROM match m, params p\n  WHERE p.accion = 'pausa'\n    AND s.telefono = m.telefono AND s.tipo = p.tipo\n    AND s.pausado = false AND COALESCE(s.pausa_count,0) < 1 AND s.clases_restantes > 0\n  RETURNING s.telefono, s.pausa_inicio, (s.pausa_inicio + INTERVAL '30 days')::date AS fecha_limite\n),\n-- Despausar: solo si pausado=true AND pausa_inicio NOT NULL\ndespausa_upd AS (\n  UPDATE bejauha.saldos_clases s\n  SET pausado = false,\n      vence_at = s.vence_at + (LEAST(current_date - s.pausa_inicio, 30)),\n      pausa_inicio = NULL,\n      actualizado_at = now()\n  FROM match m, params p\n  WHERE p.accion = 'despausa'\n    AND s.telefono = m.telefono AND s.tipo = p.tipo\n    AND s.pausado = true AND s.pausa_inicio IS NOT NULL\n  RETURNING s.telefono, s.vence_at AS nuevo_vence_at, LEAST(current_date - (SELECT pausa_inicio FROM saldo_prev_pausa WHERE telefono = s.telefono), 30) AS dias_pausado\n)\nSELECT\n  (SELECT accion FROM params) AS accion,\n  (SELECT confirmado FROM params) AS confirmado,\n  (SELECT cliente FROM params) AS cliente_buscado,\n  (SELECT tipo FROM params) AS tipo,\n  (SELECT telefono FROM match) AS telefono,\n  (SELECT nombre FROM match) AS nombre,\n  (SELECT count(*) FROM matches)::int AS n_matches,\n  (SELECT string_agg(nombre, ', ') FROM matches) AS matches_nombres,\n  (SELECT count(*) FROM sugerencias_nombre)::int AS n_sugerencias,\n  (SELECT string_agg(nombre || ' (' || telefono || ')', E'\\n• ' ORDER BY nombre) FROM sugerencias_nombre) AS sugerencias_str,\n  COALESCE(\n    (SELECT clases_restantes FROM combo_rec_upd LIMIT 1),\n    (SELECT clases_restantes FROM asis_upd LIMIT 1),\n    (SELECT clases_restantes FROM rec_upd LIMIT 1),\n    (SELECT s.clases_restantes FROM bejauha.saldos_clases s, match m WHERE s.telefono=m.telefono AND s.tipo=(SELECT tipo FROM params) LIMIT 1)\n  ) AS clases_restantes,\n  COALESCE(\n    (SELECT to_char(vence_at,'YYYY-MM-DD') FROM combo_rec_upd LIMIT 1),\n    (SELECT to_char(vence_at,'YYYY-MM-DD') FROM rec_upd LIMIT 1),\n    (SELECT to_char(s.vence_at,'YYYY-MM-DD') FROM bejauha.saldos_clases s, match m WHERE s.telefono=m.telefono AND s.tipo=(SELECT tipo FROM params) LIMIT 1)\n  ) AS vence_at,\n  -- Datos del flujo edit_lead\n  (SELECT campo FROM params) AS edit_campo,\n  (SELECT nuevo_valor FROM params) AS edit_nuevo_valor,\n  (SELECT telefono_edit FROM params) AS edit_telefono,\n  (SELECT telefono FROM edit_lead_row LIMIT 1) AS edit_telefono_resuelto,\n  (SELECT nombre FROM edit_lead_row LIMIT 1) AS edit_nombre_actual,\n  (SELECT CASE (SELECT campo FROM params)\n     WHEN 'nombre' THEN nombre\n     WHEN 'instagram' THEN instagram\n     WHEN 'email' THEN email\n     WHEN 'paquete' THEN paquete\n     WHEN 'tipificacion' THEN tipificacion\n     WHEN 'opt_out_marketing' THEN opt_out_marketing::text\n   END FROM edit_lead_row) AS edit_valor_actual,\n  EXISTS (SELECT 1 FROM edit_upd) AS edit_aplicado,\n  EXISTS (SELECT 1 FROM edit_lead_row) AS edit_lead_existe,\n  -- Datos del flujo bulk_load\n  jsonb_array_length((SELECT leads_array FROM params)) AS bulk_intentados,\n  (SELECT count(*) FROM bulk_ins)::int AS bulk_creados,\n  (SELECT jsonb_agg(jsonb_build_object('tel', x.tel, 'nombre', x.nombre, 'ig', x.ig, 'email', x.email, 'ya_existe', EXISTS(SELECT 1 FROM bejauha.leads WHERE telefono = x.tel), 'nombre_existente', (SELECT nombre FROM bejauha.leads WHERE telefono = x.tel LIMIT 1)) ORDER BY x.tel) FROM jsonb_to_recordset((SELECT leads_array FROM params)) AS x(tel text, nombre text, ig text, email text)) AS bulk_preview,\n  (SELECT jsonb_agg(jsonb_build_object('nombre_buscado', nombre_buscado, 'n_matches', n_matches, 'matches', matches) ORDER BY idx) FROM bulk_load_lookup) AS bulk_load_preview,\n  -- Datos del flujo bulk_asistencia\n  (SELECT jsonb_agg(jsonb_build_object('nombre_buscado', nombre_buscado, 'n_matches', n_matches, 'matches', matches) ORDER BY idx) FROM bulk_asis_lookup) AS bulk_asis_preview,\n  (SELECT count(*) FROM bulk_asis_log)::int AS bulk_asis_registered,\n  (SELECT jsonb_agg(jsonb_build_object('telefono', u.telefono, 'clases_restantes', u.clases_restantes, 'nombre', l.nombre) ORDER BY l.nombre) FROM bulk_asis_upd u LEFT JOIN bejauha.leads l ON l.telefono = u.telefono) AS bulk_asis_results,\n  -- Flag deudor para asistencia individual: TRUE si saldo previo era 0\n  COALESCE((SELECT prev FROM saldo_prev_asis), 1) <= 0 AS asis_sin_saldo,\n  -- Lista de deudores en bulk (los que ya estaban en 0 y se les registró asistencia sin descuento)\n  (SELECT jsonb_agg(jsonb_build_object('telefono', sp.telefono, 'nombre', l.nombre) ORDER BY l.nombre) FROM saldo_prev_bulk sp LEFT JOIN bejauha.leads l ON l.telefono = sp.telefono WHERE sp.prev <= 0) AS bulk_asis_deudores,\n  -- Datos del flujo pausa/despausa\n  EXISTS (SELECT 1 FROM pausa_upd) AS pausa_aplicada,\n  EXISTS (SELECT 1 FROM despausa_upd) AS despausa_aplicada,\n  (SELECT to_char(fecha_limite,'YYYY-MM-DD') FROM pausa_upd LIMIT 1) AS pausa_fecha_limite,\n  (SELECT dias_pausado FROM despausa_upd LIMIT 1)::int AS despausa_dias,\n  (SELECT to_char(nuevo_vence_at,'YYYY-MM-DD') FROM despausa_upd LIMIT 1) AS despausa_nuevo_vence,\n  (SELECT pausado FROM saldo_prev_pausa LIMIT 1) AS saldo_prev_pausado,\n  (SELECT pausa_count FROM saldo_prev_pausa LIMIT 1) AS saldo_prev_pausa_count,\n  (SELECT clases_restantes FROM saldo_prev_pausa LIMIT 1) AS saldo_prev_clases,\n  -- Datos del flujo ajustar_saldo\n  (SELECT saldo_actual FROM ajuste_prev LIMIT 1)::int AS ajuste_saldo_actual,\n  (SELECT nueva_cantidad FROM ajuste_prev LIMIT 1)::int AS ajuste_nueva_cantidad,\n  EXISTS (SELECT 1 FROM ajuste_upd) AS ajuste_aplicado,\n  -- Datos del flujo delete_lead\n  EXISTS (SELECT 1 FROM delete_lead_lookup) AS delete_lead_existe,\n  (SELECT nombre FROM delete_lead_lookup) AS delete_lead_nombre,\n  (SELECT telefono FROM delete_lead_lookup) AS delete_lead_telefono,\n  (SELECT string_agg(nombre || ' (' || telefono || ')', E'\\n• ' ORDER BY nombre) FROM matches) AS matches_con_tel,\n  EXISTS (SELECT 1 FROM delete_lead_del_main) AS delete_lead_aplicado,\n  -- Datos del flujo bulk_delete\n  (SELECT count(*) FROM bulk_del_main)::int AS bulk_del_count,\n  (SELECT jsonb_agg(jsonb_build_object('tel', telefono, 'nombre', nombre)) FROM bulk_del_main) AS bulk_del_results,\n  -- Preview enriquecido para bulk_delete !confirmado: cruza leads_array con leads existentes\n  (SELECT jsonb_agg(jsonb_build_object('tel', x.tel, 'nombre', COALESCE(l.nombre, x.nombre), 'existe', l.telefono IS NOT NULL)) FROM jsonb_to_recordset((SELECT leads_array FROM params)) AS x(tel text, nombre text, ig text, email text) LEFT JOIN bejauha.leads l ON l.telefono = x.tel WHERE (SELECT accion FROM params) = 'bulk_delete') AS bulk_del_preview;",
+        "options": {
+          "queryReplacement": "={{ $json.p1_json }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "vzzTNppBFKg9XCiK",
+          "name": "PostgreSQL — LeadAI"
+        }
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Formatear respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst prep = $('Preparar prompt').first().json;\nconst admin_whatsapp = prep.admin_whatsapp;\nconst respond_to = prep.respond_to || prep.admin_whatsapp;\nconst accion = r.accion;\nconst nombre = r.nombre;\nconst tel = r.telefono;\nconst saldo = r.clases_restantes;\nconst n = r.n_matches || 0;\nlet admin_text = '';\nlet aviso_cliente = '';\nlet cliente_whatsapp = '';\nlet resumen_renovacion = '';\nlet cliente_renov_tel = '';\n\n// bulkLoadSaldoHint: detecta si el mensaje del bulk_load incluyo info de clases/saldo (que el parser ignora) y devuelve un aviso para el admin. Vacio si no hay nada.\nfunction bulkLoadSaldoHint(body) {\n  const t = String(body || '').toLowerCase();\n  if (/(le\\s+quedan?\\s+\\d|tiene\\s+\\d+\\s+clase|ya\\s+consumi[oó]|ya\\s+gast[oó]|le\\s+falta[n]?\\s+\\d|saldo\\s+\\d|paquete\\s+(presencial|virtual|de\\s+\\d)|en\\s+su\\s+(primera|segunda|tercera|cuarta|quinta|sexta|s[eé]ptima|octava)\\s+clase|asisti[oó]\\s+\\d+\\s+vez|de\\s+\\d+\\s+clases?\\s+(pago|consumi|tomo)|paquete\\s+(de\\s+)?(4|8|cuatro|ocho))/i.test(t)) {\n    return '\\n\\n📌 Detecté info sobre clases o saldos en tu mensaje, pero solo creé los leads (sin cargar saldo). Si necesitas cargar el saldo a alguno, dime: \"BEJA ajusta a N las clases de Nombre\" (uno por uno).';\n  }\n  return '';\n}\n\n// smartFallback: cuando no entiendo, doy una pista útil según lo que parece haber querido el admin.\nfunction smartFallback(body) {\n  const t = String(body || '').toLowerCase().trim();\n  // Cancelacion explicita (red de seguridad si el LLM no rellena respuesta_libre)\n  if (/^(no|no\\s+quiero|cancela[r]?|mejor\\s+no|negativo|nel|nope|mejor\\s+luego|cancel[ao])[.!?\\s]*$/i.test(t)) {\n    return 'Listo, cancelado. Si necesitas algo más, dime.';\n  }\n  // Saludos\n  if (/^(hola|buenas?(\\s+(d[íi]as|tardes|noches))?|qu[eé]\\s+tal|ey|hey|saludos|holi|holaa+)[.!?\\s]*$/i.test(t)) {\n    return '¡Hola! Soy el agente de Bejauha para ayudarte con asistencias, recargas, ajustes y cargue de clientes. Dime qué necesitas (ej. \"Laura asistió\", \"Pedro pagó 8 clases\"), o escribe \"ayuda\" para ver todo lo que puedo hacer.';\n  }\n  // Agradecimientos / confirmaciones cortas\n  if (/^(gracias|mil\\s+gracias|muchas\\s+gracias|thanks?|ok|okey|okay|listo|perfecto|excelente|ch[eé]vere|genial|dale)[.!?\\s]*$/i.test(t)) {\n    return '¡Con gusto! 🌿 Si necesitas algo más, dime.';\n  }\n  // Despedidas\n  if (/^(chao|ad[ií]os|hasta\\s+luego|nos\\s+vemos|bye|hasta\\s+pronto|hasta\\s+ma[ñn]ana)[.!?\\s]*$/i.test(t)) {\n    return '¡Hasta luego! Aquí estoy si necesitas algo.';\n  }\n  // Ayuda / qué hace\n  if (/(qu[eé]\\s+(puedes|pod[eé]s|sabes)\\s+hacer|^\\s*ayuda\\s*$|^\\s*help\\s*$|c[oó]mo\\s+funcionas?|qu[eé]\\s+haces|men[uú]|comandos|opciones)/i.test(t)) {\n    return 'Soy el agente admin de Bejauha. Te ayudo con:\\n\\n• *Asistencias*: \"Laura asistió\" o \"asistieron:\" + lista\\n• *Recargas*: \"Pedro pagó 8 clases\" (cualquier cantidad)\\n• *Pago + asistencia*: \"Laura pagó 4 y tomó clase\"\\n• *Consultas*: \"¿cuántas le quedan a Ana?\"\\n• *Ajuste manual*: \"ajusta a 2 las clases de María\"\\n• *Pausar*: \"pausa el paquete de Laura\" / \"despausa a Laura\"\\n• *Cargar clientes*: \"carga estos clientes: 573XXX Nombre\"\\n• *Actualizar datos*: \"actualiza el nombre del 573XXX a Pepito\"\\n\\nDashboard:\\nhttps://n8n.srv1398596.hstgr.cloud/webhook/bejauha-dashboard?token=bjh_NssQxwv-fbPZnSPI8fnzPmUX3Kbp1v3Ymy006w';\n  }\n  if (/(corrige|corregir|arregla|arreglar|ajusta|ajustar|modific|cambia\\s+las\\s+clases|actualiza\\s+(el\\s+)?saldo|ponle|d[eé]jale|ya\\s+consumi[oó]|ya\\s+gast[oó]|de\\s+las\\s+cuales)/i.test(t)) {\n    return 'Si quieres ajustar el saldo, dime así:\\n• \"BEJA ajusta a 2 las clases de Claudia\" o\\n• \"BEJA Claudia tiene 2 clases\"\\nPediré confirmación antes de aplicar.';\n  }\n  if (/(personas?\\s+activas|qui[eé]nes?\\s+tienen|qu[eé]\\s+personas|lista\\s+(de\\s+)?(activos|clientes)|todos\\s+(los\\s+)?activos)/i.test(t)) {\n    return 'Para ver clientes activos abre el dashboard:\\nhttps://n8n.srv1398596.hstgr.cloud/webhook/bejauha-dashboard?token=bjh_NssQxwv-fbPZnSPI8fnzPmUX3Kbp1v3Ymy006w\\n\\nPor WhatsApp aún no tengo un listado completo, solo consultas por nombre.';\n  }\n  if (/(incl[uú]yel|incluye|reg[ií]strala|reg[ií]stral|agr[eé]g[au]|crea|cr[eé]ala)/i.test(t)) {\n    return 'Para crear un cliente nuevo necesito el teléfono. Mándame así:\\nBEJA carga estos clientes:\\n573001112233 Nombre Apellido';\n  }\n  if (/(deshac|borra|elimin|cancela\\s+la\\s+asist)/i.test(t)) {\n    return 'Deshacer una asistencia mal registrada todavía no lo puedo hacer. Avisa al equipo y se corrige en la base.';\n  }\n  return 'No entendí la acción. Puedes decir cosas como \"Laura asistió\", \"Pedro pagó 8 clases\", \"¿cuántas le quedan a Ana?\" o \"actualiza el nombre del 573XXX a Pepito\".';\n}\n\nif (accion === 'bulk_asistencia') {\n  const confirmado = !!r.confirmado;\n  if (!confirmado) {\n    const preview = r.bulk_asis_preview || [];\n    if (preview.length === 0) {\n      admin_text = 'No detecté ningún nombre en la lista. Mándame los nombres uno por línea, por ej.:\\nasistieron:\\nMariana\\nPedro\\nMaria';\n    } else {\n      const lineas = preview.map(p => {\n        if (p.n_matches === 1) {\n          const m = p.matches[0];\n          return '✓ ' + m.nombre + ' (' + m.telefono + ')';\n        }\n        if (p.n_matches === 0) return '✗ \"' + p.nombre_buscado + '\" — no encontré a nadie';\n        const opciones = p.matches.map(x => x.nombre).join(', ');\n        return '⚠️ \"' + p.nombre_buscado + '\" — hay varios: ' + opciones;\n      });\n      const allOk = preview.every(p => p.n_matches === 1);\n      const modalidadLabel = (r.tipo === 'virtual') ? '*VIRTUAL*' : '*PRESENCIAL*';\n      const avisoVirtual = (r.tipo === 'virtual') ? '\\n\\n⚠️ Atención: estás registrando asistencias VIRTUALES (lo más común es presencial). Si te equivocaste, responde \"no\" y reenvía sin la palabra \"virtual\".' : '';\n      if (allOk) {\n        admin_text = 'Voy a registrar asistencia ' + modalidadLabel + ' de:\\n' + lineas.join('\\n') + avisoVirtual + '\\n\\n¿Confirmas? (responde sí o no)';\n      } else {\n        const ambiguos = preview.filter(p => p.n_matches > 1).length;\n        const noEncontrados = preview.filter(p => p.n_matches === 0).length;\n        const encontrados = preview.filter(p => p.n_matches === 1).length;\n        let consejo = '';\n        if (ambiguos > 0 && noEncontrados > 0) {\n          consejo = 'Para los ambiguos (⚠️) mándame el nombre más específico o apellido. Para los que no encontré (✗): si son clientes nuevos primero agrégalos con \"BEJA carga estos clientes: 573XXX Nombre\" y después reenvíame la lista de asistencia.';\n        } else if (ambiguos > 0) {\n          consejo = 'Para los ambiguos (⚠️) mándame el nombre más específico o apellido y reenvía la lista.';\n        } else {\n          consejo = 'Esos nombres no están en la base. Si son clientes nuevos primero agrégalos con \"BEJA carga estos clientes: 573XXX Nombre\" y después reenvíame la lista de asistencia. Si te equivocaste de nombre, corrígelo y reenvía.';\n        }\n        // Si hay encontrados (✓), ofrecer registrarlos ahora sin esperar resolver los otros\n        let opcionParcial = '';\n        if (encontrados > 0) {\n          opcionParcial = '\\n\\n💡 Si quieres registrar la asistencia de los ' + encontrados + ' encontrado' + (encontrados === 1 ? '' : 's') + ' (✓) ahora mismo y resolver los otros después, dime: \"BEJA sí registra los encontrados\".';\n        }\n        admin_text = 'Encontré problemas en la lista:\\n' + lineas.join('\\n') + '\\n\\n' + consejo + opcionParcial;\n      }\n    }\n  } else {\n    const asisTried = $('Parsear intencion').first().json.asistencias_array || [];\n    const results = r.bulk_asis_results || [];\n    const deudores = r.bulk_asis_deudores || [];\n    const resultsByTel = {};\n    for (const x of results) resultsByTel[x.telefono] = x;\n    const deudoresByTel = {};\n    for (const d of deudores) deudoresByTel[d.telefono] = true;\n    const lineas = asisTried.map(a => {\n      if (resultsByTel[a.telefono]) {\n        return '• ' + a.nombre + ': ahora ' + resultsByTel[a.telefono].clases_restantes + ' clase(s)';\n      }\n      if (deudoresByTel[a.telefono]) {\n        return '• ' + a.nombre + ': 💰 DEUDOR (asistencia registrada sin descuento)';\n      }\n      return '• ' + a.nombre + ': asistencia registrada';\n    });\n    const enSaldo0 = results.filter(x => x.clases_restantes === 0);\n    const enSaldo1 = results.filter(x => x.clases_restantes === 1);\n    const modalidadOut = (r.tipo === 'virtual') ? 'VIRTUALES' : 'presencial' + (asisTried.length === 1 ? '' : 'es');\n    admin_text = 'Hecho ✓ Asistencias ' + modalidadOut + ' registradas para ' + asisTried.length + ' persona(s).\\n' + lineas.join('\\n');\n    if (enSaldo0.length + enSaldo1.length > 0) {\n      const lowList = [...enSaldo1, ...enSaldo0].map(x => x.nombre || x.telefono);\n      admin_text += '\\n\\n⚠️ Saldo bajo o agotado: ' + lowList.join(', ') + '. Considerar proponer migración a membresía.';\n    }\n    if (deudores.length > 0) {\n      const deudList = deudores.map(d => d.nombre || d.telefono);\n      admin_text += '\\n\\n💰 Deudores (cobrar la asistencia): ' + deudList.join(', ');\n    }\n    // Construir avisos a clientes (saldo 1 y 0) y alerta de renovacion al grupo (saldo 0).\n    // Estos se exponen para que nodos downstream los usen.\n    const avisos_clientes = [];\n    for (const x of enSaldo1) {\n      if (x.telefono) avisos_clientes.push({ telefono: x.telefono, texto: 'Hola ' + (x.nombre || '') + ' te queda 1 clase de tu paquete. Cuando quieras renovamos para que no pierdas el ritmo' });\n    }\n    const renovaciones = [];\n    for (const x of enSaldo0) {\n      if (x.telefono) {\n        avisos_clientes.push({ telefono: x.telefono, texto: 'Hola ' + (x.nombre || '') + ' 🌿 Hoy usaste tu última clase, qué bueno que llegaste hasta acá. Para que no pierdas el ritmo, te paso con alguien del equipo para que coordinen la renovación contigo. Te escriben pronto 💛' });\n        renovaciones.push({ telefono: x.telefono, nombre: x.nombre || '', resumen: (x.nombre || x.telefono) + ' acabó su paquete. Candidato a MIGRAR A MEMBRESÍA — proponé la membresía primero (bejauha.com/planes); si insiste en seguir con paquete, recarga.' });\n      }\n    }\n    return [{ json: { admin_whatsapp, respond_to, admin_text, aviso_cliente: '', cliente_whatsapp: '', resumen_renovacion: '', cliente_renov_tel: '', bulk_avisos_clientes: avisos_clientes, bulk_renovaciones: renovaciones } }];\n  }\n} else if (accion === 'bulk_load_sin_tel') {\n  const preview = r.bulk_load_preview || [];\n  if (preview.length === 0) {\n    admin_text = 'Veo que quieres cargar clientes nuevos, pero no detecté nombres ni teléfonos. Mándame así:\\n\\nBEJA carga estos clientes:\\n573001112233 Nombre Apellido\\n573004445566 Otro Nombre\\n\\nUn cliente por línea, teléfono primero.';\n  } else {\n    const yaEnBase = preview.filter(p => p.n_matches === 1).map(p => '• ' + p.matches[0].nombre + ' — ' + p.matches[0].telefono);\n    const ambiguos = preview.filter(p => p.n_matches > 1).map(p => '⚠️ \"' + p.nombre_buscado + '\" — hay varios: ' + p.matches.map(x => x.nombre).join(', '));\n    const noEncontrados = preview.filter(p => p.n_matches === 0).map(p => '• ' + p.nombre_buscado);\n    const partes = [];\n    if (yaEnBase.length > 0) {\n      partes.push('Estos ya están en la base (no hay que crearlos):\\n' + yaEnBase.join('\\n'));\n    }\n    if (ambiguos.length > 0) {\n      partes.push('Estos están ambiguos (especifica apellido):\\n' + ambiguos.join('\\n'));\n    }\n    if (noEncontrados.length > 0) {\n      partes.push('Estos no están en la base, para crearlos necesito su teléfono:\\n' + noEncontrados.join('\\n') + '\\n\\nMándame así:\\nBEJA carga estos clientes:\\n573001112233 ' + noEncontrados[0].replace(/^•\\s*/, '') + (noEncontrados.length > 1 ? ('\\n573004445566 ' + noEncontrados[1].replace(/^•\\s*/, '')) : ''));\n    } else if (yaEnBase.length > 0 && ambiguos.length === 0) {\n      partes.push('Todos los que mencionas ya están registrados, no hay nada nuevo que crear. ¿Querías registrar asistencia de ellos? Mándame: BEJA asistieron: ...');\n    }\n    admin_text = partes.join('\\n\\n');\n  }\n} else if (accion === 'bulk_load') {\n  const intentados = r.bulk_intentados || 0;\n  const creados = r.bulk_creados || 0;\n  const preview = r.bulk_preview || [];\n  const confirmado = !!r.confirmado;\n  if (intentados === 0) {\n    admin_text = 'No pude entender la lista. Mándamela así:\\n  573001112233 Pepito Pérez\\n  573001112234 María García';\n  } else if (!confirmado) {\n    const nuevos = preview.filter(x => !x.ya_existe);\n    const existentes = preview.filter(x => x.ya_existe);\n    if (nuevos.length === 0 && existentes.length > 0) {\n      const lineas = existentes.slice(0, 10).map(x => '• ' + (x.nombre_existente || x.nombre) + ' (' + x.tel + ')');\n      const cola = existentes.length > 10 ? ('\\n... y ' + (existentes.length - 10) + ' más') : '';\n      admin_text = 'Todos los ' + existentes.length + ' clientes que mandaste ya están en la base, no hay nada nuevo que crear:\\n' + lineas.join('\\n') + cola;\n    } else {\n      const partes = [];\n      const lineasNuevos = nuevos.slice(0, 15).map(x => '• ' + x.nombre + ' (' + x.tel + ')' + (x.ig ? ' @' + x.ig : ''));\n      const colaN = nuevos.length > 15 ? ('\\n... y ' + (nuevos.length - 15) + ' más') : '';\n      partes.push('Voy a crear ' + nuevos.length + ' lead' + (nuevos.length === 1 ? '' : 's') + ' nuevo' + (nuevos.length === 1 ? '' : 's') + ':\\n' + lineasNuevos.join('\\n') + colaN);\n      if (existentes.length > 0) {\n        const lineasE = existentes.slice(0, 10).map(x => '• ' + (x.nombre_existente || x.nombre) + ' (' + x.tel + ')' + (x.nombre_existente && x.nombre_existente.toLowerCase() !== x.nombre.toLowerCase() ? ' — tú lo nombraste \"' + x.nombre + '\"' : ''));\n        const colaE = existentes.length > 10 ? ('\\n... y ' + (existentes.length - 10) + ' más') : '';\n        partes.push('Estos ya están registrados y los voy a ignorar:\\n' + lineasE.join('\\n') + colaE);\n      }\n      partes.push('¿Confirmas crear ' + nuevos.length + ' nuevo' + (nuevos.length === 1 ? '' : 's') + '? (responde sí o no)');\n      admin_text = partes.join('\\n\\n');\n    }\n    admin_text += bulkLoadSaldoHint(prep.admin_body);\n  } else {\n    const omitidos = intentados - creados;\n    if (creados === 0 && omitidos > 0) {\n      admin_text = 'Listo, no creé nada nuevo: los ' + omitidos + ' que mandaste ya estaban en la base.';\n    } else if (omitidos === 0) {\n      admin_text = 'Hecho ✓ ' + creados + ' lead' + (creados === 1 ? '' : 's') + ' creado' + (creados === 1 ? '' : 's') + '.';\n    } else {\n      admin_text = 'Hecho ✓ ' + creados + ' creado' + (creados === 1 ? '' : 's') + ', ' + omitidos + ' ya existían (omitidos).';\n    }\n    // Si en el historial reciente hay info de clases que no se procesó, recordarle al admin\n    try {\n      const histTexto = ($('Cargar memoria admin').first().json.historial || []).filter(m => m.dir === 'in').map(m => m.texto || '').join(' ');\n      admin_text += bulkLoadSaldoHint(histTexto);\n    } catch (e) { /* no historial disponible, ignorar */ }\n  }\n} else if (accion === 'bulk_delete') {\n  const preview = r.bulk_del_preview || [];\n  const confirmadoBd = !!r.confirmado;\n  if (preview.length === 0) {\n    admin_text = 'No detecté ningún cliente en la lista a eliminar. Mándame así:\\n\\nBEJA elimina estos clientes:\\n573001112233 Pedro García\\n573004445566 Maria López';\n  } else if (!confirmadoBd) {\n    const lineas = preview.map(p => {\n      if (p.existe) return '• ' + p.nombre + ' (' + p.tel + ')';\n      return '• ' + p.nombre + ' (' + p.tel + ') — ⚠️ no existe en la base';\n    });\n    const existentes = preview.filter(p => p.existe).length;\n    if (existentes === 0) {\n      admin_text = 'Ninguno de los ' + preview.length + ' clientes que mandaste existe en la base. Revisa los teléfonos.';\n    } else {\n      admin_text = '⚠️ Vas a ELIMINAR ' + existentes + ' cliente(s) de la base, junto con TODO su historial (saldos, asistencias, recargas, handoffs, mensajes):\\n' + lineas.join('\\n') + '\\n\\nEsta acción NO se puede deshacer.\\n\\n¿Confirmas? (responde sí o no)';\n    }\n  } else {\n    const eliminados = r.bulk_del_count || 0;\n    const results = r.bulk_del_results || [];\n    if (eliminados === 0) {\n      admin_text = 'No eliminé ningún cliente — los teléfonos que mandaste no estaban en la base.';\n    } else {\n      const lista = results.map(x => '• ' + (x.nombre || x.tel) + ' (' + x.tel + ')').join('\\n');\n      admin_text = 'Hecho ✓ ' + eliminados + ' cliente(s) eliminado(s) con todo su historial:\\n' + lista;\n    }\n  }\n} else if (accion === 'delete_lead_sin_tel') {\n  admin_text = 'Para eliminar un cliente necesito el número de teléfono. Mándame así: \"BEJA elimina al 573001112233\". Si no recuerdas el número, búscalo primero en el dashboard.';\n} else if (accion === 'delete_lead') {\n  const telEdit = r.edit_telefono || '';\n  const clienteBuscado = r.cliente_buscado || '';\n  const existe = !!r.delete_lead_existe;\n  const aplicado = !!r.delete_lead_aplicado;\n  const confirmadoDel = !!r.confirmado;\n  const nombreResuelto = r.delete_lead_nombre || telEdit || clienteBuscado;\n  const telResuelto = r.delete_lead_telefono || telEdit;\n  const nByName = r.n_matches || 0;\n  // Caso: admin dio nombre, hay varios homonimos → desambiguacion (lista nombre+tel)\n  if (!telEdit && clienteBuscado && nByName > 1) {\n    admin_text = '⚠️ Encontré varios clientes con \"' + clienteBuscado + '\":\\n• ' + (r.matches_con_tel || '') + '\\n\\nDime el número exacto del que quieres eliminar (ej. \"BEJA elimina al 573XXX\").';\n  }\n  // Caso: nada encontrado\n  else if (!existe && !aplicado) {\n    const detalle = telEdit ? ('el teléfono ' + telEdit) : ('\"' + clienteBuscado + '\"');\n    admin_text = 'No encontré ningún cliente con ' + detalle + '.';\n    if (!telEdit && r.n_sugerencias && r.n_sugerencias > 0 && r.sugerencias_str) {\n      admin_text += '\\n\\n💡 ¿Quizás te refieres a alguno de estos? (nombres parecidos)\\n• ' + r.sugerencias_str + '\\n\\nReenvía con el nombre o teléfono exacto.';\n    } else {\n      admin_text += ' ¿Me confirmas el dato?';\n    }\n  }\n  // Caso: encontrado, falta confirmar\n  else if (!confirmadoDel) {\n    admin_text = '⚠️ Vas a ELIMINAR a ' + nombreResuelto + ' (' + telResuelto + ') de la base, junto con todo su historial (saldo, asistencias, recargas, handoffs y conversación).\\n\\nEsta acción NO se puede deshacer.\\n\\n¿Confirmas? (responde sí o no)';\n  } else if (aplicado) {\n    admin_text = 'Hecho ✓ ' + nombreResuelto + ' (' + telResuelto + ') fue eliminado de la base con todo su historial.';\n  } else {\n    admin_text = 'No pude eliminar el cliente. Revisa el teléfono o nombre.';\n  }\n} else if (accion === 'edit_lead') {\n  // Flujo edit_lead: si confirmado=false propone; si confirmado=true ya ejecutó (o no encontró el lead)\n  const campo = r.edit_campo;\n  const nuevoVal = r.edit_nuevo_valor;\n  const telEdit = r.edit_telefono || '';\n  const clienteBuscado = r.cliente_buscado || '';\n  const existe = !!r.edit_lead_existe;\n  const aplicado = !!r.edit_aplicado;\n  const confirmado = !!r.confirmado;\n  const valActual = r.edit_valor_actual;\n  const telResuelto = r.edit_telefono_resuelto || telEdit;\n  const nombreEdit = r.edit_nombre_actual || telResuelto || clienteBuscado;\n  const nByName = r.n_matches || 0;\n  // Caso: admin dio nombre, hay varios homonimos → desambiguar\n  if (!telEdit && clienteBuscado && nByName > 1) {\n    admin_text = '⚠️ Encontré varios clientes con \"' + clienteBuscado + '\":\\n• ' + (r.matches_con_tel || '') + '\\n\\nDime el número exacto del que quieres actualizar (ej. \"BEJA actualiza el ' + campo + ' del 573XXX a ' + nuevoVal + '\").';\n  } else if (!existe && !aplicado) {\n    const detalle = telEdit ? ('el teléfono ' + telEdit) : ('\"' + clienteBuscado + '\"');\n    admin_text = 'No encontré ningún cliente con ' + detalle + '.';\n    if (!telEdit && r.n_sugerencias && r.n_sugerencias > 0 && r.sugerencias_str) {\n      admin_text += '\\n\\n💡 ¿Quizás te refieres a alguno de estos? (nombres parecidos)\\n• ' + r.sugerencias_str + '\\n\\nReenvía el comando con el nombre o teléfono exacto.';\n    } else {\n      admin_text += ' ¿Me confirmas el dato?';\n    }\n  } else if (!confirmado) {\n    admin_text = 'Voy a cambiar el campo \"' + campo + '\" de ' + nombreEdit + ' (' + telResuelto + '):\\n  De: ' + (valActual || '(vacío)') + '\\n  A:  ' + nuevoVal + '\\n\\n¿Confirmas? (responde sí o no)';\n  } else if (aplicado) {\n    admin_text = 'Hecho ✓ Campo \"' + campo + '\" de ' + nombreEdit + ' actualizado a: ' + nuevoVal;\n  } else {\n    admin_text = 'No pude aplicar el cambio. Revisa que el teléfono/nombre y el campo sean correctos.';\n  }\n} else if (accion === 'ajustar_saldo') {\n  if (n > 1) {\n    admin_text = 'Encontré varias personas con ese nombre: ' + (r.matches_nombres || '') + '. ¿A cuál te refieres? Dime el apellido o el celular.';\n  } else if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. ¿Me confirmas el nombre o el celular?';\n  } else if (!r.confirmado) {\n    const actual = (r.ajuste_saldo_actual === null || r.ajuste_saldo_actual === undefined) ? 0 : r.ajuste_saldo_actual;\n    const nueva = r.ajuste_nueva_cantidad;\n    if (actual === nueva) {\n      admin_text = nombre + ' ya tiene ' + nueva + ' clase(s) ' + r.tipo + '. No hay nada que ajustar.';\n    } else {\n      admin_text = 'Voy a ajustar el saldo de ' + nombre + ':\\n  Actual: ' + actual + ' clase(s) ' + r.tipo + '\\n  Nuevo:  ' + nueva + ' clase(s) ' + r.tipo + '\\n\\n¿Confirmas? (responde sí o no)';\n    }\n  } else if (r.ajuste_aplicado) {\n    admin_text = 'Hecho ✓ ' + nombre + ' ahora tiene ' + r.ajuste_nueva_cantidad + ' clase(s) ' + r.tipo + '.';\n  } else {\n    admin_text = 'No pude aplicar el ajuste. Revisa el nombre y el saldo del cliente.';\n  }\n} else if (n > 1) {\n  admin_text = 'Encontré varias personas con ese nombre: ' + (r.matches_nombres || '') + '. ¿A cuál te refieres? Dime el apellido o el celular para no equivocarme 🌿';\n} else if (!tel && (accion === 'asistencia' || accion === 'recarga' || accion === 'consulta')) {\n  admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base.';\n  if (r.n_sugerencias && r.n_sugerencias > 0 && r.sugerencias_str) {\n    admin_text += '\\n\\n💡 ¿Quizás te refieres a alguno de estos? (nombres parecidos)\\n• ' + r.sugerencias_str + '\\n\\nReenvía el comando con el nombre o teléfono exacto del correcto.';\n  } else {\n    admin_text += ' ¿Me confirmas el nombre o el celular?';\n  }\n} else if (accion === 'asistencia') {\n  const sinSaldo = !!r.asis_sin_saldo;\n  if (sinSaldo) {\n    // Cliente ya estaba en 0: asistencia registrada como deudor, NO re-avisamos ni re-escalamos\n    admin_text = 'Asistencia registrada para ' + nombre + ', pero ya estaba en saldo 0 (DEUDOR / cortesía). Coordina el cobro o la recarga.';\n  } else {\n    admin_text = 'Listo, registré la asistencia de ' + nombre + '. Le quedan ' + saldo + ' clase(s) ' + r.tipo + '.';\n    if (saldo === 1) { cliente_whatsapp = tel; aviso_cliente = 'Hola ' + nombre + ' te queda 1 clase de tu paquete. Cuando quieras renovamos para que no pierdas el ritmo'; }\n    else if (saldo === 0) {\n      cliente_whatsapp = tel;\n      aviso_cliente = 'Hola ' + nombre + ' 🌿 Hoy usaste tu última clase, qué bueno que llegaste hasta acá. Para que no pierdas el ritmo, te paso con alguien del equipo para que coordinen la renovación contigo. Te escriben pronto 💛';\n      resumen_renovacion = nombre + ' acabó su paquete ' + r.tipo + '. Candidato a MIGRAR A MEMBRESÍA — proponé la membresía primero (bejauha.com/planes); si insiste en seguir con paquete, recarga.';\n      cliente_renov_tel = tel;\n      admin_text = admin_text + ' Ya escalé al grupo para la renovación.';\n    }\n  }\n} else if (accion === 'pausa') {\n  // Validaciones explicitas para mensaje claro al admin\n  if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. Me confirmas el nombre o el celular?';\n  } else if (r.pausa_aplicada) {\n    admin_text = 'Listo, pausé el paquete de ' + nombre + '. Tiene hasta el ' + r.pausa_fecha_limite + ' para reactivar (máximo 1 mes). Después se reactiva automáticamente.';\n  } else if (r.saldo_prev_pausado === true) {\n    admin_text = nombre + ' ya está en pausa. Cuando regrese, despáusalo con \"BEJA despausa a ' + nombre + '\".';\n  } else if ((r.saldo_prev_pausa_count || 0) >= 1) {\n    admin_text = nombre + ' ya usó la pausa de este paquete. Solo se permite pausar 1 vez por paquete.';\n  } else if ((r.saldo_prev_clases || 0) <= 0) {\n    admin_text = nombre + ' no tiene saldo activo, no se puede pausar. Recarga primero.';\n  } else {\n    admin_text = 'No pude pausar el paquete de ' + nombre + '. Revisa el estado del cliente.';\n  }\n} else if (accion === 'despausa') {\n  if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. Me confirmas el nombre o el celular?';\n  } else if (r.despausa_aplicada) {\n    const dias = r.despausa_dias;\n    admin_text = 'Listo, despausé el paquete de ' + nombre + '. Estuvo ' + dias + ' día(s) pausado, vencimiento extendido al ' + r.despausa_nuevo_vence + '.';\n  } else if (r.saldo_prev_pausado === false) {\n    admin_text = nombre + ' no estaba pausado. No hay nada que despausar.';\n  } else {\n    admin_text = 'No pude despausar el paquete de ' + nombre + '. Revisa el estado del cliente.';\n  }\n} else if (accion === 'recarga_y_asistencia_pendiente') {\n  if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. ¿Me confirmas el nombre o el celular?';\n  } else {\n    admin_text = '¿Cuántas clases vas a recargar a ' + nombre + '? Le sumo el paquete y le resto la clase de hoy. Responde con el número (ej. 4, 8, 12...).';\n  }\n} else if (accion === 'recarga_y_asistencia') {\n  if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. ¿Me confirmas el nombre o el celular?';\n  } else {\n    admin_text = 'Listo ✓ Recarga aplicada a ' + nombre + ' y asistencia de hoy registrada. Saldo final: ' + saldo + ' clase(s) ' + r.tipo + (r.vence_at ? ('. Vence el ' + r.vence_at) : '') + '.';\n    if (saldo === 1) { cliente_whatsapp = tel; aviso_cliente = 'Hola ' + nombre + ' te queda 1 clase de tu paquete. Cuando quieras renovamos para que no pierdas el ritmo'; }\n  }\n} else if (accion === 'recarga_pendiente') {\n  if (!tel) {\n    admin_text = 'No encontré a \"' + (r.cliente_buscado || '') + '\" en la base. Me confirmas el nombre o el celular?';\n  } else {\n    admin_text = '¿Cuántas clases vas a recargar a ' + nombre + '? Responde con el número (ej. 4, 8, 12...).';\n  }\n} else if (accion === 'recarga') {\n  admin_text = 'Recarga aplicada a ' + nombre + '. Saldo actual: ' + saldo + ' clase(s) ' + r.tipo + (r.vence_at ? ('. Vence el ' + r.vence_at) : '') + '.';\n} else if (accion === 'consulta') {\n  if (saldo === null || saldo === undefined) {\n    admin_text = nombre + ' no tiene paquete ' + r.tipo + ' registrado en la base.';\n  } else if (saldo === 0) {\n    admin_text = nombre + ' ya no tiene clases ' + r.tipo + ' disponibles — acabó su paquete' + (r.vence_at ? ' (último vencimiento: ' + r.vence_at + ')' : '') + '. Candidato a recarga o migración a membresía.';\n  } else {\n    const plural = saldo === 1 ? '' : 's';\n    const verbo = saldo === 1 ? 'le queda 1 clase' : 'le quedan ' + saldo + ' clases';\n    const vencer = r.vence_at ? '. Vence el ' + r.vence_at : '';\n    const variantes = [\n      'A ' + nombre + ' ' + verbo + ' ' + r.tipo + ' disponible' + plural + vencer + '.',\n      nombre + ' tiene ' + saldo + ' clase' + plural + ' ' + r.tipo + ' disponible' + plural + ' por usar' + vencer + '.',\n      'Saldo de ' + nombre + ': ' + saldo + ' clase' + plural + ' ' + r.tipo + ' por usar' + vencer + '.',\n      nombre + ' cuenta con ' + saldo + ' clase' + plural + ' ' + r.tipo + ' pendiente' + plural + vencer + '.'\n    ];\n    admin_text = variantes[Math.floor(Math.random() * variantes.length)];\n  }\n} else {\n  const respuestaLLM = $('Parsear intencion').first().json.respuesta_libre || '';\n  admin_text = respuestaLLM ? respuestaLLM : smartFallback(prep.admin_body);\n}\nreturn [{ json: { admin_whatsapp, respond_to, admin_text, aviso_cliente, cliente_whatsapp, resumen_renovacion, cliente_renov_tel } }];"
+      }
+    },
+    {
+      "id": "node-send-admin",
+      "name": "Responder admin (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        280,
+        -100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.respond_to }}\",\n  \"text\": {{ JSON.stringify($json.admin_text) }}\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-if-cliente",
+      "name": "Hay aviso a cliente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.aviso_cliente }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-send-cliente",
+      "name": "Avisar cliente (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.cliente_whatsapp }}\",\n  \"text\": {{ JSON.stringify($json.aviso_cliente) }}\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "node-bulk-split-avisos",
+      "name": "Split avisos bulk",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 480],
+      "parameters": {
+        "jsCode": "const f = $('Formatear respuesta').first().json;\nconst avisos = f.bulk_avisos_clientes || [];\nif (avisos.length === 0) return [];\nreturn avisos.map(a => ({ json: { telefono: a.telefono, texto: a.texto } }));"
+      }
+    },
+    {
+      "id": "node-bulk-aviso-send",
+      "name": "Enviar aviso bulk cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 480],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefono }}\",\n  \"delay\": 4000,\n  \"linkPreview\": false,\n  \"text\": {{ JSON.stringify($json.texto) }}\n}",
+        "options": { "timeout": 15000, "batching": { "batch": { "batchSize": 1, "batchInterval": 1500 } } }
+      }
+    },
+    {
+      "id": "node-bulk-handoffs-renov",
+      "name": "Crear handoffs bulk renov",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 600],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ren AS (\n  SELECT (r->>'telefono') AS telefono, (r->>'resumen') AS resumen, (r->>'nombre') AS nombre\n  FROM jsonb_array_elements($1::jsonb) AS r\n),\nho AS (\n  INSERT INTO bejauha.handoffs (telefono, origen_agente, resumen, estado)\n  SELECT telefono, 'inbound', resumen, 'pendiente' FROM ren WHERE telefono <> ''\n  RETURNING id\n),\nupd AS (\n  UPDATE bejauha.leads SET asignado_humano = true, ultimo_contacto = now()\n  FROM ren WHERE bejauha.leads.telefono = ren.telefono\n  RETURNING bejauha.leads.telefono\n)\nSELECT (SELECT count(*) FROM ho)::int AS handoffs_creados;",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify($('Formatear respuesta').first().json.bulk_renovaciones || []) }}"
+        }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-log-conv",
+      "name": "Log conversacion admin",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, -100],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\nmeta AS (\n  SELECT jsonb_build_object(\n    'wf', 'wf02',\n    'respond_to', COALESCE(d->>'respond_to',''),\n    'is_group', COALESCE((d->>'respond_to') LIKE '%@g.us', false),\n    'confirmado', COALESCE((d->>'confirmado')::boolean, false)\n  ) AS m\n  FROM inp\n),\nl_in AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT d->>'admin', 'in', 'sistema', d->>'admin_body', NULLIF(d->>'intent',''), (SELECT m FROM meta)\n  FROM inp WHERE d->>'admin_body' <> ''\n  RETURNING id\n),\nl_out AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT d->>'admin', 'out', 'sistema', d->>'admin_text', NULLIF(d->>'intent',''), (SELECT m FROM meta)\n  FROM inp WHERE d->>'admin_text' <> ''\n  RETURNING id\n)\nSELECT (SELECT count(*) FROM l_in)::int AS in_logged, (SELECT count(*) FROM l_out)::int AS out_logged;",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify({ admin: $('Preparar prompt').first().json.admin_whatsapp, admin_body: $('Preparar prompt').first().json.admin_body, admin_text: $('Formatear respuesta').first().json.admin_text, intent: $('Parsear intencion').first().json.accion || 'sin_accion', respond_to: $('Preparar prompt').first().json.respond_to || '', confirmado: $('Parsear intencion').first().json.confirmado || false }) }}"
+        }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-if-renov",
+      "name": "Escalar renovacion?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [280, 360],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.resumen_renovacion }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-renov-handoff",
+      "name": "Crear handoff renovacion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 360],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\np AS (SELECT d->>'telefono' AS telefono, d->>'resumen' AS resumen FROM inp),\nupd AS (\n  UPDATE bejauha.leads SET asignado_humano = true, ultimo_contacto = now()\n  FROM p WHERE bejauha.leads.telefono = p.telefono\n  RETURNING bejauha.leads.telefono\n)\nINSERT INTO bejauha.handoffs (telefono, origen_agente, resumen, estado)\nSELECT p.telefono, 'inbound', p.resumen, 'pendiente'\nFROM p JOIN upd ON upd.telefono = p.telefono\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ JSON.stringify({ telefono: $('Formatear respuesta').first().json.cliente_renov_tel, resumen: $('Formatear respuesta').first().json.resumen_renovacion }) }}"
+        }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-renov-armar",
+      "name": "Armar alerta renov",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 360],
+      "parameters": {
+        "jsCode": "const f = $('Formatear respuesta').first().json;\n// Grupo 'Leads Calientes Bejauha' (mismo que ATENCION). Si en el futuro hay grupo aparte de renovaciones, cambiar aqui.\nconst ASESOR = '120363409231703955@g.us';\nconst texto = '🔁 Renovación necesaria: +' + f.cliente_renov_tel + '\\n' + f.resumen_renovacion;\nreturn [{ json: { asesor_whatsapp: ASESOR, alerta_text: texto } }];"
+      }
+    },
+    {
+      "id": "node-renov-send",
+      "name": "Avisar grupo renovacion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 360],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.asesor_whatsapp }}\",\n  \"text\": {{ JSON.stringify($json.alerta_text) }}\n}",
+        "options": { "timeout": 15000 }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada Admin": {
+      "main": [
+        [
+          {
+            "node": "Preparar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger sub-workflow": {
+      "main": [
+        [
+          {
+            "node": "Preparar prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar prompt": {
+      "main": [
+        [
+          {
+            "node": "Cargar memoria admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar memoria admin": {
+      "main": [
+        [
+          {
+            "node": "Armar prompt completo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar prompt completo": {
+      "main": [
+        [
+          {
+            "node": "OpenAI interpreta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI interpreta": {
+      "main": [
+        [
+          {
+            "node": "Parsear intencion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear intencion": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecutar SQL": {
+      "main": [
+        [
+          {
+            "node": "Formatear respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear respuesta": {
+      "main": [
+        [
+          {
+            "node": "Responder admin (Evolution)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Hay aviso a cliente?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Escalar renovacion?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log conversacion admin",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split avisos bulk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Crear handoffs bulk renov",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split avisos bulk": {
+      "main": [[{ "node": "Enviar aviso bulk cliente", "type": "main", "index": 0 }]]
+    },
+    "Hay aviso a cliente?": {
+      "main": [
+        [
+          {
+            "node": "Avisar cliente (Evolution)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Escalar renovacion?": {
+      "main": [
+        [
+          {
+            "node": "Crear handoff renovacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Crear handoff renovacion": {
+      "main": [
+        [
+          {
+            "node": "Armar alerta renov",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar alerta renov": {
+      "main": [
+        [
+          {
+            "node": "Avisar grupo renovacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
