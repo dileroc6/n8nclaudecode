@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+html { scroll-behavior: smooth; }
+body { background: #fff; color: #09090b; overflow-x: hidden; }
+
+/* Noise sutil sobre fondo blanco — mix-blend multiply */
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* Dot-grid hero */
+.hero-dots {
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ── Blog article typography ─────────────────────────────── */
+.blog-article {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: #3f3f46;
+}
+.blog-article h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #09090b;
+  margin-top: 2.75rem;
+  margin-bottom: 0.875rem;
+  line-height: 1.25;
+}
+.blog-article h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #18181b;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+.blog-article p {
+  margin-bottom: 1.125rem;
+}
+.blog-article ul,
+.blog-article ol {
+  margin: 0.75rem 0 1.5rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+.blog-article ul li,
+.blog-article ol li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.6rem;
+  color: #3f3f46;
+}
+.blog-article ul li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #2563EB;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.blog-article ol {
+  counter-reset: list-counter;
+}
+.blog-article ol li {
+  counter-increment: list-counter;
+}
+.blog-article ol li::before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: 0;
+  color: #2563EB;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.blog-article strong {
+  color: #09090b;
+  font-weight: 600;
+}
+.blog-article em {
+  color: #52525b;
+}
+.blog-article code {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.875em;
+  background: #F4F4F5;
+  color: #2563EB;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+.blog-article blockquote {
+  border-left: 3px solid #2563EB;
+  padding: 0.875rem 1.25rem;
+  margin: 1.75rem 0;
+  background: #EEF4FF;
+  border-radius: 0 0.625rem 0.625rem 0;
+  color: #1e3a5f;
+  font-style: normal;
+  font-size: 0.9375rem;
+}
+
+/* ── Key visual: gradient text ─────────────────────────────── */
+.text-gradient {
+  background-image: linear-gradient(135deg, #5B9EFF 0%, #A78BFA 55%, #F472B6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.label-gradient {
+  background-image: linear-gradient(to right, #5B9EFF, #A78BFA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow decorativo hero */
+.hero-glow {
+  background:
+    radial-gradient(ellipse 50% 40% at 15% 60%, rgba(37,99,235,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 30% 50% at 80% 20%, rgba(27,58,107,0.05) 0%, transparent 70%);
+}

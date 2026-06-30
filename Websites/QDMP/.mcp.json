@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "hostinger": {
+      "command": "cmd",
+      "args": ["/c", "C:\\Users\\User\\AppData\\Roaming\\npm\\hostinger-api-mcp.cmd"],
+      "env": {
+        "API_TOKEN": "ojMli0mOUnyN6HVybAlogMFUKMMUbUc0QwosWckff5cd102a",
+        "DEBUG": "false"
+      }
+    }
+  }
+}

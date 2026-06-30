@@ -1,0 +1,233 @@
+{
+  "name": "FerreteríaYa - Bot Precios Siigo",
+  "nodes": [
+    {
+      "parameters": { "updates": ["message"], "additionalFields": {} },
+      "id": "node-01",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [100, 300],
+      "webhookId": "ferreteriaya-siigo-precios",
+      "credentials": { "telegramApi": { "id": "0H1hsKpCAEbKGXPv", "name": "Ferreteriaya_Siigo_bot" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{ "id": "auth-check", "leftValue": "={{ $json.message.text }}", "rightValue": "*FerFerreteriaNicoFabi2026", "operator": { "type": "string", "operation": "contains" } }],
+          "combinator": "and"
+        }
+      },
+      "id": "node-auth",
+      "name": "Autenticado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [320, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json;\nconst cleanText = (msg.message.text || '').replace('*FerFerreteriaNicoFabi2026', '').trim();\nreturn [{ json: { ...msg, message: { ...msg.message, text: cleanText } } }];"
+      },
+      "id": "node-strip",
+      "name": "Limpiar Clave",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [540, 180]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "🔒 Acceso denegado. Debes incluir la clave de autenticación en tu mensaje.",
+        "additionalFields": {}
+      },
+      "id": "node-no-auth",
+      "name": "Telegram No Autorizado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [540, 420],
+      "credentials": { "telegramApi": { "id": "0H1hsKpCAEbKGXPv", "name": "Ferreteriaya_Siigo_bot" } }
+    },
+    {
+      "parameters": {
+        "prompt": "=Eres un asistente de una ferretería colombiana. Del siguiente mensaje extrae el identificador del producto y el nuevo precio. REGLAS: Si el usuario menciona un número o código, devuelve {\"codigo\": \"12345\", \"precio\": 50000}. Si menciona un nombre de producto, devuelve {\"nombre\": \"Bombillo Led E27 50W\", \"precio\": 50000}. El precio debe ser número entero sin puntos ni comas ni $. Si no puedes extraer la información responde: {\"error\": \"no entendido\"}. Responde ÚNICAMENTE con JSON válido sin markdown. Mensaje: {{ $json.message.text }}"
+      },
+      "id": "node-02",
+      "name": "Extraer Código y Precio",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [760, 180]
+    },
+    {
+      "parameters": {
+        "model": { "__rl": true, "value": "claude-haiku-4-5-20251001", "mode": "list" },
+        "options": {}
+      },
+      "id": "node-03",
+      "name": "Claude Haiku",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.2,
+      "position": [760, 380],
+      "credentials": { "anthropicApi": { "id": "jW1QbVsyLlLsDOGK", "name": "AP - Anthropic API" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = ($input.first().json.text || '').trim();\ntry {\n  const clean = text.replace(/```json|```/g, '').trim();\n  return [{ json: JSON.parse(clean) }];\n} catch(e) {\n  return [{ json: { error: 'parse: ' + text } }];\n}"
+      },
+      "id": "node-04",
+      "name": "Parsear JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [980, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{ "id": "c1", "leftValue": "={{ $json.error }}", "rightValue": "", "operator": { "type": "string", "operation": "empty" } }],
+          "combinator": "and"
+        }
+      },
+      "id": "node-05",
+      "name": "Entendido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1200, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.siigo.com/auth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }, { "name": "Partner-Id", "value": "ferreteriayasiigo" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "{\"username\":\"ferreteriayacom@gmail.com\",\"access_key\":\"MGJkNGY1N2MtNDgyNC00NjI1LWIyY2MtZmMwMDMzNTcwNWE5Oj1xKDg4Nj1mclQ=\"}"
+      },
+      "id": "node-06",
+      "name": "Siigo Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1420, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $('Parsear JSON').first().json;\nconst token = $input.first().json.access_token;\nlet searchUrl;\nif (parsed.codigo) {\n  searchUrl = 'https://api.siigo.com/v1/products?code=' + parsed.codigo;\n} else if (parsed.nombre) {\n  searchUrl = 'https://api.siigo.com/v1/products?name=' + encodeURIComponent(parsed.nombre);\n}\nreturn [{ json: { token, searchUrl, searchType: parsed.codigo ? 'codigo' : 'nombre' } }];"
+      },
+      "id": "node-url",
+      "name": "Construir URL Búsqueda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1640, 80]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.searchUrl }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ \"Bearer \" + $json.token }}" }, { "name": "Partner-Id", "value": "ferreteriayasiigo" }] }
+      },
+      "id": "node-07",
+      "name": "Siigo Buscar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1860, 80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{ "id": "c2", "leftValue": "={{ $json.pagination.total_results }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }],
+          "combinator": "and"
+        }
+      },
+      "id": "node-08",
+      "name": "Encontrado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2080, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "const product = $('Siigo Buscar').first().json.results[0];\nconst token = $('Construir URL Búsqueda').first().json.token;\nconst newPrice = Number($('Parsear JSON').first().json.precio);\nconst total = $('Siigo Buscar').first().json.pagination.total_results;\nconst prices = product.prices.map(g => ({ ...g, price_list: g.price_list.map((p,i) => i===0 ? {...p, value: newPrice} : p) }));\nreturn [{ json: { token, productId: product.id, productCode: product.code, productName: product.name, newPrice, total, updateBody: { code: product.code, name: product.name, account_group: product.account_group, type: product.type, stock_control: product.stock_control, active: product.active, tax_classification: product.tax_classification, tax_included: product.tax_included, taxes: product.taxes, prices, unit: product.unit } } }];"
+      },
+      "id": "node-09",
+      "name": "Preparar Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2300, -40]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ \"https://api.siigo.com/v1/products/\" + $json.productId }}",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "={{ \"Bearer \" + $json.token }}" }, { "name": "Content-Type", "value": "application/json" }, { "name": "Partner-Id", "value": "ferreteriayasiigo" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.updateBody) }}"
+      },
+      "id": "node-10",
+      "name": "Siigo Actualizar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2520, -40]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ \"✅ Precio actualizado\" + ($('Preparar Update').item.json.total > 1 ? \" (primer resultado de \" + $('Preparar Update').item.json.total + \")\" : \"\") + \"\\n\\n📦 \" + $('Preparar Update').item.json.productName + \"\\n🏷️ Código: \" + $('Preparar Update').item.json.productCode + \"\\n💰 Nuevo precio: $\" + $('Preparar Update').item.json.newPrice }}",
+        "additionalFields": {}
+      },
+      "id": "node-11",
+      "name": "Telegram Éxito",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2740, -40],
+      "credentials": { "telegramApi": { "id": "0H1hsKpCAEbKGXPv", "name": "Ferreteriaya_Siigo_bot" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ \"❌ No encontré ningún producto en Siigo.\\nIntenta con el código exacto o un nombre más específico.\" }}",
+        "additionalFields": {}
+      },
+      "id": "node-12",
+      "name": "Telegram No Encontrado",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2300, 200],
+      "credentials": { "telegramApi": { "id": "0H1hsKpCAEbKGXPv", "name": "Ferreteriaya_Siigo_bot" } }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "❓ No entendí el mensaje.\n\nEjemplos válidos:\n\"*FerFerreteriaNicoFabi2026 código 50862 a 3500\"\n\"*FerFerreteriaNicoFabi2026 Bombillo Led E27 50W a 19000\"",
+        "additionalFields": {}
+      },
+      "id": "node-13",
+      "name": "Telegram No Entendido",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1420, 300],
+      "credentials": { "telegramApi": { "id": "0H1hsKpCAEbKGXPv", "name": "Ferreteriaya_Siigo_bot" } }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Autenticado?", "type": "main", "index": 0 }]] },
+    "Autenticado?": { "main": [[{ "node": "Limpiar Clave", "type": "main", "index": 0 }], [{ "node": "Telegram No Autorizado", "type": "main", "index": 0 }]] },
+    "Limpiar Clave": { "main": [[{ "node": "Extraer Código y Precio", "type": "main", "index": 0 }]] },
+    "Claude Haiku": { "ai_languageModel": [[{ "node": "Extraer Código y Precio", "type": "ai_languageModel", "index": 0 }]] },
+    "Extraer Código y Precio": { "main": [[{ "node": "Parsear JSON", "type": "main", "index": 0 }]] },
+    "Parsear JSON": { "main": [[{ "node": "Entendido?", "type": "main", "index": 0 }]] },
+    "Entendido?": { "main": [[{ "node": "Siigo Auth", "type": "main", "index": 0 }], [{ "node": "Telegram No Entendido", "type": "main", "index": 0 }]] },
+    "Siigo Auth": { "main": [[{ "node": "Construir URL Búsqueda", "type": "main", "index": 0 }]] },
+    "Construir URL Búsqueda": { "main": [[{ "node": "Siigo Buscar", "type": "main", "index": 0 }]] },
+    "Siigo Buscar": { "main": [[{ "node": "Encontrado?", "type": "main", "index": 0 }]] },
+    "Encontrado?": { "main": [[{ "node": "Preparar Update", "type": "main", "index": 0 }], [{ "node": "Telegram No Encontrado", "type": "main", "index": 0 }]] },
+    "Preparar Update": { "main": [[{ "node": "Siigo Actualizar", "type": "main", "index": 0 }]] },
+    "Siigo Actualizar": { "main": [[{ "node": "Telegram Éxito", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

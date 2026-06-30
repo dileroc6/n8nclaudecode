@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Que Dice Mi Perro — Bienestar canino en Bogotá · Libre de jaulas</title>
+<meta name="description" content="Centro de bienestar canino en Bogotá. Guardería indoor libre de jaulas, hotel 24/7, baño con aromaterapia, profilaxis dental, paseos y ruta.">
+<link rel="icon" type="image/png" href="assets/isotipo.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Black+Ops+One&family=Lato:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css?v=2">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<style>
+  /* ── Tweak classes ── */
+  body.t-poster .float-decor { display: block !important; position: absolute; pointer-events: none; will-change: transform; }
+  body.t-poster .hero-curve  { display: block !important; opacity: .35; }
+  body.t-poster .orbit-ring  { display: block !important; }
+  body.t-poster .bubble      { display: inline-flex !important; align-items: center; }
+  body.t-poster .deco-paw    { animation: floatY 6s ease-in-out infinite; }
+  body.t-poster .deco-star   { animation: twinkle 3s ease-in-out infinite; }
+  body.t-poster .deco-sun    { animation: spinSlow 30s linear infinite; }
+
+  body.t-no-marquee .marquee { display: none !important; }
+
+  body.t-compact section     { padding: clamp(48px, 6vw, 80px) 0 !important; }
+  body.t-compact .section-head { margin-bottom: 36px !important; }
+  body.t-compact .hero       { padding: 40px 0 60px !important; min-height: auto !important; }
+
+  body.t-accent-orange .btn-primary { background: var(--brand-orange); }
+  body.t-accent-orange .btn-primary:hover { background: var(--brand-orange-deep); }
+  body.t-accent-orange .hero-iso { background: var(--brand-orange); box-shadow: 0 30px 80px -30px rgba(232,77,42,.55); }
+</style>
+
+</head>
+<body data-page="home">
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="container">
+    <div class="hbar" style="border-color: rgb(0, 0, 0)">
+      <a class="logo-link" href="index.html"><img src="assets/logo-dark.png" alt="Que Dice Mi Perro"></a>
+      <nav class="primary" aria-label="Navegación principal">
+        <a href="index.html">Inicio</a>
+        <a href="nosotros.html">Nosotros</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="precios.html">Precios</a>
+        <a href="contacto.html">Contacto</a>
+      </nav>
+      <a class="btn btn-yellow header-cta" href="https://wa.me/573112146996" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.821 11.821 0 013.48 8.413c-.003 6.555-5.338 11.89-11.893 11.89-1.99 0-3.95-.502-5.688-1.452L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 1.97.521 3.486 1.39 5.012l-1 3.648 3.741-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        Reservar
+      </a>
+      <button class="menu-btn" aria-label="Abrir menú"><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobileNav" aria-hidden="true">
+  <button class="close" aria-label="Cerrar">×</button>
+  <a href="index.html">Inicio</a>
+  <a href="nosotros.html">Nosotros</a>
+  <a href="servicios.html">Servicios</a>
+  <a href="precios.html">Precios</a>
+  <a href="contacto.html">Contacto</a>
+</div>
+
+<main>
+
+<!-- HERO -->
+<section class="hero hero-video" data-screen-label="01 Hero">
+  <video class="hero-bg-video" autoplay muted loop playsinline preload="auto">
+    <source src="assets/hero-video.mp4" type="video/mp4">
+  </video>
+  <div class="hero-bg-overlay" aria-hidden="true"></div>
+
+  <svg class="float-decor deco-paw" style="top:18%; left:6%; width:54px; --rot:-12deg;" viewBox="0 0 64 64" aria-hidden="true"><g fill="#1A1A1A"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+  <svg class="float-decor deco-paw" style="bottom:14%; left:14%; width:38px; --rot:18deg; animation-delay:1.3s;" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518" stroke="#1A1A1A" stroke-width="2"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+  <svg class="float-decor deco-paw" style="top:28%; right:8%; width:46px; --rot:24deg; animation-delay:.5s;" viewBox="0 0 64 64" aria-hidden="true"><g fill="#E84D2A"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+  <svg class="float-decor deco-star" style="top:12%; right:30%; width:34px; --rot:0deg;" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 0 L19 13 L32 16 L19 19 L16 32 L13 19 L0 16 L13 13 Z" fill="#E84D2A"/></svg>
+  <svg class="float-decor deco-star" style="bottom:22%; right:24%; width:22px; --rot:0deg; animation-delay:1s;" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 0 L19 13 L32 16 L19 19 L16 32 L13 19 L0 16 L13 13 Z" fill="#F5C518"/></svg>
+  <svg class="float-decor deco-sun" style="bottom:10%; left:4%; width:70px;" viewBox="0 0 80 80" aria-hidden="true">
+    <g fill="#F5C518" stroke="#1A1A1A" stroke-width="2"><circle cx="40" cy="40" r="14"/></g>
+    <g stroke="#F5C518" stroke-width="4" stroke-linecap="round">
+      <line x1="40" y1="6" x2="40" y2="16"/><line x1="40" y1="64" x2="40" y2="74"/>
+      <line x1="6" y1="40" x2="16" y2="40"/><line x1="64" y1="40" x2="74" y2="40"/>
+      <line x1="14" y1="14" x2="22" y2="22"/><line x1="58" y1="58" x2="66" y2="66"/>
+      <line x1="66" y1="14" x2="58" y2="22"/><line x1="22" y1="58" x2="14" y2="66"/>
+    </g>
+  </svg>
+
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="hero-eyebrow"><span class="dot"></span>BOGOTÁ · LIBRE DE JAULAS</span>
+        <h1 class="h-display h-hero hero-title" id="heroTitle">
+          <span class="word">Tu</span> <span class="word">perro</span> <span class="word">merece</span> <span class="word">más</span> <span class="word">que</span> <span class="word">una</span><br>
+          <span class="word script-word" style="margin: 0px 6.7496px">guardería.</span>
+        </h1>
+        <p class="hero-sub">Cuidamos a tu peludo con un enfoque integral: bienestar físico, emocional y mental. Aromaterapia, musicoterapia y atención uno a uno, en un ambiente hogareño y libre de jaulas.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="https://wa.me/573112146996" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.821 11.821 0 013.48 8.413c-.003 6.555-5.338 11.89-11.893 11.89-1.99 0-3.95-.502-5.688-1.452L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 1.97.521 3.486 1.39 5.012l-1 3.648 3.741-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+            Reservar por WhatsApp
+          </a>
+          <a class="btn btn-outline" href="servicios.html">Ver servicios →</a>
+        </div>
+        <div class="hero-stats" style="border-width: 0px">
+          <div class="stat"><div class="num"><span class="counter" data-target="100">0</span><span class="suffix">%</span></div><div class="lbl">Libre de jaulas</div></div>
+          <div class="stat"><div class="num"><span class="counter" data-target="24">0</span><span class="suffix">/7</span></div><div class="lbl">Hotel canino</div></div>
+          <div class="stat"><div class="num"><span class="counter" data-target="5">0</span><span class="suffix">+</span></div><div class="lbl">Servicios integrales</div></div>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>🐾 Libre de jaulas <span class="sep">✦</span> Aromaterapia <span class="sep">✦</span> Musicoterapia <span class="sep">✦</span> Grupos pequeños <span class="sep">✦</span> Atención 24/7 <span class="sep">✦</span> Alimentación personalizada <span class="sep">✦</span> Productos Hydra <span class="sep">✦</span> Esencias florales <span class="sep">✦</span></span>
+    <span>🐾 Libre de jaulas <span class="sep">✦</span> Aromaterapia <span class="sep">✦</span> Musicoterapia <span class="sep">✦</span> Grupos pequeños <span class="sep">✦</span> Atención 24/7 <span class="sep">✦</span> Alimentación personalizada <span class="sep">✦</span> Productos Hydra <span class="sep">✦</span> Esencias florales <span class="sep">✦</span></span>
+  </div>
+</div>
+
+<!-- SERVICES NAVIGATION (cards link to subpages) -->
+<section class="services-white" data-screen-label="02 Servicios (navegación)">
+  <div class="container">
+    <div class="section-head">
+      <div class="title-wrap">
+        <span class="eyebrow reveal">Lo que ofrecemos</span>
+        <h2 class="h-display h-section reveal delay-1">
+          Explora nuestros <span class="hl">servicios</span>.
+        </h2>
+      </div>
+      <p class="lede reveal delay-2">
+        Cada servicio diseñado bajo nuestro enfoque de bienestar emocional. Toca cualquier card para conocer los detalles.
+      </p>
+    </div>
+
+    <div class="services-grid">
+      <a class="svc-card reveal" href="servicios.html#guarderia">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/heart-black.png" alt=""><img class="alt" src="assets/icons/heart-orange.png" alt=""></div>
+        <h3 class="svc-title">Guardería Indoor</h3>
+        <p class="svc-body">Olfateo, estimulación mental, juegos guiados y socialización supervisada.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+      <a class="svc-card reveal delay-1" href="servicios.html#hotel">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/hotel-black.png" alt=""><img class="alt" src="assets/icons/hotel-orange.png" alt=""></div>
+        <h3 class="svc-title">Hotel 24/7</h3>
+        <p class="svc-body">Alojamiento libre de jaulas con supervisión constante.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+      <a class="svc-card reveal delay-2" href="servicios.html#bano">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/peluqueria-black.png" alt=""><img class="alt" src="assets/icons/peluqueria-orange.png" alt=""></div>
+        <h3 class="svc-title">Baño y Peluquería</h3>
+        <p class="svc-body">Aromaterapia, musicoterapia y productos Hydra. Spa completo.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+      <a class="svc-card reveal" href="servicios.html#profilaxis">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/shampoo-black.png" alt=""><img class="alt" src="assets/icons/shampoo-orange.png" alt=""></div>
+        <h3 class="svc-title">Profilaxis Dental</h3>
+        <p class="svc-body">Limpieza dental sin anestesia. Hasta 80% del sarro removido.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+      <a class="svc-card reveal delay-1" href="servicios.html#paseos">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/paw-black.png" alt=""><img class="alt" src="assets/icons/paw-orange.png" alt=""></div>
+        <h3 class="svc-title">Paseos</h3>
+        <p class="svc-body">Máximo 3 perritos por salida. Recogida y entrega en tu casa.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+      <a class="svc-card reveal delay-2" href="servicios.html#ruta">
+        <svg class="svc-paw-bg" viewBox="0 0 64 64" aria-hidden="true"><g fill="#F5C518"><ellipse cx="32" cy="38" rx="14" ry="11"/><ellipse cx="14" cy="22" rx="5" ry="7"/><ellipse cx="26" cy="14" rx="5" ry="7"/><ellipse cx="38" cy="14" rx="5" ry="7"/><ellipse cx="50" cy="22" rx="5" ry="7"/></g></svg>
+        <div class="svc-icon"><img class="base" src="assets/icons/transporte-black.png" alt=""><img class="alt" src="assets/icons/transporte-orange.png" alt=""></div>
+        <h3 class="svc-title">Ruta Pet</h3>
+        <p class="svc-body">Transporte opcional puerta a puerta. Sin preocupaciones.</p>
+        <span class="svc-link">Más detalles <span class="arr">→</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- BRIEF ABOUT TEASER → links to Nosotros -->
+<section class="section-dark" data-screen-label="03 Nosotros (teaser)">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-img-wrap reveal">
+        <div class="frame-back"></div>
+        <img src="assets/photos/dog-01.jpg" alt="Perrito feliz en Que Dice Mi Perro">
+        <div class="about-badge"><span class="big">+10 años</span>cuidando peludos</div>
+      </div>
+      <div>
+        <span class="eyebrow reveal">Quiénes somos</span>
+        <h2 class="h-display h-section reveal delay-1" style="margin-top:14px;">
+          Tu peludo es parte de <span class="hl">nuestra familia</span>.
+        </h2>
+        <p class="lede reveal delay-2" style="margin-top:22px;">
+          Trabajamos con grupos pequeños, supervisión constante y rutinas adaptadas a cada perro. No creemos en forzar interacciones ni en sobreestimular: creemos en observar, entender y acompañar.
+        </p>
+        <div class="reveal delay-3" style="margin-top:30px; display:flex; gap: 12px; flex-wrap: wrap;">
+          <a class="btn btn-yellow" href="nosotros.html">Conoce más sobre nosotros →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS (polaroids) -->
+<section class="testimonials" data-screen-label="04 Testimonios">
+  <div class="container">
+    <div class="head">
+      <span class="eyebrow reveal" style="justify-content:center;display:inline-flex;">Familias felices</span>
+      <h2 class="h-display h-section reveal delay-1" style="margin-top:14px;">Lo que dicen <span class="hl">nuestros peluditos</span>.</h2>
+      <p class="lede reveal delay-2" style="margin: 18px auto 0;">Cada foto es una historia. Cada cola movida, un testimonio.</p>
+    </div>
+  </div>
+
+  <div class="clothesline-wrap">
+    <div class="clothesline" aria-hidden="true"><svg viewBox="0 0 1440 60" preserveAspectRatio="none"><path d="M 0 22 Q 360 50 720 30 T 1440 24" stroke="#1A1A1A" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div>
+    <div class="polaroids" id="polaroids">
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#E84D2A"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#F5C518"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-01.jpg" alt="¡Russy es feliz!"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">¡Russy es feliz!</p>
+        <div class="owner">María &amp; Russy</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#F5C518"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#E84D2A"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-12.jpg" alt="Mi bebé Luna"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">Mi bebé Luna 🌙</p>
+        <div class="owner">Catalina &amp; Luna</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#E84D2A"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#F5C518"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-09.jpg" alt="Toby siempre vuelve"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">Toby siempre vuelve 🐾</p>
+        <div class="owner">Andrés &amp; Toby</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#F5C518"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#E84D2A"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-04.jpg" alt="Coco la consentida"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">Coco la consentida</p>
+        <div class="owner">Laura &amp; Coco</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#E84D2A"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#F5C518"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-13.jpg" alt="Pepe siempre quiere ir"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">Pepe siempre quiere ir</p>
+        <div class="owner">Daniel &amp; Pepe</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#F5C518"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#E84D2A"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-07.jpg" alt="Mi Rocky regresa feliz"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">Mi Rocky regresa feliz</p>
+        <div class="owner">Valentina &amp; Rocky</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#E84D2A"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#F5C518"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-10.jpg" alt="La reina Maya"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">La reina Maya 👑</p>
+        <div class="owner">Andrea &amp; Maya</div>
+      </article>
+      <article class="polaroid">
+        <svg class="clip" viewBox="0 0 36 48" aria-hidden="true"><rect x="6" y="0" width="24" height="14" rx="2" fill="#F5C518"/><rect x="10" y="14" width="16" height="32" rx="2" fill="#E84D2A"/><circle cx="18" cy="10" r="3" fill="#1A1A1A"/></svg>
+        <div class="photo"><img src="assets/photos/dog-03.jpg" alt="Familia QDMP"></div>
+        <div class="stars">★★★★★</div>
+        <p class="caption">¡Familia QDMP!</p>
+        <div class="owner">La manada</div>
+      </article>
+    </div>
+  </div>
+  <p class="swipe-hint">← desliza para ver más →</p>
+</section>
+
+<!-- CTA strip -->
+<section class="cta-strip" data-screen-label="04 CTA">
+  <div class="container">
+    <h2>Listos para conocer a <span class="hl orange"><span style="color: #e84d2a">tu peludo</span></span>.</h2>
+    <p>Escríbenos por WhatsApp y te ayudamos a elegir el plan perfecto. Sin compromiso, sin letra chiquita.</p>
+    <div class="row-btns">
+      <a class="btn btn-primary" href="https://wa.me/573112146996" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+      <a class="btn btn-outline" href="contacto.html">Llenar formulario →</a>
+      <a class="btn btn-outline" href="precios.html">Ver precios</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="fcol">
+        <img src="assets/logo-dark.png" alt="Que Dice Mi Perro" style="height:80px; width:auto;">
+        <p class="tagline">Tu peludo es parte de nuestra familia</p>
+        <p class="desc">Guardería canina indoor, hotel 24/7, baño y bienestar. Libre de jaulas, en Bogotá.</p>
+        <div class="socials">
+          <a href="https://wa.me/573112146996" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.821 11.821 0 013.48 8.413c-.003 6.555-5.338 11.89-11.893 11.89-1.99 0-3.95-.502-5.688-1.452L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 1.97.521 3.486 1.39 5.012l-1 3.648 3.741-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></a>
+          <a href="https://instagram.com/quedicemiperro" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zM17.5 6.5h.01"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43V8.61a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.84-.04z"/></svg></a>
+        </div>
+      </div>
+      <div class="fcol">
+        <h5>Servicios</h5>
+        <ul>
+          <li><a href="servicios.html#guarderia">Guardería indoor</a></li>
+          <li><a href="servicios.html#hotel">Hotel canino 24/7</a></li>
+          <li><a href="servicios.html#bano">Baño y peluquería</a></li>
+          <li><a href="servicios.html#profilaxis">Profilaxis dental</a></li>
+          <li><a href="servicios.html#paseos">Paseos y ruta</a></li>
+        </ul>
+      </div>
+      <div class="fcol">
+        <h5>Sitio</h5>
+        <ul>
+          <li><a href="nosotros.html">Nosotros</a></li>
+          <li><a href="precios.html">Precios</a></li>
+          <li></li>
+          <li><a href="contacto.html#faq">Preguntas frecuentes</a></li>
+          <li><a href="contacto.html">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="fcol">
+        <h5>Contacto</h5>
+        <ul>
+          <li class="finfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg><span>311 214 6996</span></li>
+          <li class="finfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Bogotá, Colombia</span></li>
+          <li class="finfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>L-V 6:00am – 6:30pm</span></li>
+          <li class="finfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>S-D 8:30am – 5:30pm</span></li>
+          <li class="finfo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" aria-hidden="true"><path d="M3 21h18M5 21V8h14v13M9 12h6M9 16h6M10 8V5h4v3"/></svg><span>Hotel: 24/7</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 Que Dice Mi Perro · Todos los derechos reservados</div>
+      <div class="right">Hecho con 🐾 en Bogotá</div>
+    </div>
+  </div>
+</footer>
+
+<a class="fab-wa" href="https://wa.me/573112146996" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.945C.16 5.335 5.495 0 12.05 0a11.82 11.82 0 018.413 3.488 11.821 11.821 0 013.48 8.413c-.003 6.555-5.338 11.89-11.893 11.89-1.99 0-3.95-.502-5.688-1.452L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884 0 1.97.521 3.486 1.39 5.012l-1 3.648 3.741-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+</a>
+
+<script src="assets/site.js"></script>
+
+</body>
+</html>
