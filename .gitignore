@@ -9,3 +9,10 @@ node_modules/
 
 # Bejauha NO es de ToqueFlow: repo/proyecto aparte (plataforma/ con .env.local, media pesada, .ai 496MB)
 Websites/Bejauha/
+
+# Supabase CLI (cache / vínculo local)
+**/supabase/.temp/
+
+# Vassco: datos fiscales reales (facturas DIAN, RUT) — no publicar en GitHub
+Vassco/*.zip
+Vassco/Rut*.pdf
