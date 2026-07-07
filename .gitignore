@@ -7,5 +7,5 @@ node_modules/
 # Artefactos de deploy (zips de build) — no versionar
 *_deploy_*.zip
 
-# Proyecto anidado con su propio repo git (contiene .env.local con secretos)
-Websites/Bejauha/plataforma/
+# Bejauha NO es de ToqueFlow: repo/proyecto aparte (plataforma/ con .env.local, media pesada, .ai 496MB)
+Websites/Bejauha/
