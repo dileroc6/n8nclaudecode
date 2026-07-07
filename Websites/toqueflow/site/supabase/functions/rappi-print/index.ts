@@ -90,14 +90,33 @@ Deno.serve(async (req: Request) => {
   const meta = { company_id: payload.company_id, sede: payload.sede, sede_id: payload.sede_id };
   if (!pedido.trim()) return json({ error: "Pega el texto del pedido." }, 400);
 
-  const ai = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 700, messages: [{ role: "user", content: PROMPT(pedido) }] }),
-  });
-  if (!ai.ok) {
+  // Llama a Claude con reintentos ante errores transitorios (5xx, 429, 529 overloaded, fallos de red).
+  // Anthropic devuelve 500/529 intermitentes; sin reintento el operario ve el error de una.
+  let ai: Response | null = null;
+  let lastErr = "";
+  const MAX_TRIES = 4;
+  for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
+    try {
+      ai = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 700, messages: [{ role: "user", content: PROMPT(pedido) }] }),
+      });
+    } catch (e) {
+      ai = null;
+      lastErr = "fetch: " + (e instanceof Error ? e.message : String(e));
+    }
+    if (ai && ai.ok) break;
+    const status = ai ? ai.status : 0;
+    if (ai) lastErr = "HTTP " + status + ": " + (await ai.text()).slice(0, 200);
+    const retryable = !ai || status >= 500 || status === 429; // red caída, 5xx, 529 overloaded o 429 rate-limit
+    if (!retryable || attempt === MAX_TRIES) break;
+    await new Promise((r) => setTimeout(r, 400 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 250))); // ~0.4s, 0.8s, 1.6s + jitter
+  }
+  if (!ai || !ai.ok) {
+    console.error("Claude falló tras reintentos:", lastErr);
     try { await logUsage(null, { ...meta, success: false }); } catch (_) {}
-    return json({ error: "Error de Claude: " + (await ai.text()).slice(0, 200) }, 502);
+    return json({ error: "El servicio de lectura (IA) está saturado en este momento. Espera unos segundos e intenta imprimir de nuevo." }, 502);
   }
 
   const out = await ai.json();
