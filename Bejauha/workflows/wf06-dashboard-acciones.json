@@ -1,0 +1,147 @@
+{
+  "name": "Bejauha - Dashboard Acciones (WF06)",
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Entrada Action",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1000, 0],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bejauha-dashboard-action",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-validar",
+      "name": "Validar y normalizar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-800, 0],
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst EXPECTED = 'bjh_NssQxwv-fbPZnSPI8fnzPmUX3Kbp1v3Ymy006w';\nconst token = String(body.token || '');\nif (token !== EXPECTED) {\n  return [{ json: { _error: 'token_invalido', http_code: 403 } }];\n}\nconst action = String(body.action || '').toLowerCase().trim();\nconst valid_actions = ['create_lead', 'ajustar_saldo', 'asistencia', 'edit_nombre', 'edit_telefono'];\nif (!valid_actions.includes(action)) {\n  return [{ json: { _error: 'accion_invalida', http_code: 400 } }];\n}\nfunction normTel(raw) {\n  let t = String(raw || '').replace(/\\D/g, '');\n  if (t.length === 10 && t[0] === '3') t = '57' + t;\n  return t;\n}\nlet tel = normTel(body.telefono);\nif (tel.length < 10) return [{ json: { _error: 'telefono_invalido', http_code: 400 } }];\nconst nombre = String(body.nombre || '').trim();\nconst clases = (body.clases !== undefined && body.clases !== null && body.clases !== '') ? parseInt(body.clases, 10) : null;\nconst nuevo_telefono = normTel(body.nuevo_telefono);\nif (action === 'create_lead' && nombre.length < 2) return [{ json: { _error: 'nombre_requerido', http_code: 400 } }];\nif (action === 'edit_nombre' && nombre.length < 2) return [{ json: { _error: 'nombre_requerido', http_code: 400 } }];\nif (action === 'edit_telefono' && nuevo_telefono.length < 10) return [{ json: { _error: 'nuevo_telefono_invalido', http_code: 400 } }];\nif (action === 'edit_telefono' && nuevo_telefono === tel) return [{ json: { _error: 'tel_es_igual', http_code: 400 } }];\nif (action === 'ajustar_saldo' && (clases === null || isNaN(clases) || clases < 0 || clases > 999)) return [{ json: { _error: 'cantidad_invalida', http_code: 400 } }];\nconst p1 = { action, telefono: tel, nombre, clases, nuevo_telefono };\nreturn [{ json: { action, telefono: tel, nombre, clases, nuevo_telefono, p1_json: JSON.stringify(p1) } }];"
+      }
+    },
+    {
+      "id": "node-if-error",
+      "name": "Hay error?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-600, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 2 },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json._error }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty", "singleValue": true }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "node-error-respond",
+      "name": "Respond Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-400, -180],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $json._error }) }}",
+        "options": {
+          "responseCode": "={{ $json.http_code || 400 }}",
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "node-sql",
+      "name": "Ejecutar SQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-400, 180],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH inp AS (SELECT $1::jsonb AS d),\np AS (SELECT d->>'action' AS action, d->>'telefono' AS telefono, d->>'nombre' AS nombre, d->>'nuevo_telefono' AS nuevo_telefono, COALESCE((d->>'clases')::int, 0) AS clases FROM inp),\n-- create_lead\nlead_ins AS (\n  INSERT INTO bejauha.leads (telefono, nombre, origen, clasificacion)\n  SELECT p.telefono, p.nombre, 'inbound', 'tibio' FROM p WHERE p.action = 'create_lead'\n  ON CONFLICT (telefono) DO NOTHING\n  RETURNING telefono, nombre\n),\n-- edit_nombre: actualiza solo el nombre del lead\nedit_nombre_upd AS (\n  UPDATE bejauha.leads l SET nombre = p.nombre, ultimo_contacto = now()\n  FROM p WHERE p.action = 'edit_nombre' AND l.telefono = p.telefono\n  RETURNING l.telefono, l.nombre\n),\n-- edit_telefono: actualiza el tel; el ON UPDATE CASCADE de las FKs propaga a saldos/asistencias/recargas/handoffs.\n-- Guard común: el nuevo_telefono NO debe colisionar con otro lead, y el original SÍ debe existir. Si falla, nada se actualiza.\nedit_tel_chk AS (\n  SELECT\n    EXISTS(SELECT 1 FROM bejauha.leads l WHERE l.telefono = (SELECT telefono FROM p)) AS old_existe,\n    EXISTS(SELECT 1 FROM bejauha.leads l WHERE l.telefono = (SELECT nuevo_telefono FROM p)) AS new_existe\n  WHERE (SELECT action FROM p) = 'edit_telefono'\n),\nedit_tel_logs AS (\n  UPDATE bejauha.mensajes_logs ml SET telefono = p.nuevo_telefono\n  FROM p WHERE p.action = 'edit_telefono' AND ml.telefono = p.telefono\n    AND (SELECT old_existe FROM edit_tel_chk) AND NOT (SELECT new_existe FROM edit_tel_chk)\n  RETURNING ml.id\n),\nedit_tel_recv AS (\n  UPDATE bejauha.mensajes_recibidos mr SET telefono = p.nuevo_telefono\n  FROM p WHERE p.action = 'edit_telefono' AND mr.telefono = p.telefono\n    AND (SELECT old_existe FROM edit_tel_chk) AND NOT (SELECT new_existe FROM edit_tel_chk)\n  RETURNING mr.message_id\n),\nedit_tel_upd AS (\n  UPDATE bejauha.leads l SET telefono = p.nuevo_telefono, ultimo_contacto = now()\n  FROM p WHERE p.action = 'edit_telefono' AND l.telefono = p.telefono\n    AND (SELECT old_existe FROM edit_tel_chk) AND NOT (SELECT new_existe FROM edit_tel_chk)\n  RETURNING l.telefono, l.nombre\n),\n-- ajustar_saldo (set absoluto del saldo presencial)\nsaldo_prev_ajuste AS (\n  SELECT s.clases_restantes AS prev, s.vence_at FROM bejauha.saldos_clases s, p\n  WHERE p.action = 'ajustar_saldo' AND s.telefono = p.telefono AND s.tipo = 'presencial'\n),\nsaldo_upd AS (\n  INSERT INTO bejauha.saldos_clases (telefono, tipo, clases_restantes, vence_at)\n  SELECT p.telefono, 'presencial', p.clases,\n         COALESCE((SELECT vence_at FROM saldo_prev_ajuste),\n                  (current_date + INTERVAL '3 months')::date)\n  FROM p WHERE p.action = 'ajustar_saldo'\n  ON CONFLICT (telefono, tipo) DO UPDATE\n    SET clases_restantes = EXCLUDED.clases_restantes, actualizado_at = now()\n  RETURNING telefono, clases_restantes, vence_at\n),\n-- asistencia (-1 saldo, sin_saldo si ya estaba en 0)\nsaldo_prev_asis AS (\n  SELECT COALESCE(s.clases_restantes, 0) AS prev FROM p\n  LEFT JOIN bejauha.saldos_clases s ON s.telefono = p.telefono AND s.tipo = 'presencial'\n  WHERE p.action = 'asistencia'\n),\nasis_log AS (\n  INSERT INTO bejauha.asistencias (telefono, tipo, admin, sin_saldo)\n  SELECT p.telefono, 'presencial', 'dashboard',\n         COALESCE((SELECT prev FROM saldo_prev_asis), 0) <= 0\n  FROM p WHERE p.action = 'asistencia'\n  RETURNING telefono\n),\nasis_upd AS (\n  UPDATE bejauha.saldos_clases s\n  SET clases_restantes = s.clases_restantes - 1, actualizado_at = now()\n  FROM p WHERE p.action = 'asistencia' AND s.telefono = p.telefono AND s.tipo = 'presencial' AND s.clases_restantes > 0\n  RETURNING s.clases_restantes\n),\naudit_log AS (\n  INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent, metadata)\n  SELECT COALESCE(NULLIF(p.nuevo_telefono,''), p.telefono), 'out', 'sistema',\n         'dashboard:' || p.action || ' tel=' || p.telefono ||\n           CASE WHEN p.action = 'ajustar_saldo' THEN ' clases=' || p.clases::text\n                WHEN p.action = 'create_lead' THEN ' nombre=' || COALESCE(p.nombre,'')\n                WHEN p.action = 'edit_nombre' THEN ' nombre_nuevo=' || COALESCE(p.nombre,'')\n                WHEN p.action = 'edit_telefono' THEN ' nuevo_tel=' || COALESCE(p.nuevo_telefono,'')\n                ELSE '' END,\n         'dashboard_' || p.action,\n         jsonb_build_object('source','dashboard','action',p.action,'telefono',p.telefono,'nombre',p.nombre,'clases',p.clases,'nuevo_telefono',p.nuevo_telefono)\n  FROM p\n  RETURNING id\n)\nSELECT\n  (SELECT action FROM p) AS action,\n  (SELECT telefono FROM p) AS telefono,\n  (SELECT nombre FROM p) AS nombre_input,\n  (SELECT l.nombre FROM bejauha.leads l WHERE l.telefono = (SELECT telefono FROM p)) AS nombre_real,\n  EXISTS (SELECT 1 FROM bejauha.leads WHERE telefono = (SELECT telefono FROM p)) AS lead_existe,\n  EXISTS (SELECT 1 FROM lead_ins) AS lead_creado,\n  (SELECT clases_restantes FROM saldo_upd LIMIT 1)::int AS saldo_nuevo,\n  (SELECT to_char(vence_at,'YYYY-MM-DD') FROM saldo_upd LIMIT 1) AS vence_at_nuevo,\n  COALESCE((SELECT prev FROM saldo_prev_asis), 0)::int AS saldo_antes_asistencia,\n  (SELECT clases_restantes FROM asis_upd LIMIT 1)::int AS saldo_despues_asistencia,\n  EXISTS (SELECT 1 FROM asis_log) AS asistencia_registrada,\n  (COALESCE((SELECT prev FROM saldo_prev_asis), 0) <= 0) AS era_deudor,\n  EXISTS (SELECT 1 FROM edit_nombre_upd) AS edit_nombre_aplicado,\n  (SELECT nombre FROM edit_nombre_upd LIMIT 1) AS edit_nombre_nuevo_nombre,\n  EXISTS (SELECT 1 FROM edit_tel_upd) AS edit_tel_aplicado,\n  COALESCE((SELECT old_existe FROM edit_tel_chk), false) AS edit_tel_old_existe,\n  COALESCE((SELECT new_existe FROM edit_tel_chk), false) AS edit_tel_new_existe;",
+        "options": {
+          "queryReplacement": "={{ $json.p1_json }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "vzzTNppBFKg9XCiK",
+          "name": "PostgreSQL — LeadAI"
+        }
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-200, 180],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nlet message = '';\nlet ok = true;\nconst action = r.action;\nif (action === 'create_lead') {\n  if (r.lead_creado) {\n    message = 'Lead creado: ' + (r.nombre_input || '') + ' (' + r.telefono + ')';\n  } else if (r.lead_existe) {\n    message = 'Ya existía: ' + (r.nombre_real || r.nombre_input || '') + ' (' + r.telefono + ')';\n  } else {\n    ok = false; message = 'No se pudo crear el lead';\n  }\n} else if (action === 'ajustar_saldo') {\n  if (!r.lead_existe) { ok = false; message = 'Ese teléfono no existe como lead. Crea el lead primero.'; }\n  else if (r.saldo_nuevo !== null && r.saldo_nuevo !== undefined) {\n    message = 'Saldo de ' + (r.nombre_real || r.telefono) + ' ajustado a ' + r.saldo_nuevo + ' clase(s). Vence ' + r.vence_at_nuevo + '.';\n  } else { ok = false; message = 'No se pudo ajustar el saldo'; }\n} else if (action === 'asistencia') {\n  if (!r.lead_existe) { ok = false; message = 'Ese teléfono no existe como lead. Crea el lead primero.'; }\n  else if (r.asistencia_registrada) {\n    if (r.era_deudor) {\n      message = 'Asistencia registrada para ' + (r.nombre_real || r.telefono) + ' como DEUDOR (saldo en 0, no se descontó).';\n    } else {\n      message = 'Asistencia registrada para ' + (r.nombre_real || r.telefono) + '. Saldo: ' + r.saldo_despues_asistencia + ' clase(s) restantes.';\n    }\n  } else { ok = false; message = 'No se pudo registrar la asistencia'; }\n} else if (action === 'edit_nombre') {\n  if (r.edit_nombre_aplicado) {\n    message = 'Nombre actualizado a: ' + r.edit_nombre_nuevo_nombre;\n  } else if (!r.lead_existe) {\n    ok = false; message = 'No encontré ese teléfono en la base.';\n  } else {\n    ok = false; message = 'No se pudo actualizar el nombre.';\n  }\n} else if (action === 'edit_telefono') {\n  if (r.edit_tel_aplicado) {\n    message = 'Teléfono actualizado. Todo el historial (saldos, asistencias, recargas, handoffs, mensajes) ahora apunta al nuevo número.';\n  } else if (!r.edit_tel_old_existe) {\n    ok = false; message = 'El teléfono original no existe en la base.';\n  } else if (r.edit_tel_new_existe) {\n    ok = false; message = 'El nuevo teléfono ya pertenece a otro cliente. Cambia el destino o elimina al duplicado primero.';\n  } else {\n    ok = false; message = 'No se pudo cambiar el teléfono.';\n  }\n}\nreturn [{ json: { ok, message, action, telefono: r.telefono, nombre: r.nombre_real, saldo_nuevo: r.saldo_nuevo, saldo_despues_asistencia: r.saldo_despues_asistencia, era_deudor: r.era_deudor, lead_existe: r.lead_existe, lead_creado: r.lead_creado } }];"
+      }
+    },
+    {
+      "id": "node-respond",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [0, 180],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Access-Control-Allow-Origin", "value": "*" }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada Action": {
+      "main": [[{ "node": "Validar y normalizar", "type": "main", "index": 0 }]]
+    },
+    "Validar y normalizar": {
+      "main": [[{ "node": "Hay error?", "type": "main", "index": 0 }]]
+    },
+    "Hay error?": {
+      "main": [
+        [{ "node": "Respond Error", "type": "main", "index": 0 }],
+        [{ "node": "Ejecutar SQL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ejecutar SQL": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    },
+    "Format Response": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  }
+}

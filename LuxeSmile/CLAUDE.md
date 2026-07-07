@@ -131,22 +131,8 @@
 
 ### ETAPA 6 — Recopilación de datos y CRM
 - Bot solicita secuencialmente: nombre completo, correo electrónico, teléfono con código de país
-- Envía al CRM del cliente vía webhook (formato JSON):
-  ```json
-  {
-    "sku": "0042",
-    "first_name": "Monica",
-    "last_name": "García",
-    "email": "monica@example.com",
-    "phone": "+1-555-0000",
-    "procedure": "veneers_20",
-    "deposit_paid": true,
-    "payment_method": "paypal",
-    "language": "en"
-  }
-  ```
-- El registro queda en estado `draft` en el CRM — humano revisa y confirma
-- CRM envía correo de confirmación automáticamente vía Gmail/nodemailer
+- Envía los datos al CRM Cima Labs vía `PATCH /leads/{crm_lead_id}` o `PATCH /pacientes/{crm_paciente_id}` con `{ email, fecha_nacimiento, numero_identificacion }`
+- **Nota (2026-05-19):** la integración con el CRM dejó de ser un webhook único (estilo `draft`) y pasó a ser una serie de llamadas REST distribuidas a lo largo de las etapas 3→7. Ver [docs/crm-integration-plan.md](docs/crm-integration-plan.md).
 
 ### ETAPA 7 — Agendamiento
 - Bot confirma las fechas definitivas con el lead
@@ -181,36 +167,55 @@ Esto permite aislamiento de datos, backups selectivos y permisos por schema sin 
 CREATE SCHEMA IF NOT EXISTS luxe_smile;
 ```
 
-### Tabla principal: `luxe_smile.leads`
+### Modelo de datos: división local vs CRM Cima Labs
+
+> **Decisión arquitectónica (2026-05-19):** el CRM de Cima Labs es **source of truth de los datos de negocio**;
+> PostgreSQL local guarda solo **estado conversacional del bot**.
+> Ver [docs/crm-integration-plan.md](docs/crm-integration-plan.md) para el detalle completo.
+
+| Dato | Local (`luxe_smile.*`) | CRM Cima Labs |
+|---|---|---|
+| SKU, teléfono, idioma, estado del bot | ✅ | — |
+| Historial de mensajes | ✅ (tabla `mensajes`) | — |
+| Bloqueos de agenda del admin | ✅ (tabla `agenda_bloques`) | — |
+| Trazabilidad local de pagos | ✅ (tabla `pagos`) | — |
+| Nombre, email, fecha nac., identificación | — | ✅ |
+| Monto, procedimientos, closer, fuente | — | ✅ |
+| Fechas (cita1, cita2, llegada, despegue) | — | ✅ + Google Calendar |
+
+El puente entre ambos sistemas son los campos `crm_lead_id` y `crm_paciente_id` en `luxe_smile.leads`.
+
+### Tabla principal: `luxe_smile.leads` (modelo slim)
 
 ```sql
 CREATE TABLE luxe_smile.leads (
-  id            SERIAL PRIMARY KEY,
-  sku           VARCHAR(10)   NOT NULL UNIQUE,        -- ej: '0042'
-  phone         VARCHAR(30)   NOT NULL UNIQUE,        -- número WhatsApp del lead
-  name          VARCHAR(120),                         -- nombre detectado o ingresado
-  language      CHAR(2)       NOT NULL DEFAULT 'en',  -- 'en' o 'es'
-  estado        VARCHAR(30)   NOT NULL DEFAULT 'captacion',
-                -- valores válidos:
-                -- captacion | fotos_enviadas | revision_pendiente
-                -- cotizacion_enviada | pago_pendiente
-                -- pago_confirmado | datos_recopilados | agendado
-  procedure     VARCHAR(60),                          -- ej: 'veneers_20'
-  cotizacion_usd NUMERIC(10,2),                       -- monto cotizado por el especialista
-  mes_preferido VARCHAR(20),                          -- mes elegido por el lead
-  payment_method VARCHAR(10),                         -- 'paypal' | 'manual'
-  deposit_paid  BOOLEAN       NOT NULL DEFAULT FALSE,
-  first_name    VARCHAR(60),
-  last_name     VARCHAR(60),
-  email         VARCHAR(120),
-  phone_full    VARCHAR(30),                          -- teléfono con código de país (Etapa 6)
-  crm_draft_id  VARCHAR(60),                          -- ID asignado por el CRM del cliente
-  calendar_event_id VARCHAR(120),                     -- ID del evento en Google Calendar
-  notas         TEXT,                                 -- campo libre para el equipo humano
-  created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-  pago_at       TIMESTAMPTZ,                          -- timestamp de confirmación de pago
-  agendado_at   TIMESTAMPTZ                           -- timestamp de creación del evento
+  id              SERIAL PRIMARY KEY,
+  sku             VARCHAR(10)   NOT NULL UNIQUE,        -- inventado por el bot: '0042'
+  phone           VARCHAR(30)   NOT NULL UNIQUE,        -- número WhatsApp del lead
+  name            VARCHAR(120),                         -- nombre detectado por el bot
+  language        CHAR(2)       NOT NULL DEFAULT 'en',  -- 'en' o 'es'
+  estado          VARCHAR(30)   NOT NULL DEFAULT 'captacion',
+                  -- captacion | fotos_enviadas | revision_pendiente
+                  -- cotizacion_enviada | pago_pendiente | pago_confirmado
+                  -- datos_recopilados | agendado | descartado
+                  -- reprogramar_pendiente (admin canceló)
+  crm_lead_id     UUID,                                 -- devuelto por POST /leads (Etapa 3) — ej: '612b5a57-93ce-442d-a0d1-7728a960b4ac'
+  crm_paciente_id UUID,                                 -- devuelto por POST /pacientes (Etapa 5)
+  notas           TEXT,                                 -- campo libre para el equipo humano
+  created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+  pago_at         TIMESTAMPTZ,                          -- timestamp de confirmación de pago
+  agendado_at     TIMESTAMPTZ                           -- timestamp de creación del evento
+
+  -- Columnas DEPRECATED (migración 2026-05-19) — todavía presentes en la tabla
+  -- pero NINGÚN workflow nuevo debe leerlas. Se eliminan en Fase 6 cuando
+  -- todos los workflows migren al CRM:
+  --   procedure, cotizacion_usd, mes_preferido, payment_method, deposit_paid,
+  --   first_name, last_name, email, phone_full, calendar_event_id, crm_draft_id
 );
+
+CREATE INDEX idx_leads_crm_lead     ON luxe_smile.leads(crm_lead_id);
+CREATE INDEX idx_leads_crm_paciente ON luxe_smile.leads(crm_paciente_id);
 ```
 
 ### Tabla de historial de conversación: `luxe_smile.mensajes`
@@ -266,15 +271,24 @@ CREATE TABLE luxe_smile.agenda_bloques (
 
 ```
 captacion
-  └─► fotos_enviadas
-        └─► revision_pendiente
-              ├─► cotizacion_enviada   (caso VIABLE)
-              │     └─► pago_pendiente
-              │           └─► pago_confirmado
-              │                 └─► datos_recopilados
-              │                       └─► agendado  ✅
-              └─► [fin de flujo]       (caso NO VIABLE)
+  └─► proceso_explicado          (bot-interno: lead mostró interés, WF-01)
+        └─► fotos_solicitadas    (bot-interno: se envió la guía fotográfica, WF-01)
+              └─► fotos_enviadas (lead mandó fotos → handoff a WF-02)
+                    └─► cotizacion_enviada   (caso VIABLE)
+                    │     └─► pago_pendiente
+                    │           └─► pago_confirmado
+                    │                 └─► datos_recopilados
+                    │                       └─► agendado  ✅
+                    └─► descartado           (caso NO VIABLE)
+
+  └─► otro                       (bot-interno: queja/off-topic/returning, WF-01)
+  └─► reprogramar_pendiente      (admin canceló cita — WF-07)
 ```
+
+> **Nota:** `proceso_explicado`, `fotos_solicitadas`, `otro` son **estados bot-internos**
+> que usa el AI Agent de WF-01 para decidir la fase del funnel. No estaban en la lista
+> canónica original pero el bot los usa en runtime (la columna `estado` es `VARCHAR` libre).
+> Ver el prompt en [prompts/wf01-captacion-calificacion.md](prompts/wf01-captacion-calificacion.md).
 
 ### Índices recomendados
 
@@ -427,9 +441,9 @@ PAYPAL_ENV=production  # o sandbox para pruebas
 CRM_WEBHOOK_URL=https://[crm-cliente]/api/leads
 CRM_API_KEY=xxxx
 
-# Claude API
-ANTHROPIC_API_KEY=xxxx
-CLAUDE_MODEL=claude-opus-4-5
+# OpenAI API (decisión del proyecto: usar GPT, no Claude)
+OPENAI_API_KEY=sk-xxxx
+OPENAI_MODEL=gpt-4o-mini
 
 # Admin canal de control
 ADMIN_PHONES=+57300xxxxxxx,+57311xxxxxxx   # números autorizados separados por coma
@@ -521,8 +535,9 @@ luxe-smile/
 - `Google Calendar — Luxe Smile`
 - `PayPal API — Luxe Smile` (Checkout API)
 - `HTTP Request — CRM Luxe Smile` (webhook con API key)
-- `Anthropic API — LeadAI`
-- `Anthropic API — LeadAI (Admin)` *(puede ser la misma key, con prompt distinto)*
+- `OpenAI API — LeadAI` *(decisión del proyecto: usar GPT, no Claude)*
+- `OpenAI API — LeadAI (Admin)` *(puede ser la misma key, con prompt distinto)*
+- `CRM Cima Labs — Luxe Smile` (Header Auth — credencial ID `bdFoVsi2qdFV3fvT`)
 
 ---
 
@@ -551,41 +566,58 @@ luxe-smile/
 ## 12. Estado del proyecto (actualizado por Claude Code)
 
 > Esta sección se actualiza automáticamente al final de cada sesión de trabajo.
-> Última actualización: 2026-04-17
+> Última actualización: 2026-05-19
 
 ### Setup completado ✅
 
 | Tarea | Detalle |
 |---|---|
-| Credenciales n8n | Evolution API (`QT0zn550ysJh8VpI`), PostgreSQL (`vzzTNppBFKg9XCiK`), Anthropic placeholder (`6a9Pt3vI39KsmCa0`) |
-| Base de datos | Schema `luxe_smile` creado en DB `leadai` — 4 tablas + índices |
-| Evolution API | Instancia `luxe-smile` creada (ID: `249619a4-cd96-49ea-867b-0a148c061d65`) — QR pendiente de escanear |
-| **WF-01** | Captación y Calificación — ID: `CuBrhx5KucZ4mMXX` |
-| **WF-02** | Revisión de Caso (Human Loop) — ID: `jeFR0qJOte0JuzTf` |
-| **WF-03** | Cotización y Cierre — ID: `bUzKAIBYmJvNa1ME` |
-| **WF-04** | Confirmación de Pago PayPal — ID: `k0RqPhnzM3ZjQeEe` |
+| Credenciales n8n | Evolution API (`QT0zn550ysJh8VpI`), PostgreSQL (`vzzTNppBFKg9XCiK`), **OpenAI productiva (`2VcuaBfAaHcbxuEF`)** — decisión del proyecto: GPT, no Claude, **CRM Cima Labs (`bdFoVsi2qdFV3fvT`)** |
+| Base de datos | Schema `luxe_smile` creado en DB `leadai` — **5 tablas** (leads, mensajes, pagos, agenda_bloques, **mensajes_procesados** para idempotencia) + índices + migraciones aplicadas (`crm_lead_id`/`crm_paciente_id` UUID, `updated_at` con trigger, `procedure` deprecated) |
+| Evolution API | Instancia `luxe-smile` creada (ID: `249619a4-cd96-49ea-867b-0a148c061d65`) — QR pendiente de escanear · **Mientras tanto se usa `dev-router`** (env var `EVOLUTION_INSTANCE_LUXE=dev-router` en docker-compose) |
+| **WA Router multi-cliente** | Workflow `IxpEmIZCHPPp4sC7` — recibe webhook único de Evolution `/webhook/wa-router`, detecta prefijo (`LUXE`, `SAVIA`, `ZOE`, `FERRE`) y reenvía a cada cliente. Para Luxe → `/webhook/luxe-smile-messages` |
+| **CRM Cima Labs** | Smoke test pasado el 2026-05-19 (workflow `MvDo4iHbD5Trxv1u`) — `/health`, `/closers`, `/leads/search` respondieron `ok:true`. Closers reales: `Hernan Lopez`, `Joshe Diaz`, `Mariana Cambas`. Cuestionario enviado al equipo Cima Labs (ver [docs/cuestionario-cima-labs.html](docs/cuestionario-cima-labs.html)) |
+| **Hallazgos del API CRM** | IDs son UUID (no BIGINT) · Colecciones envueltas en `data.items` · `/agenda` no valida horarios (es solo log) · `pipeline_stage: "Cotizado"` aceptado · ver [docs/crm-integration-plan.md](docs/crm-integration-plan.md) |
+| **WF-01** ⭐ refactorizado | Captación y Calificación — ID: `CuBrhx5KucZ4mMXX` · **40 nodos** · 2026-05-19: refactor IA-driven (eliminados regex de detección + hardcodes del Parser) + idempotencia webhook (3 nodos nuevos) · Prompt vive en `parameters.options.systemMessage`, NO en `.md` (el `.md` es espejo de referencia) |
+| **WF-02** | Revisión de Caso (Human Loop) — ID: `jeFR0qJOte0JuzTf` · Pendiente refactor IA-driven análogo a WF-01 |
+| **WF-03** | Cotización y Cierre — ID: `bUzKAIBYmJvNa1ME` · Pendiente integración CRM (Fase 3 del plan) |
+| **WF-04** | Confirmación de Pago PayPal — ID: `k0RqPhnzM3ZjQeEe` · Bloqueado por credenciales PayPal pendientes |
 | **WF-05** | Confirmación de Pago Manual — ID: `Jxc1UVPoK4mGJVHJ` |
-| **WF-06** | Datos y Agendamiento — ID: `cgAXqzntirV1uDb5` |
+| **WF-06** | Datos y Agendamiento — ID: `cgAXqzntirV1uDb5` · Webhook mock `httpbin.org` aún presente (se elimina en Fase 4 del plan) |
 | **WF-07** | Admin Control — ID: `aSy1GEWhtUzIHncw` |
+| **Exploración CRM** | Workflow `SB10zprJRSAjEbTH` — tests empíricos del API. Workflow `qAyNfiKsRR09dBs6` — cleanup de leads huérfanos. |
 
-### Pendientes bloqueantes (sin esto no se puede activar ningún workflow)
+### Pendientes bloqueantes
 
-1. **Anthropic API key real** — la key provista era de OpenAI. Necesita `sk-ant-api03-...` desde console.anthropic.com. Actualizar credencial `6a9Pt3vI39KsmCa0` en n8n UI.
-2. **Escanear QR de WhatsApp** — conectar el número de Luxe Smile a la instancia `luxe-smile` de Evolution API.
-3. **Variables de entorno en n8n** — configurar en n8n → Settings → Environment Variables:
-   - `EVOLUTION_API_URL` = `https://evolution.srv1398596.hstgr.cloud`
-   - `EVOLUTION_INSTANCE_LUXE` = `luxe-smile`
-   - `EVOLUTION_API_KEY` = `leadai2024secreto`
-   - `ADMIN_PHONES` = `+573012661158`
-   - `CLAUDE_MODEL` = `claude-opus-4-5`
-   - `LUXE_PHOTO_GUIDE_URL` = (URL de la imagen guía — pendiente del cliente)
-   - `DEPOSIT_AMOUNT_USD` = `500`
-   - `RESERVATION_POLICY_DAYS` = `5`
+1. **Respuesta de Cima Labs al cuestionario** ([docs/cuestionario-cima-labs.html](docs/cuestionario-cima-labs.html)) — bloquea Fase 2 de la integración CRM:
+   - ¿Closer especial para el bot?
+   - ¿Cómo se maneja disponibilidad/cupos en `/agenda`?
+2. **Escanear QR oficial de WhatsApp Luxe Smile** — conectar el número a la instancia `luxe-smile` de Evolution API. Mientras tanto, el bot opera contra `dev-router` (con prefijo `LUXE` requerido para testing). Al conectar QR, cambiar la env var `EVOLUTION_INSTANCE_LUXE=dev-router` → `luxe-smile` en docker-compose y `docker compose up -d n8n`.
+
+### Pendientes de mejora identificados (review 2026-05-19)
+
+Ver [docs/pendientes.md](docs/pendientes.md) para detalle priorizado. Críticos cerrados, quedan:
+
+- **🟡 I1-I5** — robustez (retry AI Agent, truncar historial, observabilidad de decisiones IA, guard extra del sendImage, sync estado list de esta sec con la realidad del bot)
+- **🟢 N1-N7** — calidad de vida (test suite conversacional, refactor visual WF-01, etc.)
+
+### Env vars productivas (en docker-compose, ya configuradas)
+
+Confirmadas en runtime el 2026-05-19:
+- `EVOLUTION_API_URL`, `EVOLUTION_INSTANCE_LUXE`, `EVOLUTION_INSTANCE_SAVIA`, `EVOLUTION_API_KEY`
+- `WHATSAPP_GROUP_CASOS=120363409047825899@g.us`, `WHATSAPP_GROUP_PAGOS=120363411157984355@g.us`
+
+Hardcodeadas en nodos HTTP (decisión: env vars no editables desde UI en esta versión de n8n):
+- URL base del CRM Cima Labs: `https://ayozqkwmpwdqxiggvrnq.supabase.co/functions/v1/api-v1`
+
+Pendientes de seteo (no bloqueantes hoy):
+- `LUXE_PHOTO_GUIDE_URL` — pendiente del cliente
+- `DEPOSIT_AMOUNT_USD=500`, `RESERVATION_POLICY_DAYS=5`
 
 ### Pendientes no bloqueantes (para etapas posteriores)
 
 - **Google Calendar OAuth** — configurar desde n8n UI cuando el cliente entregue acceso
 - **PayPal API** — client ID + secret pendientes del cliente
 - **IDs de grupos WhatsApp** — obtener después de conectar la instancia (`WHATSAPP_GROUP_CASOS`, `WHATSAPP_GROUP_PAGOS`)
-- **CRM webhook real** — actualmente mockeado en `https://httpbin.org/post`
 - **`LUXE_PHOTO_GUIDE_URL`** — imagen referencial de ángulos fotográficos
+- **Eliminar mock httpbin.org en WF-06** — se hará en Fase 4 de la integración CRM (ver [docs/crm-integration-plan.md](docs/crm-integration-plan.md))

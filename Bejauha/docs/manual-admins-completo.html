@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bejauha — Manual de admins (completo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;1,500;1,600&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sage-50:   #f4f6f3;
+    --sage-100:  #e6ebe1;
+    --sage-200:  #c8d3bd;
+    --sage-300:  #a5b596;
+    --sage-500:  #6b8459;
+    --sage-700:  #46583a;
+    --sage-900:  #2c3a23;
+    --cream:     #fbf7ef;
+    --cream-dk:  #f3edde;
+    --ink:       #2d2a24;
+    --ink-soft:  #5b574f;
+    --shadow:    0 1px 3px rgba(44, 58, 35, .08), 0 8px 24px rgba(44, 58, 35, .06);
+    --radius:    12px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.65;
+    font-weight: 400;
+    font-size: 16px;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, var(--sage-700), var(--sage-500));
+    color: var(--cream);
+    padding: 56px 24px 64px;
+  }
+  .hero-inner { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  .hero .eyebrow {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    color: var(--cream-dk);
+    margin: 0 0 10px;
+    font-weight: 500;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 2.6rem;
+    margin: 0 0 12px;
+    color: var(--cream);
+    letter-spacing: -.01em;
+    line-height: 1.15;
+  }
+  .hero .subtitle {
+    font-size: 1.05rem;
+    color: var(--cream-dk);
+    margin: 0;
+    font-weight: 300;
+    max-width: 640px;
+    line-height: 1.55;
+  }
+  .hero .meta {
+    margin-top: 22px;
+    font-size: .85rem;
+    color: var(--cream-dk);
+    opacity: .9;
+    border-top: 1px solid rgba(255,255,255,.18);
+    padding-top: 16px;
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .hero .meta span strong { color: var(--cream); font-weight: 500; }
+
+  /* Layout */
+  .wrap {
+    max-width: 920px;
+    margin: -28px auto 0;
+    padding: 0 16px 56px;
+  }
+  .content {
+    background: white;
+    border-radius: var(--radius);
+    padding: 40px 48px;
+    box-shadow: var(--shadow);
+  }
+  @media (max-width: 600px) { .content { padding: 26px 22px; } }
+
+  /* TOC */
+  .toc {
+    background: var(--sage-50);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin: 0 0 18px;
+  }
+  .toc-title {
+    font-family: 'Poppins', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--sage-700);
+    margin: 0 0 12px;
+  }
+  .toc ol {
+    margin: 0;
+    padding-left: 22px;
+    columns: 2;
+    column-gap: 28px;
+  }
+  @media (max-width: 600px) { .toc ol { columns: 1; } }
+  .toc li {
+    margin-bottom: 6px;
+    font-size: .92rem;
+    break-inside: avoid;
+  }
+  .toc a {
+    color: var(--sage-700);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .toc a:hover { color: var(--sage-900); text-decoration: underline; }
+
+  .content section { padding-top: 16px; padding-bottom: 14px; }
+  .content section + section { border-top: 1px solid var(--sage-100); padding-top: 28px; margin-top: 18px; }
+
+  h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 500;
+    font-style: italic;
+    font-size: 1.7rem;
+    color: var(--sage-700);
+    margin: 0 0 16px;
+    letter-spacing: -.01em;
+    scroll-margin-top: 16px;
+    display: flex; align-items: center; gap: 14px;
+    line-height: 1.25;
+  }
+  h2 svg { color: var(--sage-500); flex-shrink: 0; }
+
+  h3 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: .85rem;
+    color: var(--sage-900);
+    margin: 26px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  h4 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--sage-900);
+    margin: 18px 0 6px;
+  }
+
+  p { margin: 10px 0; }
+  strong { font-weight: 600; color: var(--sage-900); }
+  em { color: var(--ink-soft); }
+
+  a { color: var(--sage-700); }
+
+  /* Code */
+  code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    background: var(--sage-50);
+    color: var(--sage-700);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: .9em;
+    font-weight: 500;
+  }
+  pre {
+    background: var(--sage-900);
+    color: #d7e3cd;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: .88rem;
+    line-height: 1.5;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: .92rem;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--sage-100);
+  }
+  thead { background: var(--sage-50); }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--sage-700);
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-bottom: 1px solid var(--sage-100);
+  }
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--sage-100);
+    vertical-align: top;
+    font-size: .93rem;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--sage-50); }
+
+  /* Callouts */
+  blockquote {
+    margin: 14px 0;
+    padding: 12px 16px 12px 38px;
+    background: var(--sage-50);
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-style: italic;
+    position: relative;
+    font-size: .94rem;
+  }
+  blockquote::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    width: 14px;
+    height: 14px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b8459' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 2L2 7l10 5 10-5-10-5z'/><path d='M2 17l10 5 10-5'/><path d='M2 12l10 5 10-5'/></svg>");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: .85;
+  }
+  blockquote strong { color: var(--sage-700); }
+
+  /* Dialog example */
+  .dialog {
+    background: var(--cream-dk);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    font-size: .92rem;
+    line-height: 1.55;
+  }
+  .dialog p { margin: 6px 0; }
+  .dialog .who {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 600;
+    color: var(--sage-700);
+    margin-right: 6px;
+  }
+  .dialog em { color: var(--ink-soft); }
+
+  ul, ol { padding-left: 22px; }
+  li { margin-bottom: 4px; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--ink-soft);
+    font-size: .85rem;
+  }
+  footer .pf {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    color: var(--sage-700);
+    font-size: 1rem;
+  }
+
+  @media print {
+    body { background: white; }
+    .hero { background: white; color: var(--ink); padding: 0 0 18px; border-bottom: 2px solid var(--sage-300); }
+    .hero h1, .hero .subtitle, .hero .meta, .hero .meta span strong, .hero .eyebrow { color: var(--ink); }
+    .wrap { padding: 0; margin-top: 0; }
+    .content { box-shadow: none; padding: 0; }
+    h2 svg { color: var(--sage-700); }
+    pre { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+    section { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Bejauha · Manual interno</p>
+    <h1>Manual de admins — versión completa</h1>
+    <p class="subtitle">Cómo usar el agente Bejauha en WhatsApp y el dashboard web. Todo el detalle, con ejemplos, casos paso a paso y glosario.</p>
+    <div class="meta">
+      <span><strong>Última actualización:</strong> 10 junio 2026</span>
+      <span><strong>Versión corta:</strong> manual-admins.html</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <main class="content">
+
+    <section>
+      <div class="toc">
+        <p class="toc-title">Contenido</p>
+        <ol>
+          <li><a href="#s1">Qué hace el agente</a></li>
+          <li><a href="#s2">Cómo lo usan día a día</a></li>
+          <li><a href="#s3">Dashboard web</a></li>
+          <li><a href="#s4">Hablándole por WhatsApp</a></li>
+          <li><a href="#s5">Asistencias</a></li>
+          <li><a href="#s6">Paquete: recargar, ajustar, pausar</a></li>
+          <li><a href="#s7">Datos del cliente</a></li>
+          <li><a href="#s8">Conversacional: saludos y ayuda</a></li>
+          <li><a href="#s9">Handoffs</a></li>
+          <li><a href="#s10">Grupo Leads Calientes</a></li>
+          <li><a href="#s11">Estrategia paquete vs. membresía</a></li>
+          <li><a href="#s12">Proceso outbound automático</a></li>
+          <li><a href="#s13">Casos de uso paso a paso</a></li>
+          <li><a href="#s14">FAQ extendida</a></li>
+          <li><a href="#s15">Glosario</a></li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="s1">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        1. Qué hace el agente
+      </h2>
+      <p>El <strong>agente de Bejauha</strong> (que se presenta como <strong>Beja</strong> ante los clientes) es un asistente automatizado que vive en WhatsApp. Su trabajo es:</p>
+      <ul>
+        <li><strong>Atender prospects nuevos</strong> que escriben por primera vez (planes, precios, sede, horarios, clase de cortesía).</li>
+        <li><strong>Llevar el control operativo</strong> de los clientes con paquete vigente: registrar asistencias, descontar saldo, recargar paquetes, ajustar saldos, pausar.</li>
+        <li><strong>Prospectar de forma automática</strong> a la base dormida ofreciendo la clase de cortesía.</li>
+        <li><strong>Pasarles el balón a ustedes</strong> cuando hay algo que no puede resolver solo (un <em>handoff</em>).</li>
+      </ul>
+      <p>El agente <strong>nunca improvisa con dinero ni con políticas</strong>. Si alguien pide algo fuera de su alcance (precio especial, cambio de sede, hablar con humano), genera un handoff.</p>
+      <blockquote><strong>El agente no reemplaza a las admins.</strong> Es un primer filtro y un sistema de registro. Las decisiones comerciales (cerrar venta, hacer excepción, atender insistente) siguen siendo de ustedes.</blockquote>
+    </section>
+
+    <section id="s2">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18h14V3H5zM9 7h6M9 11h6M9 15h4"/></svg>
+        2. Cómo lo usan día a día
+      </h2>
+      <p>Hay <strong>dos formas</strong> de interactuar con el sistema:</p>
+      <table>
+        <thead><tr><th>Para...</th><th>Cómo</th><th>Cuándo</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ver datos</strong> (clientes, saldos, handoffs)</td><td>Dashboard web (link privado)</td><td>Cuando quieras revisar, buscar o auditar</td></tr>
+          <tr><td><strong>Hacer acciones</strong> (registrar, recargar, editar)</td><td>Hablándole por WhatsApp con prefijo <code>BEJA</code></td><td>En el momento — después de cada clase, cuando llega un pago, etc.</td></tr>
+        </tbody>
+      </table>
+      <blockquote><strong>Regla de oro:</strong> el agente <strong>solo se activa con <code>BEJA</code></strong> al inicio del mensaje <strong>en el grupo de admins</strong>. En chat privado con BEJA no hace falta prefijo — escriben natural. Esto vale incluso para confirmaciones.</blockquote>
+      <h3>¿Por qué BEJA en el grupo?</h3>
+      <p>El agente está conectado al WhatsApp Business y al grupo de admins. Si respondiera a todo lo que se escribe en el grupo, sería ruido constante. El prefijo es un interruptor explícito en ese contexto. En chats privados no hace falta porque ahí toda la conversación es con el agente.</p>
+    </section>
+
+    <section id="s3">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        3. Dashboard web
+      </h2>
+      <pre><code>https://n8n.srv1398596.hstgr.cloud/webhook/bejauha-dashboard?token=&lt;TOKEN_PRIVADO&gt;</code></pre>
+      <p>El token completo se les comparte aparte (es un secreto, no se envía por canales públicos).</p>
+
+      <h3>Qué muestra</h3>
+      <p>3 pestañas en una sola página, todo en vivo:</p>
+      <ul>
+        <li><strong>Todos los leads</strong>: toda la base de prospects y clientes. Búsqueda por nombre o teléfono.</li>
+        <li><strong>Clientes paquete</strong>: solo los que tienen saldo activo. Click → ves saldo, fecha de vencimiento, si está pausado.</li>
+        <li><strong>Handoffs activos</strong>: lo que está pendiente de que ustedes atiendan ahora mismo.</li>
+      </ul>
+
+      <h3>Cómo usarlo</h3>
+      <ul>
+        <li>Búsqueda en vivo mientras escribes (no hay que dar Enter).</li>
+        <li>Click en cualquier item → abre detalle con todos los campos.</li>
+        <li><strong>Solo lectura.</strong> Para hacer cambios, igual hay que escribir <code>BEJA ...</code> por WhatsApp.</li>
+      </ul>
+
+      <h3>Tip de acceso rápido</h3>
+      <p>Guarden la URL en la <strong>pantalla de inicio del celular</strong>:</p>
+      <ul>
+        <li><strong>iPhone (Safari):</strong> botón compartir → "Añadir a pantalla de inicio"</li>
+        <li><strong>Android (Chrome):</strong> menú de 3 puntos → "Añadir a pantalla de inicio"</li>
+      </ul>
+
+      <h3>Seguridad</h3>
+      <ul>
+        <li>Cualquiera con el link entra. <strong>No compartir</strong> por canales públicos.</li>
+        <li>Si el celular se pierde o el link se filtra, <strong>avisar</strong> para rotarlo.</li>
+      </ul>
+    </section>
+
+    <section id="s4">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        4. Hablándole por WhatsApp
+      </h2>
+      <p>En el grupo, los comandos siguen este formato:</p>
+      <pre><code>BEJA &lt;lo que quieres hacer en lenguaje natural&gt;</code></pre>
+      <p>En chat privado con BEJA, el prefijo es opcional. El agente entiende variaciones. Lo que sí importa:</p>
+      <ol>
+        <li><strong>En el grupo, empezar con <code>BEJA</code></strong> (o el agente ignora).</li>
+        <li><strong>Ser específicos</strong>: nombre completo o teléfono cuando hay ambigüedad.</li>
+        <li><strong>Confirmar con <code>BEJA sí</code> / <code>BEJA no</code></strong> cuando el agente pregunta.</li>
+      </ol>
+    </section>
+
+    <section id="s5">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        5. Asistencias
+      </h2>
+      <p>Cuando una clienta con paquete viene a clase, registras su asistencia. El agente descuenta una clase del saldo automáticamente.</p>
+
+      <h3>Una sola persona</h3>
+      <pre><code>BEJA Mariana asistió</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Listo, registré la asistencia de Mariana López. Le quedan 3 clase(s) presencial.</p>
+      </div>
+
+      <h3>Varias personas a la vez (bulk)</h3>
+      <pre><code>BEJA asistieron:
+Mariana López
+Sofía Mendez
+Carolina Pérez</code></pre>
+      <p>El agente busca cada nombre, te muestra preview con ✓/⚠️/✗, pide confirmación y registra todas con el saldo nuevo.</p>
+
+      <h3>Modalidad: presencial vs. virtual</h3>
+      <p>Si la clase es <strong>virtual</strong>, incluye la palabra en el mensaje:</p>
+      <pre><code>BEJA asisten a clase virtual de hoy:
+Catalina Medina
+Tatiana Forero</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Voy a registrar asistencia <strong>*VIRTUAL*</strong> de:<br>
+        ✓ Catalina Medina (...)<br>
+        ✓ Tatiana Forero (...)<br><br>
+        ⚠️ Atención: estás registrando asistencias VIRTUALES (lo más común es presencial). Si te equivocaste, responde "no" y reenvía sin la palabra "virtual".<br><br>
+        ¿Confirmas? (responde sí o no)</p>
+      </div>
+      <p>Por defecto (si no se menciona modalidad), el agente registra como <strong>presencial</strong>.</p>
+
+      <h3>Si hay ambigüedad (homónimos)</h3>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Encontré varias personas con ese nombre: Mariana López, Mariana Gómez. ¿A cuál te refieres? Dime el apellido o el celular 🌿</p>
+        <p><span class="who">Tú:</span> <code>BEJA López</code> &nbsp;<em>o</em>&nbsp; <code>BEJA 8421</code></p>
+      </div>
+
+      <h3>Si la clienta no tiene saldo (acabó su paquete)</h3>
+      <p>La asistencia <strong>se registra igual</strong>, marcada como <strong>deudora</strong>. Además, el agente abre handoff de renovación al grupo.</p>
+    </section>
+
+    <section id="s6">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 11V7a4 4 0 0 0-8 0v4"/><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/></svg>
+        6. Paquete: recargar, ajustar, pausar, consultar
+      </h2>
+
+      <h3>Recargar (cualquier cantidad)</h3>
+      <p><strong>Ya no hay restricción a solo 4 u 8 clases</strong> — puedes recargar cualquier cantidad:</p>
+      <pre><code>BEJA recarga 4 a Laura
+BEJA recarga 8 a Laura
+BEJA recarga 12 a Pedro
+BEJA recarga 20 a María</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Recarga aplicada a Laura Martínez. Saldo actual: 9 clase(s) presencial. Vence el 2026-09-04.</p>
+      </div>
+      <blockquote><strong>Vencimiento automático:</strong> menos de 8 clases → 2 meses · 8 o más → 3 meses.</blockquote>
+
+      <h3>Si no especificas cantidad</h3>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> ¿Cuántas clases vas a recargar a Laura? Responde con el número (ej. 4, 8, 12...).</p>
+        <p><span class="who">Tú:</span> <code>BEJA 8</code></p>
+      </div>
+
+      <h3>Pago + asistencia en un solo mensaje (combo)</h3>
+      <p>Si la clienta paga el paquete <strong>Y</strong> toma la clase el mismo día, díselo todo junto:</p>
+      <pre><code>BEJA Laura pagó 4 y tomó clase</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Listo ✓ Recarga aplicada a Laura Rubio y asistencia de hoy registrada. Saldo final: 3 clase(s) presencial. Vence el 2026-08-04.</p>
+      </div>
+
+      <h3>Ajustar saldo manualmente (corregir errores)</h3>
+      <p>Si hay un error en el conteo, corrige el saldo directamente:</p>
+      <pre><code>BEJA ajusta a 2 las clases de María
+BEJA Ximena tiene 1 clase no 3
+BEJA corrige el saldo de Pedro a 4</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Voy a ajustar el saldo de María García:<br>
+        &nbsp;&nbsp;Actual: 5 clase(s) presencial<br>
+        &nbsp;&nbsp;Nuevo:  2 clase(s) presencial<br><br>
+        ¿Confirmas? (responde sí o no)</p>
+      </div>
+
+      <h3>Pausar paquete</h3>
+      <p><strong>1 vez por paquete, máximo 1 mes.</strong></p>
+      <pre><code>BEJA pausa a Laura</code></pre>
+      <p>Se reactiva automáticamente al mes o cuando escribas:</p>
+      <pre><code>BEJA despausa a Laura</code></pre>
+
+      <h3>Consultar saldo</h3>
+      <pre><code>BEJA cuántas le quedan a Laura</code></pre>
+      <p>El agente responde con variación natural (no siempre la misma redacción):</p>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> A Laura Martínez le quedan 3 clases presencial disponibles. Vence el 2026-07-14.</p>
+      </div>
+    </section>
+
+    <section id="s7">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        7. Datos del cliente
+      </h2>
+
+      <h3>Editar un campo</h3>
+      <pre><code>BEJA actualiza el nombre del 573001234567 a María García
+BEJA actualiza el email del 573001234567 a maria@correo.com</code></pre>
+      <p>El agente pide confirmación antes de aplicar.</p>
+
+      <h3>Cargar varios clientes nuevos</h3>
+      <pre><code>BEJA carga estos clientes:
+573001234567 Laura Martínez
+573009876543 Pedro Gómez
+573004445566 Ana Ríos</code></pre>
+      <p>El agente ahora <strong>verifica qué teléfonos ya existen</strong> en la base antes de proceder:</p>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Voy a crear 1 lead nuevo:<br>
+        • Ana Ríos (573004445566)<br><br>
+        Estos ya están registrados y los voy a ignorar:<br>
+        • Laura Martínez (573001234567)<br>
+        • Pedro Gómez (573009876543) — tú lo nombraste "Pedro Gómez Carrillo"<br><br>
+        ¿Confirmas crear 1 nuevo? (responde sí o no)</p>
+      </div>
+      <p>Si el nombre que mandaste es distinto al guardado, lo señala para que decidas si corregir con <code>BEJA actualiza el nombre del 573XXX a NuevoNombre</code>.</p>
+
+      <h3>Pegar nombres sin teléfono (ayuda contextual)</h3>
+      <p>Si pegas la lista solo con nombres, el agente busca en la base y te dice qué encuentra:</p>
+      <pre><code>BEJA carga estos clientes:
+Claudia Murcia
+Maria de la Oz
+Luis Guillermo</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> Estos ya están en la base (no hay que crearlos):<br>
+        • Claudia Murcia — 573226142394<br>
+        • Luis Guillermo — 573115310523<br><br>
+        Estos no están en la base, para crearlos necesito su teléfono:<br>
+        • Maria de la Oz<br><br>
+        Mándame así:<br>
+        BEJA carga estos clientes:<br>
+        573001112233 Maria de la Oz</p>
+      </div>
+
+      <h3>Eliminar un cliente (con su historial)</h3>
+      <p>Eliminar un cliente borra al lead <strong>y todo su historial</strong> (saldos, asistencias, recargas, handoffs, mensajes). Es destructivo y requiere confirmación.</p>
+
+      <h4>Por teléfono</h4>
+      <pre><code>BEJA elimina al 573132800644</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> ⚠️ Vas a ELIMINAR a Tatiana Forero (573132800644) de la base, junto con todo su historial (saldo, asistencias, recargas, handoffs y conversación).<br><br>
+        Esta acción NO se puede deshacer.<br><br>
+        ¿Confirmas? (responde sí o no)</p>
+      </div>
+
+      <h4>Por nombre (único match)</h4>
+      <pre><code>BEJA elimina a Tatiana Forero</code></pre>
+      <p>Mismo preview destructivo con teléfono resuelto.</p>
+
+      <h4>Por nombre con varios homónimos</h4>
+      <pre><code>BEJA elimina a Maria</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> ⚠️ Encontré varios clientes con "Maria":<br>
+        • Maria García (573001112233)<br>
+        • Maria López (573004445566)<br>
+        • Maria Rodríguez (573009998877)<br><br>
+        Dime el número exacto del que quieres eliminar (ej. "BEJA elimina al 573XXX").</p>
+      </div>
+
+      <h3>Eliminar varios clientes a la vez (bulk_delete)</h3>
+      <p>Cuando necesites borrar una lista entera, lo haces en un solo comando con preview y una sola confirmación:</p>
+      <pre><code>BEJA elimina estos clientes:
++57 311 8544318 Estefania Guevara
++57 313 8024553 Flor Mara Boada
++57 300 4814967 Francisco Ovalle</code></pre>
+      <div class="dialog">
+        <p><span class="who">Agente:</span> ⚠️ Vas a ELIMINAR 3 cliente(s) de la base, junto con TODO su historial (saldos, asistencias, recargas, handoffs, mensajes):<br>
+        • Estefania Guevara (573118544318)<br>
+        • Flor Mara Boada (573138024553)<br>
+        • Francisco Ovalle (573004814967)<br><br>
+        Esta acción NO se puede deshacer.<br><br>
+        ¿Confirmas? (responde sí o no)</p>
+      </div>
+      <p>Si alguno <strong>no existe</strong> en la base, lo marca con ⚠️ antes de confirmar.</p>
+      <p>Aplica la misma cascada que <code>delete_lead</code> individual: saldos, asistencias, recargas, handoffs, logs y recibidos — todo se borra para cada uno.</p>
+
+      <h3>Nombres limpios automáticamente (bulk_load y bulk_delete)</h3>
+      <p>A partir del <strong>10 jun</strong>, el LLM limpia los nombres antes de guardarlos. Si escribes:</p>
+      <pre><code>BEJA carga este cliente +57 311 8544318 Estefania Guevara</code></pre>
+      <p>El nombre se guarda como <strong>"Estefania Guevara"</strong> (no "carga este cliente Estefania Guevara"). El sistema sigue extrayendo los teléfonos con regex (precisión, sin alucinaciones del LLM) pero usa los nombres ya limpios del LLM.</p>
+      <p>Aplica para <code>bulk_load</code>, <code>bulk_delete</code> y cualquier comando con listas.</p>
+    </section>
+
+    <section id="s8">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        8. Conversacional: saludos, ayuda y mensajes sociales
+      </h2>
+      <p>El agente reconoce mensajes conversacionales y responde de forma natural en colombiano. <strong>No</strong> te suelta el "no entendí" cuando solo lo saludas o agradeces.</p>
+      <table>
+        <thead><tr><th>Lo que escribes</th><th>Respuesta del agente</th></tr></thead>
+        <tbody>
+          <tr><td><code>BEJA hola</code> · <code>BEJA buenas</code></td><td>Saludo cálido + recordatorio breve de capacidades (generado por LLM, varía)</td></tr>
+          <tr><td><code>BEJA gracias</code> · <code>BEJA listo</code></td><td>Respuesta corta y amable</td></tr>
+          <tr><td><code>BEJA chao</code> · <code>BEJA nos vemos</code></td><td>Despedida cordial</td></tr>
+          <tr><td><code>BEJA ayuda</code> · <code>BEJA qué puedes hacer</code></td><td>Lista completa de capacidades + URL del dashboard</td></tr>
+        </tbody>
+      </table>
+      <p>Los saludos son <strong>generados por LLM</strong>, así que rotan en tono y redacción (no suenan a respuesta enlatada).</p>
+
+      <h3>Si el agente no entiende lo que pediste</h3>
+      <p>Si dices algo ambiguo que no es ni social ni un comando reconocible, el agente da pistas útiles:</p>
+      <ul>
+        <li><em>"corrige las clases de X"</em> → sugiere <code>BEJA ajusta a N las clases de X</code></li>
+        <li><em>"qué personas activas tenemos"</em> → te da el link del dashboard</li>
+        <li><em>"deshacer asistencia"</em> → te dice que esa función aún no existe</li>
+        <li><em>"incluye a Pepito"</em> → te recuerda que para crear cliente necesitas teléfono</li>
+      </ul>
+      <p>Solo como <strong>último recurso</strong> (cosa totalmente desconocida), lanza el mensaje genérico con ejemplos.</p>
+    </section>
+
+    <section id="s9">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        9. Handoffs
+      </h2>
+      <p>Un <strong>handoff</strong> es cuando el agente se hace a un lado y <strong>les pasa el cliente a ustedes</strong> porque hay algo que no puede resolver. Mientras hay handoff:</p>
+      <ul>
+        <li><strong>El agente deja de responder a ese cliente.</strong></li>
+        <li>Aparece un aviso en el grupo "Leads Calientes Bejauha".</li>
+        <li>Una de ustedes lo atiende desde su WhatsApp personal.</li>
+      </ul>
+
+      <h3>Cuándo se genera un handoff</h3>
+      <table>
+        <thead><tr><th>Situación</th><th>Aviso al grupo</th><th>Por qué</th></tr></thead>
+        <tbody>
+          <tr><td>Cliente sin saldo (acabó paquete)</td><td><strong>Renovación necesaria</strong> · <em>"X acabó su paquete, candidato a migrar a membresía"</em></td><td>Push a membresía o renovación</td></tr>
+          <tr><td>Prospect nuevo insiste en paquete (después de proponerle membresía)</td><td><strong>Lead caliente</strong> · <em>"Quiere el paquete, no aceptó membresía"</em></td><td>Decisión de ustedes</td></tr>
+          <tr><td>Pide clase suelta presencial</td><td><strong>Lead caliente</strong> · <em>"Quiere coordinar día"</em></td><td>Requiere coordinación de horario</td></tr>
+          <tr><td>Pide hablar con persona</td><td><strong>Lead caliente</strong> · <em>"Pidió hablar con persona"</em></td><td>Cuando lo solicita explícitamente</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Cómo se cierra</h3>
+      <ol>
+        <li><strong>Auto-cierre a las 48h</strong> sin actividad.</li>
+        <li><strong>El cliente vuelve a escribir</strong> después del cierre — el agente retoma como prospect normal.</li>
+      </ol>
+      <p>No hay comando manual para cerrar.</p>
+      <blockquote><strong>Por qué importa atender rápido:</strong> mientras el handoff está abierto, el cliente recibe <strong>silencio</strong> del agente.</blockquote>
+    </section>
+
+    <section id="s10">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        10. El grupo "Leads Calientes Bejauha"
+      </h2>
+      <p>Es el <strong>centro de operaciones</strong>. Allí llegan los avisos del agente y desde allí pueden comandarlo.</p>
+      <table>
+        <thead><tr><th>Tipo</th><th>Qué significa</th><th>Cuándo atender</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Lead caliente</strong></td><td>Alguien listo para cerrar venta</td><td><strong>Minutos importan</strong></td></tr>
+          <tr><td><strong>Renovación</strong></td><td>Cliente con paquete que acabó saldo, candidato a migrar a membresía</td><td><strong>Mismo día</strong></td></tr>
+          <tr><td><strong>Auto-cierre</strong></td><td>Handoffs viejos (&gt;48h) cerrados a las 9am</td><td>Informativo</td></tr>
+          <tr><td><strong>Auto-despausa</strong></td><td>Paquetes pausados que volvieron a correr</td><td>Informativo</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Ejemplo de aviso "lead caliente"</h3>
+      <div class="dialog">
+        <p>🔥 <strong>Nuevo lead caliente</strong></p>
+        <p><strong>Mariana López</strong> (573001234567)<br>Quiere el paquete — no aceptó membresía.</p>
+        <p><em>Mensaje original:</em><br><em>"Hola, vi sus precios pero prefiero el paquete por ahora, no quiero suscripción. ¿Cómo pago?"</em></p>
+      </div>
+    </section>
+
+    <section id="s11">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        11. Estrategia comercial: paquete vs. membresía
+      </h2>
+      <h3>Política actual</h3>
+      <ul>
+        <li><strong>No se venden paquetes nuevos</strong> a prospects que llegan por primera vez. Push directo a membresía (<code>bejauha.com/planes</code>).</li>
+        <li><strong>Los clientes con paquete vigente</strong> siguen normales hasta que se les acabe. Se irán <strong>migrando a membresía</strong> progresivamente.</li>
+        <li>Cuando se acaba un paquete, el aviso al grupo dice <strong>"candidato a migrar a membresía"</strong>.</li>
+        <li>En conversaciones inbound, el agente se presenta como <strong>Beja</strong> en su primer mensaje (identidad de marca).</li>
+      </ul>
+
+      <h3>Qué hace el agente</h3>
+      <ul>
+        <li>A <strong>prospects nuevos</strong>: propone membresía primero. Si insisten en paquete, genera handoff.</li>
+        <li>A <strong>clientes paquete existentes</strong>: opera normal.</li>
+      </ul>
+
+      <h3>Clase de cortesía con tracking de conversión</h3>
+      <p>Cuando un prospect acepta la clase de cortesía (gratis), el agente automáticamente:</p>
+      <ol>
+        <li><strong>Crea el lead</strong> en la base de datos (si no existe).</li>
+        <li><strong>Carga 1 clase presencial</strong> al saldo (vence en 30 días).</li>
+        <li><strong>Marca al lead</strong> con <code>tomo_cortesia=true</code> y <code>cortesia_at=&lt;fecha&gt;</code>.</li>
+        <li><strong>Genera handoff</strong> al grupo para coordinar día y hora.</li>
+      </ol>
+      <p>Cuando la persona viene a la clase, el admin hace <code>BEJA &lt;Nombre&gt; asistió</code> normal → saldo va de 1→0 → handoff de renovación dispara.</p>
+      <blockquote><strong>Para marketing:</strong> después se puede medir conversión cortesía → cliente con queries simples sobre <code>tomo_cortesia=true</code> cruzado con <code>bejauha.recargas</code>. Ver <code>database/014_cortesia.sql</code> para queries listas.</blockquote>
+    </section>
+
+    <section id="s12">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        12. Proceso outbound (no requiere acción)
+      </h2>
+      <p>El agente corre un <strong>proceso de prospección saliente</strong>:</p>
+      <ul>
+        <li><strong>Volumen:</strong> 20 mensajes por día.</li>
+        <li><strong>Base:</strong> contactos dormidos.</li>
+        <li><strong>Mensaje:</strong> invitación a la clase de cortesía (gratis, 1 vez).</li>
+        <li><strong>Resultado:</strong> si responde positivo, entra como handoff de lead caliente al grupo.</li>
+      </ul>
+      <blockquote><strong>No tienen que hacer nada con esto.</strong> El proceso corre en automático.</blockquote>
+    </section>
+
+    <section id="s13">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        13. Casos de uso paso a paso
+      </h2>
+
+      <h4>Caso A — Llega una clienta a clase</h4>
+      <ol>
+        <li>Escribes: <code>BEJA Mariana asistió</code></li>
+        <li>Agente: <em>"Listo, registré la asistencia de Mariana López. Le quedan 3 clase(s) presencial."</em></li>
+      </ol>
+
+      <h4>Caso B — Llegan 4 clientas a la misma clase</h4>
+      <ol>
+        <li>Escribes:
+          <pre><code>BEJA asistieron:
+Mariana López
+Sofía Mendez
+Carolina Pérez
+Andrea Ruiz</code></pre>
+        </li>
+        <li>El agente procesa las 4 y reporta:
+          <div class="dialog">
+            <p>Asistencias presenciales registradas para 4 persona(s).<br>
+            • Mariana López: ahora 3 restantes<br>
+            • Sofía Mendez: ahora 5 restantes<br>
+            • Carolina Pérez: ahora 0 restantes (deudora, handoff abierto)<br>
+            • Andrea Ruiz: ahora 2 restantes</p>
+          </div>
+        </li>
+      </ol>
+
+      <h4>Caso C — Clase virtual del domingo</h4>
+      <ol>
+        <li>Escribes:
+          <pre><code>BEJA asisten a clase virtual de hoy:
+Catalina Medina
+Tatiana Forero</code></pre>
+        </li>
+        <li>Agente muestra preview con <strong>*VIRTUAL*</strong> y aviso de precaución.</li>
+        <li>Confirmas <code>BEJA sí</code> si era virtual.</li>
+      </ol>
+
+      <h4>Caso D — Prospect nuevo que quiere paquete</h4>
+      <ol>
+        <li>Cliente nuevo: <em>"hola, cuánto vale el paquete de 8?"</em></li>
+        <li>Agente se presenta como Beja y propone membresía.</li>
+        <li>Cliente insiste: <em>"no quiero membresía, solo paquete".</em></li>
+        <li>Agente abre handoff: <strong>Lead caliente — Quiere el paquete, no aceptó membresía.</strong></li>
+        <li>Una admin atiende; si vende: <code>BEJA carga estos clientes:</code> + <code>BEJA recarga 8 a &lt;nombre&gt;</code>.</li>
+      </ol>
+
+      <h4>Caso E — Cliente pagó y vino el mismo día</h4>
+      <ol>
+        <li>Laura llega a clase con el pago.</li>
+        <li>Escribes: <code>BEJA Laura pagó 4 y tomó clase</code></li>
+        <li>Agente: <em>"Listo ✓ Recarga aplicada a Laura Rubio y asistencia de hoy registrada. Saldo final: 3 clase(s) presencial."</em></li>
+      </ol>
+
+      <h4>Caso F — Corregir un saldo mal contado</h4>
+      <ol>
+        <li>Notas que Ximena Espitia aparece con 3 clases pero debería tener 1.</li>
+        <li>Escribes: <code>BEJA ajusta a 1 las clases de Ximena Espitia</code></li>
+        <li>Agente muestra preview "Actual: 3 → Nuevo: 1" y pide confirmación.</li>
+        <li>Confirmas con <code>BEJA sí</code>.</li>
+      </ol>
+
+      <h4>Caso G — Vienen tres clientas nuevas por una alianza</h4>
+      <ol>
+        <li>Escribes:
+          <pre><code>BEJA carga estos clientes:
+573001112233 Laura Vega
+573004445566 María Salas
+573007778899 Ana Torres</code></pre>
+        </li>
+        <li>Agente verifica duplicados, muestra preview y pide confirmación.</li>
+        <li><code>BEJA sí</code> → quedan creadas.</li>
+      </ol>
+
+      <h4>Caso H — Saludo casual</h4>
+      <ol>
+        <li>Escribes: <code>BEJA hola</code></li>
+        <li>Agente responde algo como: <em>"¡Hola! Soy el agente de Bejauha para ayudarte con asistencias, recargas y ajustes. Dime qué necesitas o escribe 'ayuda' para ver todo lo que puedo hacer."</em></li>
+      </ol>
+
+      <h4>Caso I — Eliminar un cliente cargado por error</h4>
+      <ol>
+        <li>Notas que se cargó "Tatiana Forero le quedan 3 clases" como nombre (error).</li>
+        <li>Escribes: <code>BEJA elimina al 573132800644</code> o <code>BEJA elimina a Tatiana Forero</code></li>
+        <li>Si hay homónimos, el agente los lista con sus teléfonos para que elijas.</li>
+        <li>Confirmas con <code>BEJA sí</code>. Cliente y todo su historial eliminado. Queda audit log.</li>
+      </ol>
+
+      <h4>Caso K — Limpieza masiva de clientes mal cargados</h4>
+      <ol>
+        <li>Tienes 5 clientes con nombres prefijados tipo "carga este cliente Pedro García" por errores anteriores.</li>
+        <li>Escribes:
+          <pre><code>BEJA elimina estos clientes:
+573001111111 Pedro García
+573002222222 Maria López
+573003333333 Ana Rodríguez
+573004444444 Carlos Pérez
+573005555555 Sandra Gómez</code></pre>
+        </li>
+        <li>Agente muestra preview destructivo con los 5.</li>
+        <li>Confirmas con <code>BEJA sí</code> → todos eliminados con su historial en una sola transacción.</li>
+        <li>Vuelves a cargarlos limpios (el nuevo parser de nombres ya no incluye el prefijo).</li>
+      </ol>
+
+      <h4>Caso J — Prospect acepta clase de cortesía</h4>
+      <ol>
+        <li>Prospect escribe: <em>"Hola, quiero probar una clase para conocerlas"</em></li>
+        <li>Beja (el agente) responde cálido y le ofrece la cortesía.</li>
+        <li>Prospect dice: <em>"Sí, dale, coordinemos"</em></li>
+        <li>El agente automáticamente lo crea en la base, le carga 1 clase presencial, marca <code>tomo_cortesia=true</code> + <code>cortesia_at</code>, y genera handoff al grupo.</li>
+        <li>Una admin coordina día/hora por WhatsApp.</li>
+        <li>Cuando viene a la clase: <code>BEJA &lt;Nombre&gt; asistió</code> → saldo 1→0 → handoff de renovación normal.</li>
+      </ol>
+    </section>
+
+    <section id="s14">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        14. FAQ extendida
+      </h2>
+      <p><strong>¿El agente no me responde?</strong><br>Si estás en el grupo, verifica que empezó con <code>BEJA</code>. En chat privado, escribe natural.</p>
+      <p><strong>¿El agente respondió "no entendí la acción"?</strong><br>Reformula. Ejemplos que funcionan: <code>BEJA Laura asistió</code>, <code>BEJA recarga 4 a Pedro</code>. O escribe <code>BEJA ayuda</code> para ver todo.</p>
+      <p><strong>¿Una clienta dice que escribió y no le respondieron?</strong><br>Probablemente tiene un <strong>handoff activo</strong>. Búscala en "Handoffs activos" del dashboard.</p>
+      <p><strong>Cargué un cliente y dice "duplicado", ¿qué pasó?</strong><br>El teléfono ya existía, posiblemente con un nombre distinto. El agente te muestra cómo está guardado. Para corregir el nombre: <code>BEJA actualiza el nombre del 573XXX a NuevoNombre</code>. <strong>¡Cuidado!</strong> Si el apellido es muy distinto, verifica con la persona — puede ser otra cliente.</p>
+      <p><strong>El agente no encuentra a alguien en la lista de asistencia.</strong><br>El nombre debe coincidir con como está guardado. Revisen el dashboard para ver el nombre exacto.</p>
+      <p><strong>¿Puedo deshacer una asistencia mal registrada?</strong><br>Aún no. Avisar en el grupo o usar <code>BEJA ajusta</code> para corregir el saldo.</p>
+      <p><strong>¿Por qué llegan avisos a las 9am de "auto-cierre" y "auto-despausa"?</strong><br>Tareas programadas. Solo informativas.</p>
+      <p><strong>¿El dashboard me deja exportar la lista?</strong><br>No por ahora. Es solo lectura.</p>
+      <p><strong>¿Puedo recargar 12 o 20 clases en lugar de 4 u 8?</strong><br>Sí. El agente acepta cualquier cantidad. Antes estaba limitado, ahora ya no.</p>
+      <p><strong>¿Cuánto vence un paquete recargado?</strong><br>Menos de 8 clases → 2 meses. 8 o más → 3 meses.</p>
+      <p><strong>¿El agente se presenta como "Beja" cuando habla con clientes?</strong><br>Sí, en su primer mensaje con un cliente nuevo se presenta: <em>"Hola, soy Beja del equipo de Bejauha 🌿..."</em>. Después no se vuelve a presentar para no sonar repetitivo.</p>
+      <p><strong>¿Puedo eliminar un cliente cargado por error?</strong><br>Sí. <code>BEJA elimina al 573XXX</code> o <code>BEJA elimina a Nombre</code>. El agente pide confirmación con advertencia destructiva. Se borra el lead y TODO su historial (saldos, asistencias, recargas, handoffs, mensajes). No se puede deshacer.</p>
+      <p><strong>¿Puedo eliminar varios a la vez?</strong><br>Sí. <code>BEJA elimina estos clientes:</code> + lista con uno por línea (tel + nombre). Una sola confirmación elimina todos. Si alguno no existe lo marca con ⚠️ antes de confirmar.</p>
+      <p><strong>¿Por qué los nombres ya no aparecen con basura como "carga este cliente Pedro"?</strong><br>Desde el 10 jun, el LLM limpia los nombres antes de guardarlos. Los teléfonos siguen viniendo del regex (más confiable), pero los nombres pasan por el LLM para quitar prefijos de comandos, info irrelevante y texto sobrante.</p>
+      <p><strong>¿Qué pasa cuando un prospect acepta la cortesía?</strong><br>Automáticamente el agente lo crea en la base, le carga 1 clase presencial al saldo (vence 30 días), lo marca con <code>tomo_cortesia=true</code> y genera handoff al grupo para que coordinen día/hora. Una admin solo tiene que coordinar — no hay que cargarlo manualmente.</p>
+      <p><strong>¿Cómo veo después quiénes tomaron cortesía y quiénes compraron?</strong><br>Hay queries listas en <code>database/014_cortesia.sql</code>. La tasa de conversión se calcula cruzando <code>bejauha.leads.tomo_cortesia=true</code> con la existencia de entradas en <code>bejauha.recargas</code>.</p>
+    </section>
+
+    <section id="s15">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        15. Glosario
+      </h2>
+      <table>
+        <thead><tr><th>Término</th><th>Qué significa</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Agente / Beja</strong></td><td>El asistente automatizado en WhatsApp. Se presenta como "Beja" ante los clientes.</td></tr>
+          <tr><td><strong>Prospect</strong></td><td>Persona que aún no es cliente — solo está preguntando.</td></tr>
+          <tr><td><strong>Cliente paquete</strong></td><td>Cliente con saldo activo de clases.</td></tr>
+          <tr><td><strong>Lead caliente</strong></td><td>Prospect con intención clara de comprar o que pidió hablar con persona.</td></tr>
+          <tr><td><strong>Handoff</strong></td><td>El agente le pasa la conversación a ustedes. Mientras está abierto, el agente no responde.</td></tr>
+          <tr><td><strong>Recarga</strong></td><td>Sumar clases al saldo (cualquier cantidad).</td></tr>
+          <tr><td><strong>Ajuste de saldo</strong></td><td>Cambiar manualmente el saldo (sobrescribe, no suma). Útil para corregir errores.</td></tr>
+          <tr><td><strong>Combo pago+asistencia</strong></td><td>Recarga y asistencia en una sola operación.</td></tr>
+          <tr><td><strong>Eliminar cliente</strong></td><td>Borrar lead y todo su historial (saldos, asistencias, recargas, handoffs, mensajes). Destructivo.</td></tr>
+          <tr><td><strong>Eliminar varios (bulk_delete)</strong></td><td>Borrar una lista de leads en un solo comando con una sola confirmación. Mismo cascade que el individual.</td></tr>
+          <tr><td><strong>Nombres limpios (LLM)</strong></td><td>El LLM limpia los nombres antes de guardarlos: quita prefijos como "carga este cliente", "incluye al", info extra como "le quedan 3 clases", etc. Los teléfonos siguen viniendo del regex (sin alucinaciones).</td></tr>
+          <tr><td><strong>Cortesía aceptada</strong></td><td>Cuando el agente detecta que un prospect acepta la clase gratis: lo crea, le carga 1 clase y lo marca con <code>tomo_cortesia=true</code> para tracking de conversión.</td></tr>
+          <tr><td><strong>Pausa</strong></td><td>Congelar saldo y vencimiento por hasta 1 mes (1 vez por paquete).</td></tr>
+          <tr><td><strong>Modalidad</strong></td><td>Tipo de clase: presencial (default) o virtual. El agente detecta la palabra en tu mensaje.</td></tr>
+          <tr><td><strong>Deudor</strong></td><td>Cliente que asistió pero ya no tenía saldo. Asistencia queda registrada pero no descuenta.</td></tr>
+          <tr><td><strong>Auto-cierre</strong></td><td>Cierre automático de handoffs viejos (&gt;48h) a las 9am.</td></tr>
+          <tr><td><strong>Auto-despausa</strong></td><td>Reactivación automática de paquetes pausados al mes, a las 9am.</td></tr>
+          <tr><td><strong>PROSPECCIÓN</strong></td><td>Proceso outbound automático: 20 contactos dormidos por día.</td></tr>
+          <tr><td><strong>Membresía</strong></td><td>Modelo de suscripción de bejauha.com/planes.</td></tr>
+          <tr><td><strong>BEJA</strong></td><td>Prefijo obligatorio en el grupo. En chat privado es opcional.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <blockquote>Si algo falla: avisen en el grupo. Mientras se resuelve, atiendan al cliente desde su WhatsApp personal — el agente no debe ser un cuello de botella.</blockquote>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p class="pf">Bejauha · Comunidad de yoga y bienestar</p>
+  <p>Manual de admins · versión completa · 10 junio 2026</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,214 @@
+{
+  "name": "Bejauha - Recordatorios de Vencimiento (WF04)",
+  "settings": { "executionOrder": "v1", "timezone": "America/Bogota" },
+  "nodes": [
+    {
+      "id": "node-cron",
+      "name": "Cron diario 9am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-900, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "0 9 * * *" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-buscar",
+      "name": "Paquetes por vencer (14d)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-680, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.telefono, l.nombre, s.tipo, s.clases_restantes,\n       to_char(s.vence_at,'YYYY-MM-DD') AS vence_at\nFROM bejauha.saldos_clases s\nJOIN bejauha.leads l ON l.telefono = s.telefono\nWHERE s.pausado = false\n  AND s.clases_restantes > 0\n  AND s.vence_at = current_date + INTERVAL '14 days';",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-format",
+      "name": "Armar recordatorio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-460, 0],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst nombre = r.nombre || '';\nconst texto = 'Holaa ' + nombre + ' 🌿 te queremos recordar que tu paquete de clases vence en 2 semanas (el ' + r.vence_at + ') y aun te quedan ' + r.clases_restantes + ' clase(s). Cuando quieras renovamos para que sigas con tu ritmo 💛';\nreturn [{ json: { telefono: r.telefono, texto } }];"
+      }
+    },
+    {
+      "id": "node-send",
+      "name": "Enviar recordatorio (Evolution)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefono }}\",\n  \"text\": {{ JSON.stringify($json.texto) }},\n  \"options\": { \"delay\": 600, \"presence\": \"composing\" }\n}",
+        "options": { "timeout": 15000, "batching": { "batch": { "batchSize": 1, "batchInterval": 1500 } } }
+      }
+    },
+    {
+      "id": "node-log",
+      "name": "Log recordatorio",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-20, 0],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO bejauha.mensajes_logs (telefono, direccion, agente, texto, intent)\nSELECT d->>'telefono', 'out', 'sistema', d->>'texto', 'recordatorio_vencimiento'\nFROM (SELECT $1::jsonb AS d) x;",
+        "options": { "queryReplacement": "={{ JSON.stringify({ telefono: $('Armar recordatorio').item.json.telefono, texto: $('Armar recordatorio').item.json.texto }) }}" }
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    }
+    ,
+    {
+      "id": "node-autodespausa",
+      "name": "Auto-despausa 30d",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-680, 200],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH expired AS (\n  SELECT s.telefono, l.nombre, (current_date - s.pausa_inicio)::int AS dias_pausado, s.vence_at AS vence_at_old, s.tipo\n  FROM bejauha.saldos_clases s\n  JOIN bejauha.leads l ON l.telefono = s.telefono\n  WHERE s.pausado = true AND s.pausa_inicio IS NOT NULL\n    AND (current_date - s.pausa_inicio) >= 30\n),\nupd AS (\n  UPDATE bejauha.saldos_clases s\n  SET pausado = false, vence_at = s.vence_at + INTERVAL '30 days', pausa_inicio = NULL, actualizado_at = now()\n  FROM expired e\n  WHERE s.telefono = e.telefono AND s.tipo = e.tipo\n  RETURNING s.telefono, s.vence_at AS vence_at_new\n)\nSELECT e.telefono, e.nombre, e.dias_pausado, to_char(u.vence_at_new,'YYYY-MM-DD') AS vence_at_new FROM expired e JOIN upd u ON u.telefono = e.telefono;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-armar-despausa",
+      "name": "Armar aviso despausa",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-460, 200],
+      "parameters": {
+        "jsCode": "// Filtramos items que tengan datos validos (n8n a veces emite item vacio con 0 rows del Postgres)\nconst items = $input.all().filter(it => it && it.json && it.json.telefono);\nif (items.length === 0) return [];\nconst lineas = items.map(it => '• ' + (it.json.nombre || it.json.telefono) + ' — estuvo ' + it.json.dias_pausado + ' días pausado, vence ahora el ' + it.json.vence_at_new).join('\\n');\nconst ASESOR = '120363409231703955@g.us';\nconst texto = '🔓 Auto-despausa diaria: cumplieron 30 días pausados y se reactivaron automáticamente:\\n' + lineas + '\\n\\nVencimientos ya extendidos. Si quieren coordinar renovación o migración a membresía, escríbanles.';\nreturn [{ json: { asesor_whatsapp: ASESOR, alerta_text: texto } }];"
+      }
+    },
+    {
+      "id": "node-enviar-despausa",
+      "name": "Enviar aviso despausa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, 200],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.asesor_whatsapp }}\",\n  \"text\": {{ JSON.stringify($json.alerta_text) }}\n}",
+        "options": { "timeout": 15000 }
+      }
+    },
+    {
+      "id": "node-cierre-handoffs",
+      "name": "Auto-cierre handoffs 48h",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-680, 400],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH stale AS (\n  SELECT h.id, h.telefono, h.resumen, h.created_at, l.nombre\n  FROM bejauha.handoffs h\n  LEFT JOIN bejauha.leads l ON l.telefono = h.telefono\n  WHERE h.estado = 'pendiente'\n    AND h.created_at < now() - INTERVAL '48 hours'\n),\nupd_h AS (\n  UPDATE bejauha.handoffs h SET estado = 'atendido', atendido_at = now()\n  FROM stale s WHERE h.id = s.id RETURNING h.id\n),\nupd_l AS (\n  UPDATE bejauha.leads l SET asignado_humano = false\n  FROM stale s WHERE l.telefono = s.telefono AND l.asignado_humano = true\n  RETURNING l.telefono\n)\nSELECT s.telefono, COALESCE(s.nombre, s.telefono) AS nombre, LEFT(COALESCE(s.resumen,''), 80) AS resumen,\n       EXTRACT(EPOCH FROM (now() - s.created_at))/3600 AS horas_pendiente\nFROM stale s ORDER BY s.created_at;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": { "id": "vzzTNppBFKg9XCiK", "name": "PostgreSQL — LeadAI" }
+      }
+    },
+    {
+      "id": "node-armar-cierre",
+      "name": "Armar aviso cierre",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-460, 400],
+      "parameters": {
+        "jsCode": "// Filtramos items que tengan datos validos (n8n emite item vacio cuando Postgres devuelve 0 rows)\nconst items = $input.all().filter(it => it && it.json && it.json.telefono);\nif (items.length === 0) return [];\nconst lineas = items.map(it => {\n  const j = it.json;\n  const horas = Math.round(j.horas_pendiente || 48);\n  return '• ' + (j.nombre || j.telefono) + ' (+' + j.telefono + ') — ' + horas + 'h sin cerrarse' + (j.resumen ? ': ' + j.resumen : '');\n}).join('\\n');\nconst ASESOR = '120363409231703955@g.us';\nconst texto = '🧹 Auto-cierre de handoffs (≥ 48h pendientes):\\n' + lineas + '\\n\\nEl bot vuelve a atender a estos clientes si vuelven a escribir. Si seguían en venta abierta, retómenla manualmente.';\nreturn [{ json: { asesor_whatsapp: ASESOR, alerta_text: texto } }];"
+      }
+    },
+    {
+      "id": "node-enviar-cierre",
+      "name": "Enviar aviso cierre",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, 400],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1500,
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/dev-router",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.EVOLUTION_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.asesor_whatsapp }}\",\n  \"text\": {{ JSON.stringify($json.alerta_text) }}\n}",
+        "options": { "timeout": 15000 }
+      }
+    }
+  ],
+  "connections": {
+    "Cron diario 9am": { "main": [[
+      { "node": "Paquetes por vencer (14d)", "type": "main", "index": 0 },
+      { "node": "Auto-despausa 30d", "type": "main", "index": 0 },
+      { "node": "Auto-cierre handoffs 48h", "type": "main", "index": 0 }
+    ]] },
+    "Auto-despausa 30d": { "main": [[{ "node": "Armar aviso despausa", "type": "main", "index": 0 }]] },
+    "Armar aviso despausa": { "main": [[{ "node": "Enviar aviso despausa", "type": "main", "index": 0 }]] },
+    "Auto-cierre handoffs 48h": { "main": [[{ "node": "Armar aviso cierre", "type": "main", "index": 0 }]] },
+    "Armar aviso cierre": { "main": [[{ "node": "Enviar aviso cierre", "type": "main", "index": 0 }]] },
+    "Paquetes por vencer (14d)": { "main": [[{ "node": "Armar recordatorio", "type": "main", "index": 0 }]] },
+    "Armar recordatorio": { "main": [[{ "node": "Enviar recordatorio (Evolution)", "type": "main", "index": 0 }]] },
+    "Enviar recordatorio (Evolution)": { "main": [[{ "node": "Log recordatorio", "type": "main", "index": 0 }]] }
+  }
+}

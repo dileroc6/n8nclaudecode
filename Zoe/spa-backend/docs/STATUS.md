@@ -1,6 +1,6 @@
 # Estado de implementación — Zoe Tantric SPA
 
-> Snapshot al **2026-05-10** (post-demo + Metabase con 6 dashboards). Para arquitectura general ver [../README.md](../README.md), para contexto del proyecto ver [../../CLAUDE.md](../../CLAUDE.md).
+> Snapshot al **2026-05-14** (post-fixes timezone Berlin + bug modalidad WF1 + humanización WF4). Para arquitectura general ver [../README.md](../README.md), para contexto del proyecto ver [../../CLAUDE.md](../../CLAUDE.md). Para bugs históricos ver [CLAUDE.md §11.5](../../CLAUDE.md).
 
 ## Stack en producción de prueba
 
@@ -23,10 +23,10 @@
 | WF1 Orquestador WhatsApp | `fMYxEPMypkMLsOsY` | 🟢 activo | Webhook + idempotencia + memoria + GPT cliente + override determinístico + ruteo |
 | WF2 Agendar | `YnrDJqWTWe96OpR8` | 🟢 activo | Validar disponibilidad + INSERT cita + soporte terapeuta preferida |
 | WF3 Reprog/Cancel/OTP | `ZRix3z7YkYl9KLpq` | 🟢 activo | Reprogramar (límite 3) + Cancelar + Confirmar OTP |
-| WF4 Recordatorio 24h | `AvBR1nVafJzwHLpH` | 🟢 activo | Cron diario 9 AM Bogotá |
+| WF4 Recordatorio 24h | `AvBR1nVafJzwHLpH` | 🟢 activo | Cron diario 9 AM Bogotá (`settings.timezone="America/Bogota"`). Mensaje con **5 variantes aleatorias humanizadas** (sin emojis decorativos). |
 | WF5 OTP cron | `NXaDYafkvgd2kp9m` | 🟢 activo | Cron cada 5 min: genera OTP a slot+30min + marca expirados |
 | WF6 Admin GPT | `mSpGasQvpUFT6qQz` | 🟢 activo | Conversacional con preview/confirmación + 8 acciones (incluye ver_cliente) + **memoria 6 turnos** |
-| WF7 Festivos cron anual | `3IxIbIMw3QMB64zm` | 🟢 activo | Cron diario 4 AM: auto-puebla festivos CO del año siguiente (Gauss + Ley Emiliani), idempotente |
+| WF7 Festivos cron anual | `3IxIbIMw3QMB64zm` | 🟢 activo | Cron diario 4 AM Bogotá (`settings.timezone="America/Bogota"`): auto-puebla festivos CO del año siguiente (Gauss + Ley Emiliani), idempotente |
 
 ## Vistas para dashboard / Metabase (10 totales)
 

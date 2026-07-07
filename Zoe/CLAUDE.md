@@ -216,7 +216,7 @@ Zoe/
 
 ---
 
-## 11. Estado de implementación (actualizado 2026-05-08)
+## 11. Estado de implementación (actualizado 2026-05-14)
 
 ### Infraestructura — ✅ completa
 
@@ -230,7 +230,7 @@ Zoe/
 - [x] Credenciales en n8n:
   - `Zoe — Postgres` → ID `3o3N6kBR8CbwcJDD` (usuario `zoe_app`)
   - `Zoe — Evolution` → ID `eymxaFnzFTpMKxP6` (Header Auth)
-  - `OpenAi account` → ID `h6Iv2GjVJYmMUGuc`
+  - `OpenAi account` → ID `2VcuaBfAaHcbxuEF` (transversal: compartida con Luxe Smile / Savia / Bejauha / Advalis)
 - [x] `ADMIN_PHONES=573012661158` y `ZOE_WHATSAPP_BUSINESS=573053421597` en `.env`.
 
 ### Workflows desplegados — ✅ funcionales
@@ -240,10 +240,10 @@ Zoe/
 | **WF1 Orquestador** | `fMYxEPMypkMLsOsY` | Webhook + idempotencia + memoria conversacional (6 turnos) + GPT-4o-mini cliente + override determinístico + tolerancia typos + ruteo a WF2/WF3/WF6. **Contexto inyectado al GPT**: clientes, servicios, addons, sedes, terapeutas con `horario_base`, `citas_activas` del cliente (evita alucinar citas previas), `cita_pendiente_otp`. |
 | **WF2 Agendar** | `YnrDJqWTWe96OpR8` | Validar disponibilidad + INSERT cita + soporte terapeuta preferida + alternativas |
 | **WF3 Reprog/Cancel/OTP** | `ZRix3z7YkYl9KLpq` | Reprogramar (límite 3) + Cancelar + Confirmar OTP |
-| **WF4 Recordatorio 24h** | `AvBR1nVafJzwHLpH` | Cron diario 9 AM Bogotá, mensaje a citas del día siguiente |
+| **WF4 Recordatorio 24h** | `AvBR1nVafJzwHLpH` | Cron diario 9 AM Bogotá (con `settings.timezone="America/Bogota"`), mensaje a citas del día siguiente. **Tono humanizado**: 5 variantes aleatorias sin bullets/emojis decorativos. |
 | **WF5 OTP cron** | `NXaDYafkvgd2kp9m` | Cron cada 5 min: genera OTP a slot+30min + marca expirados |
 | **WF6 Admin GPT** | `mSpGasQvpUFT6qQz` | Conversacional admin con preview/confirmación: listar_citas, listar_bloqueos, ver_disponibilidad, **ver_cliente** (historial + contadores + próxima cita), crear_bloqueo (anti-duplicado), eliminar_bloqueo, cancelar_cita, bloquear/desbloquear cliente, reset_reprog. Variantes aleatorias + fechas pre-calculadas. **Memoria conversacional admin activa** (carga últimos 6 turnos de `zoe.conversacion` con `canal=admin` y los inyecta como `messages[]` al GPT). |
-| **WF7 Festivos cron anual** | `3IxIbIMw3QMB64zm` | Cron diario 4 AM Bogotá. Computa festivos colombianos del año siguiente con algoritmo Gauss (Pascua) + Ley Emiliani. Inserta en `zoe.festivos` ON CONFLICT DO NOTHING (idempotente). Aplica como bloqueos `created_by=system` via `fn_aplicar_festivos_a_bloqueos(year)`. Notifica al admin solo si hubo inserts. |
+| **WF7 Festivos cron anual** | `3IxIbIMw3QMB64zm` | Cron diario 4 AM Bogotá (con `settings.timezone="America/Bogota"`). Computa festivos colombianos del año siguiente con algoritmo Gauss (Pascua) + Ley Emiliani. Inserta en `zoe.festivos` ON CONFLICT DO NOTHING (idempotente). Aplica como bloqueos `created_by=system` via `fn_aplicar_festivos_a_bloqueos(year)`. Notifica al admin solo si hubo inserts. |
 
 ### Funcionalidades validadas en pruebas
 
@@ -272,13 +272,14 @@ Zoe/
 - [x] Variantes aleatorias en mensajes de éxito
 - [x] Scope estricto
 
-### Metabase — ✅ desplegado con 6 dashboards
+### Metabase — ✅ desplegado con 6 dashboards + 1 hub
 
 Container `zoe-metabase` (network `n8n_default`, puerto 3001). Acceso vía túnel SSH desde laptop:
-`ssh -L 3001:localhost:3001 root@srv1398596.hstgr.cloud` → `http://localhost:3001`.
+`ssh -L 3001:localhost:3001 root@srv1398596.hstgr.cloud` → `http://localhost:3001/dashboard/9` (hub).
 
 | Dashboard | id | Cards | Filtros | Propósito |
 |---|---|---|---|---|
+| **Zoe — Inicio (hub)** | 9 | 7 (markdown) | — | Portada con links a los 6 dashboards; entry point único |
 | **Visión General** | 3 | 8 | Desde / Hasta | KPIs, funnel estados, top terapeutas/clientes, ingresos diarios combo, día semana, hora |
 | **Financiero / Negocio** | 4 | 8 | Desde / Hasta | KPIs (ingresos/ticket/citas/clientes), ingresos diarios área, mensuales 12m, top servicios, por sede pie |
 | **Operativo Diario** | 5 | 8 | (sin filtros) | Citas hoy, OTP pendientes, agenda con colores por estado, bloqueos, alertas |
@@ -310,7 +311,19 @@ Paleta Zoe: púrpura `#7B1FA2` (Bogotá) + teal `#00ACC1` (Cajicá) + ámbar/ros
 
 ---
 
-## 11.5 Bugs resueltos (2026-05-12)
+## 11.5 Bugs resueltos
+
+### 2026-05-14
+
+- **Recordatorio 24h se enviaba a las 2 AM Bogotá**: el container n8n del VPS Hostinger corre en `Europe/Berlin (UTC+02)`. El cron `0 9 * * *` se interpretaba como 09:00 Berlin = 07:00 UTC = **02:00 AM Bogotá**, no 9 AM. Fix: `settings.timezone="America/Bogota"` explícito en WF4 y WF7 (vía `n8n_update_partial_workflow` op `updateSettings`). **Lección general**: todo workflow con `scheduleTrigger` en este VPS necesita el setting; no se puede asumir que la TZ del host sea Bogotá. WF5 (`*/5 * * * *`) no se afecta. Detalles en memoria `n8n_vps_hostinger_tz_berlin.md`.
+- **Recordatorio WF4 robotizado**: el Code node tenía template fijo con `🔔💆📍` y cierre `¡Te esperamos! 🌿`, cero variantes. Fix: rewrite con **5 variantes aleatorias** estilo conversacional natural (sin bullets, sin emojis decorativos, hora en formato `7:00 p.m.` con `toLocaleTimeString`). Mismo patrón que ya usaba WF1/WF6 para respuestas al cliente.
+- **WF1 defaulteaba modalidad a `individual` cuando solo había familia**: el override determinístico en `Parsear respuesta GPT` (función `extraerAgendar`) asignaba `Memorable individual` cuando el último mensaje decía solo `"Memorable"` (sin la palabra `pareja`/`individual`/`espectador`). Esto **ignoraba la modalidad declarada en turnos previos del historial** y reservaba siempre como individual aunque el cliente hubiera dicho "en pareja" antes. Caso real: cita `8da48b39…` guardada como `Memorable individual` cuando el cliente había confirmado pareja 4 turnos antes. Fix de 3 capas:
+  1. **Extractor**: detecta `familia` (Reflejo/Memorable/Espectador) y `modalidad` por separado; solo construye `servicio_solicitado` si ambas están claras EN EL TURNO. Si solo hay familia, deja null.
+  2. **Merge**: reconcilia `familia` del turno con `datos.modalidad` que el GPT haya inferido del historial. Sanity check: si el turno declara modalidad explícita y el `servicio_solicitado` heredado del GPT la contradice, gana el turno (ej. "mejor pareja" pisa `Memorable individual`).
+  3. **Faltantes**: si hay familia sin modalidad → pide explícitamente `modalidad (¿individual o en pareja?)` en lugar de seguir adelante.
+  + System prompt reforzado con regla "MODALIDAD: mantené `datos.modalidad` del historial aunque el último mensaje solo nombre la familia; NUNCA defaultees a 'individual' por omisión".
+
+### 2026-05-12
 
 - **$json post-HTTP nuking de datos** (WF1 + WF3): los nodos `Guardar respuesta bot` (WF1) y `Guardar bot turn` (WF3) leían `$json.cliente_whatsapp` del nodo previo, pero ese nodo era el HTTP a Evolution que sobrescribía `$json` con la respuesta del API → INSERT fallaba con NOT NULL violation. Fix: usar referencia explícita `$('Parsear respuesta GPT').first().json.X` y `$('Construir respuesta').first().json.X`. **Lección general**: en Zoe (y cualquier flujo con HTTP intermedio), siempre referenciar nodos por nombre, nunca confiar en `$json` después de un HTTP Request.
 - **Bot no conocía horarios**: contexto solo enviaba `id/nombre/genero/sede_id` de terapeutas. Fix: agregar `horario_base` al SELECT y al `userMessage` del prompt. El system prompt instruye al bot a distinguir entre "fuera de horario" (cerrado) y "dentro de horario pero ocupado" (ofrecer alternativas).
@@ -335,3 +348,4 @@ Este proyecto tiene memoria activa en `~/.claude/projects/-home-dileroc-Document
 - `nano_banana_credencial_transversal.md` — credenciales Gemini compartidas BF/BC (no aplica a Zoe que usa OpenAI).
 - `n8n_error_path_patterns.md` — patrones de Error Trigger en n8n (aplica al diseño de WF1-WF5).
 - `n8n_execution_mode_test.md` — `$execution.mode='test'` en Code nodes (aplica al testing local).
+- `n8n_vps_hostinger_tz_berlin.md` — container n8n VPS corre en Europe/Berlin, todo cron necesita `settings.timezone="America/Bogota"`.

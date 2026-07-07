@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bejauha · Sandbox de Agentes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sage:#7c8a6f; --sage-dark:#5f6c54; --sage-soft:#aebfa0;
+    --cream:#f6f3ea; --cream-2:#efe9db; --ink:#3a3f36; --muted:#8b9182;
+    --bot:#ffffff; --user:#dfe8d4; --sys:#f3e7cf; --line:#e3ddcd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--ink);
+    height:100vh;display:flex;flex-direction:column}
+  header{background:var(--sage);color:var(--cream);padding:14px 22px;display:flex;align-items:center;gap:14px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08)}
+  header h1{margin:0;font-weight:700;font-size:1.15rem;letter-spacing:.3px}
+  header .pf{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;opacity:.92;font-size:1.05rem}
+  header .tag{margin-left:auto;font-size:.72rem;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px}
+  .bar{display:flex;gap:10px;align-items:center;padding:12px 22px;background:var(--cream-2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .seg button{border:0;background:transparent;padding:8px 16px;font-family:inherit;font-weight:600;font-size:.85rem;cursor:pointer;color:var(--muted)}
+  .seg button.on{background:var(--sage);color:#fff}
+  .bar label{font-size:.78rem;color:var(--muted);font-weight:500}
+  .bar input{font-family:inherit;border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:.82rem;width:120px;background:#fff}
+  .bar .spacer{margin-left:auto}
+  .btn-reset{border:1px solid var(--sage);background:#fff;color:var(--sage-dark);font-family:inherit;font-weight:600;
+    padding:8px 14px;border-radius:10px;cursor:pointer;font-size:.82rem}
+  .btn-reset:hover{background:var(--sage);color:#fff}
+  #chat{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:74%;padding:11px 15px;border-radius:16px;font-size:.92rem;line-height:1.45;white-space:pre-wrap;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);animation:pop .18s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.user{align-self:flex-end;background:var(--user);border-bottom-right-radius:4px}
+  .msg.bot{align-self:flex-start;background:var(--bot);border-bottom-left-radius:4px}
+  .msg.system{align-self:center;background:var(--sys);color:#7a6326;font-size:.8rem;border-radius:10px;max-width:88%;text-align:center}
+  .msg .who{display:block;font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;opacity:.6;margin-bottom:3px}
+  .typing{align-self:flex-start;color:var(--muted);font-size:.8rem;font-style:italic;padding:4px 8px}
+  .empty{margin:auto;text-align:center;color:var(--muted);max-width:360px}
+  .empty .pf{font-family:'Playfair Display',serif;font-style:italic;font-size:1.4rem;color:var(--sage);display:block;margin-bottom:8px}
+  footer{padding:14px 22px;background:var(--cream-2);border-top:1px solid var(--line);display:flex;gap:10px}
+  footer textarea{flex:1;resize:none;font-family:inherit;font-size:.92rem;border:1px solid var(--line);border-radius:14px;
+    padding:11px 14px;height:46px;background:#fff}
+  footer button{background:var(--sage);color:#fff;border:0;border-radius:14px;padding:0 22px;font-family:inherit;
+    font-weight:600;cursor:pointer;font-size:.9rem}
+  footer button:disabled{opacity:.5;cursor:default}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Bejauha <span class="pf">· Sandbox de Agentes</span></h1>
+    <span class="tag">canal de pruebas — no pasa por WhatsApp</span>
+  </header>
+
+  <div class="bar">
+    <div class="seg" id="seg">
+      <button data-ag="3" class="on">🌿 Inbound (cliente)</button>
+      <button data-ag="2">🛠️ Admin (clases)</button>
+    </div>
+    <label>Tel. prueba</label>
+    <input id="tel" value="99999999">
+    <div class="spacer"></div>
+    <button class="btn-reset" id="reset">↺ Reiniciar prueba</button>
+  </div>
+
+  <div id="chat">
+    <div class="empty" id="empty">
+      <span class="pf">Prueba la lógica sin enviar un solo WhatsApp</span>
+      Escribe como si fueras un cliente (o un administrador) y mira cómo responde el agente real, con saldos y datos reales en un entorno aislado.
+    </div>
+  </div>
+
+  <footer>
+    <textarea id="input" placeholder="Escribe un mensaje…"></textarea>
+    <button id="send">Enviar</button>
+  </footer>
+
+<script>
+const BASE = "https://n8n.srv1398596.hstgr.cloud/webhook";
+let agente = 3;
+let after = 0;
+let session = "portal-" + Math.random().toString(36).slice(2, 10);
+let polling = null;
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const telEl = document.getElementById('tel');
+const empty = document.getElementById('empty');
+
+document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#seg button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  agente = parseInt(b.dataset.ag, 10);
+});
+
+function addMsg(rol, texto, ag){
+  if(empty) empty.style.display = 'none';
+  const d = document.createElement('div');
+  d.className = 'msg ' + rol;
+  const who = rol === 'user' ? 'Tú' : rol === 'system' ? 'Sistema (simulado)' : (ag === 2 ? 'Agente Admin' : 'Beja');
+  d.innerHTML = '<span class="who"></span>';
+  d.querySelector('.who').textContent = who;
+  d.appendChild(document.createTextNode(texto));
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping(on){
+  let t = document.getElementById('typing');
+  if(on && !t){
+    t = document.createElement('div'); t.id = 'typing'; t.className = 'typing';
+    t.textContent = 'escribiendo…'; chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
+  } else if(!on && t){ t.remove(); }
+}
+
+async function poll(){
+  try{
+    const r = await fetch(`${BASE}/bejauha-test-poll?session_id=${encodeURIComponent(session)}&after=${after}`);
+    const data = await r.json();
+    const msgs = (data && data.mensajes) || [];
+    for(const m of msgs){
+      if(m.id > after) after = m.id;
+      if(m.rol === 'user') continue; // las del usuario ya las pintamos localmente
+      showTyping(false);
+      addMsg(m.rol, m.texto, m.agente);
+    }
+  }catch(e){ /* silencio */ }
+}
+
+async function send(){
+  const texto = input.value.trim();
+  if(!texto) return;
+  addMsg('user', texto, agente);
+  input.value = '';
+  sendBtn.disabled = true;
+  showTyping(true);
+  try{
+    await fetch(`${BASE}/bejauha-test-chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ agente, session_id: session, telefono: telEl.value.trim() || '99999999', texto })
+    });
+    await poll();
+  }catch(e){ showTyping(false); addMsg('system','⚠️ Error de conexión con el sandbox.'); }
+  showTyping(false);
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+async function reset(){
+  if(!confirm('¿Reiniciar la prueba? Se borra la conversación y se restaura el contacto de prueba (saldo, estado).')) return;
+  try{
+    await fetch(`${BASE}/bejauha-test-reset`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: session, telefono: telEl.value.trim() || '99999999' })
+    });
+  }catch(e){}
+  chat.querySelectorAll('.msg, #typing').forEach(n => n.remove());
+  after = 0;
+  session = "portal-" + Math.random().toString(36).slice(2, 10);
+  empty.style.display = '';
+}
+
+sendBtn.onclick = send;
+input.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
+document.getElementById('reset').onclick = reset;
+polling = setInterval(poll, 2000); // poll de respaldo para burbujas con delay
+</script>
+</body>
+</html>
