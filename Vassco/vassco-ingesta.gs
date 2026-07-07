@@ -30,6 +30,10 @@ const CONFIG = {
   LABEL_OK:        'vassco-procesada',
   LABEL_VENTA:     'vassco-venta',
   LABEL_ERROR:     'vassco-error',
+  // Cerebro tributario (edge function). La ANON key es pública (la misma del sitio):
+  // Supabase → Project Settings → API → "anon public". Pégala aquí.
+  RETENCION_URL:     'https://pyoauvbwqxuuzamnjwfd.supabase.co/functions/v1/vassco-retencion',
+  SUPABASE_ANON_KEY: 'PEGA_AQUI_LA_ANON_KEY_PUBLICA',
 };
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO',
@@ -89,7 +93,8 @@ function processMessage_(msg) {
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       url = file.getUrl();
     }
-    escribirFila_(inv, fname, url);
+    const sug = sugerirRetenciones_(inv);
+    escribirFila_(inv, fname, url, sug);
     marcarProcesada_(inv.cufe);
     result = 'ok';
   });
@@ -135,12 +140,13 @@ function parseInvoiceXml_(xmlString) {
     }
   });
   const total = money_(textByName_(firstByName_(root, 'LegalMonetaryTotal'), 'PayableAmount'));
+  const items = allByName_(root, 'InvoiceLine', []).map(function (ln) { return textByName_(ln, 'Description'); }).filter(String);
 
   return {
     nit: nit, dv: dv, nombre: nombre,
     numf: (firstByName_(root, 'ID') || {}).getText ? firstByName_(root, 'ID').getText() : '',
     cufe: textByName_(root, 'UUID'),
-    dia: dia, mes: mes,
+    dia: dia, mes: mes, fechaISO: issue, items: items,
     baseGrav: Math.round(baseGrav),
     baseNoGrav: Math.round(total - baseGrav - iva19 - iva5 - ipo),
     iva19: iva19, iva5: iva5, ipo: ipo, total: total,
@@ -148,12 +154,38 @@ function parseInvoiceXml_(xmlString) {
   };
 }
 
-/** Escribe la fila (columnas A..U) debajo de la última con datos. */
-function escribirFila_(inv, fname, url) {
+// Llama al cerebro tributario (edge function) → { concepto, rf, ica, vr_pagar, revisar }.
+// Si falla (red, sin key), devuelve un fallback seguro: sin retenciones y marcado a revisar,
+// para que la ingesta nunca se rompa por culpa del cerebro.
+function sugerirRetenciones_(inv) {
+  try {
+    const res = UrlFetchApp.fetch(CONFIG.RETENCION_URL, {
+      method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+      headers: { Authorization: 'Bearer ' + CONFIG.SUPABASE_ANON_KEY, apikey: CONFIG.SUPABASE_ANON_KEY },
+      payload: JSON.stringify({
+        emisor_nit: inv.nit, emisor_nombre: inv.nombre, fecha: inv.fechaISO,
+        total: inv.total, base_gravada: inv.baseGrav, base_no_gravada: inv.baseNoGrav,
+        items: inv.items || [], concepto_conocido: inv.concepto || ''
+      })
+    });
+    if (res.getResponseCode() === 200) return JSON.parse(res.getContentText());
+    Logger.log('sugerirRetenciones_ HTTP ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 200));
+  } catch (e) { Logger.log('sugerirRetenciones_ falló: ' + e); }
+  return { concepto: inv.concepto || '', rf: { valor: 0 }, ica: { valor: 0 }, vr_pagar: inv.total, revisar: true };
+}
+
+/** Escribe la fila (columnas A..U) debajo de la última con datos, con la retención sugerida. */
+function escribirFila_(inv, fname, url, sug) {
   const ss = SpreadsheetApp.openById(CONFIG.SHEET_ID);
   const sh = getMonthSheet_(ss, inv.mes);
   const row = findLastDataRow_(sh) + 1;
   const link = url ? '=HYPERLINK("' + url + '","' + fname.replace(/"/g, '') + '")' : fname;
+
+  const concepto = (sug && sug.concepto) || inv.concepto || '';
+  const rf  = (sug && sug.rf  && Number(sug.rf.valor))  || 0;
+  const ica = (sug && sug.ica && Number(sug.ica.valor)) || 0;
+  const vrPagar = (sug && sug.vr_pagar) || (inv.total - rf - ica);
+  const flag = (rf > 0 || ica > 0 || !concepto) ? 'REVISAR' : ''; // solo marca lo que amerita ojo humano
 
   sh.getRange(row, 1, 1, 21).setValues([[
     inv.dia,               // A  FECHA (día)
@@ -163,7 +195,7 @@ function escribirFila_(inv, fname, url) {
     inv.nombre,            // E  NOMBRE
     link,                  // F  archivo (link Drive)
     inv.numf,              // G  FACTURA
-    inv.concepto,          // H  CONCEPTO
+    concepto,              // H  CONCEPTO
     inv.baseGrav   || '',  // I  BASE
     inv.baseNoGrav || '',  // J  BASE NO GRAVADA
     inv.iva19 || '',       // K  IVA 19%
@@ -171,11 +203,11 @@ function escribirFila_(inv, fname, url) {
     '',                    // M  OTROS IMP
     inv.ipo   || '',       // N  IPO
     inv.total,             // O  VR TOTAL
-    '',                    // P  RF        ← motor 2026 / revisión
-    '',                    // Q  R.ICA     ← motor 2026 / revisión
-    '',                    // R  R.IVA     (manual)
-    '',                    // S  VR PAGAR  ← tras retenciones
-    '',                    // T
+    rf  || '',             // P  RF     (sugerido por el motor 2026)
+    ica || '',             // Q  R.ICA  (sugerido)
+    '',                    // R  R.IVA  (manual)
+    vrPagar,               // S  VR PAGAR
+    flag,                  // T  REVISAR (si hay retención sugerida a validar)
     ''                     // U  FORMA PAGO (manual)
   ]]);
 }
