@@ -141,8 +141,6 @@ function FlowCard({ flow, showSede, onView }) {
             ))}
           </div>
 
-          <Sparkline data={flow.spark} active={active} />
-
           <div className="flow-card-foot">
             <span className="flow-last">{flow.last}</span>
             {flow.tool_url
@@ -221,10 +219,6 @@ function FlowDetail({ flow, onClose, onToggle, canManage }) {
               </div>
             ))}
           </div>
-          <div className="fd-chart">
-            <Sparkline data={flow.spark} active={active} />
-            <span className="fd-chart-cap">// últimos 12 periodos</span>
-          </div>
 
           <div className="fd-section-label">// canales conectados</div>
           <div className="fd-channels">
@@ -272,6 +266,7 @@ function DashApp({ companyId, previewName }) {
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('todos');
   const [selectedId, setSelectedId] = React.useState(null);
+  const [bizKpis, setBizKpis] = React.useState(null);
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
@@ -280,23 +275,59 @@ function DashApp({ companyId, previewName }) {
     (async () => {
       const cid = companyId;
       if (!cid) { setFlows([]); setLoading(false); return; }
-      const [flowsRes, usageRes] = await Promise.all([
+      const [flowsRes, usageRes, contactsRes, campsRes, runsRes, tmRes] = await Promise.all([
         TF_AUTH.sb.from('flows').select('*').eq('company_id', cid).order('position', { ascending: true }).order('created_at', { ascending: true }),
         TF_AUTH.sb.from('ai_usage').select('sede_id,success,created_at').eq('company_id', cid),
+        TF_AUTH.sb.from('contacts').select('status,full_name,service_type').eq('company_id', cid),
+        TF_AUTH.sb.from('campaigns').select('status').eq('company_id', cid),
+        TF_AUTH.sb.from('campaign_runs').select('status').eq('company_id', cid),
+        TF_AUTH.sb.from('test_messages').select('id').eq('company_id', cid),
       ]);
       const usg = usageRes.data || [];
       setUsage(usg);
+      // Stats EN VIVO para las tarjetas de negocio (Base de datos=stock, Campañas=follow, Simulador=chat).
+      const cts = (contactsRes.data || []).filter((c) => !/^UserToque/i.test(c.full_name || ''));
+      const camps = campsRes.data || [];
+      const runs = runsRes.data || [];
+      const testMsgs = (tmRes.data || []).length;
+      const reactivar = cts.filter((c) => c.status === 'no_activo').length;
+      const enviados = runs.filter((r) => r.status === 'sent').length;
+      // $$ estimado por membresías mensuales (karma es gratis; paquete no es mensual → no cuenta).
+      const PRECIO = { beja: 79900, uja: 120000 };
+      const suma = (arr) => arr.reduce((a, c) => a + (PRECIO[c.service_type] || 0), 0);
+      const fmtM = (v) => v >= 1000000 ? '$' + (v / 1000000).toFixed(1).replace('.0', '') + 'M' : v >= 1000 ? '$' + Math.round(v / 1000) + 'k' : '$' + v;
+      const ingreso = suma(cts.filter((c) => c.status === 'activo'));
+      // Oportunidad/mes si reactivas a los inactivos con cada plan (uja = "UHA" en pantalla).
+      const potBeja = reactivar * PRECIO.beja;
+      const potUha = reactivar * PRECIO.uja;
+      // KPIs de valor de negocio para el resumen de arriba (si la empresa tiene contactos).
+      setBizKpis(cts.length ? { contactos: cts.length, reactivar, campActivas: camps.filter((c) => c.status === 'activa').length, enviados, ingreso: fmtM(ingreso), potBeja: fmtM(potBeja), potUha: fmtM(potUha) } : null);
+      const liveStats = {
+        stock: [
+          { n: String(cts.length), l: 'contactos' },
+          { n: String(cts.filter((c) => c.status === 'activo').length), l: 'activos' },
+          { n: String(cts.filter((c) => c.status === 'no_activo').length), l: 'por reactivar' },
+        ],
+        follow: [
+          { n: String(camps.length), l: 'campañas' },
+          { n: String(camps.filter((c) => c.status === 'activa').length), l: 'activas' },
+          { n: String(runs.filter((r) => r.status === 'sent').length), l: 'msgs enviados' },
+        ],
+        chat: [
+          { n: String(testMsgs), l: 'mensajes de prueba' },
+          { n: '3', l: 'modos' },
+        ],
+      };
       setFlows((flowsRes.data || []).map((r) => {
         const matching = usg.filter((u) => (r.sede_id ? u.sede_id === r.sede_id : true));
         const st = usageStats(matching);
-        // Los flows tipo 'chart' (dashboards/reportes, sin consumo de IA) muestran sus
-        // propias métricas guardadas (stats/spark) en vez de los contadores de ai_usage.
-        const useStored = r.type === 'chart' && Array.isArray(r.stats) && r.stats.length;
+        // 'chart'/'chat' usan stats guardadas; 'stock'/'follow' usan stats EN VIVO; el resto, ai_usage.
+        const useStored = (r.type === 'chart' || r.type === 'chat') && Array.isArray(r.stats) && r.stats.length;
         return {
           id: r.id, name: r.name, type: r.type, kind: r.kind, status: r.status,
           sede: r.sede_id || 'ambas', desc: r.description || '',
           channels: r.channels || [],
-          stats: useStored ? r.stats : [{ n: String(st.total), l: 'pedidos' }, { n: String(st.mes), l: 'este mes' }, { n: String(st.hoy), l: 'hoy' }],
+          stats: liveStats[r.type] ? liveStats[r.type] : (useStored ? r.stats : [{ n: String(st.total), l: 'pedidos' }, { n: String(st.mes), l: 'este mes' }, { n: String(st.hoy), l: 'hoy' }]),
           spark: (useStored && Array.isArray(r.spark) && r.spark.length) ? r.spark : st.spark,
           last: r.last_label || '', tool_url: r.tool_url || null,
         };
@@ -328,7 +359,14 @@ function DashApp({ companyId, previewName }) {
 
   const scopedUsage = activeSede === 'todas' ? usage : usage.filter((u) => u.sede_id === activeSede);
   const okRate = scopedUsage.length ? Math.round(scopedUsage.filter((u) => u.success !== false).length / scopedUsage.length * 100) : null;
-  const overview = [
+  // Resumen de valor: si la empresa tiene base de negocio (contactos), muestra KPIs
+  // útiles para el cliente; si no, cae a los contadores genéricos (uso de IA).
+  const overview = bizKpis ? [
+    { n: String(bizKpis.contactos), l: 'contactos en tu base' },
+    { n: bizKpis.ingreso, l: 'ingreso mensual (membresías)' },
+    { n: bizKpis.potBeja, l: 'al mes si reactivas tus ' + bizKpis.reactivar + ' inactivos con membresía Beja' },
+    { n: bizKpis.potUha, l: 'al mes si reactivas tus ' + bizKpis.reactivar + ' inactivos con membresía UHA' },
+  ] : [
     { n: String(activeCount), l: 'flows activos' },
     { n: String(autoCount), l: 'automatizaciones' },
     { n: String(scopedUsage.length), l: 'pedidos procesados' },

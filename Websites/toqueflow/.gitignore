@@ -1,5 +1,9 @@
 .mcp.json
 credentials.env
+# Contiene la URL + secreto del webhook n8n (no comitear)
+site/supabase/*.local.sql
+# Token del rol n8n_worker (credencial — no comitear)
+*.local.txt
 site/node_modules/
 site/dist/
 

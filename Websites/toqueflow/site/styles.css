@@ -3087,15 +3087,16 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .flow-card.is-paused .flow-name, .flow-card.is-paused .flow-card-icon { opacity: .65; }
 
 .flow-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+/* Iconos de tarjeta monocolor: todos igual, sin distinguir por tipo. */
 .flow-card-icon {
   width: 46px; height: 46px; border-radius: 12px;
-  background: var(--orange-grad); color: #fff;
+  background: var(--dark-1); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 16px -6px rgba(241,90,36,.5);
+  box-shadow: 0 6px 16px -8px rgba(10,34,48,.4);
 }
 .flow-card-icon[data-kind="automatización"] {
   background: var(--dark-1);
-  color: var(--orange-2);
+  color: #fff;
   box-shadow: 0 6px 16px -8px rgba(10,34,48,.4);
 }
 .flow-kind {
@@ -3106,8 +3107,8 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
   margin-bottom: 8px;
 }
 .flow-kind[data-kind="agente"] {
-  color: var(--orange-2);
-  background: color-mix(in oklab, var(--orange-2) 12%, transparent);
+  color: #0a2230;
+  background: color-mix(in oklab, #0a2230 8%, transparent);
 }
 .flow-kind[data-kind="automatización"] {
   color: #0a2230;
