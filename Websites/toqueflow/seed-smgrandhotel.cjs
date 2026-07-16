@@ -41,9 +41,10 @@ const FLOW = {
   name: 'KPI de Ocupación', type: 'chart', kind: 'automatización', status: 'activo', sede: null,
   desc: 'Dashboard de ocupación hotelera (49 habitaciones), actualizado periódicamente desde el Excel de reservas.',
   channels: [],
-  // prom. 12m (jul25–jun26) + ocupación del último mes CERRADO (jun26).
-  // La 3ª métrica ("real" con complementary) vuelve cuando llegue el Informe Diario de junio.
-  stats: [{ n: '35%', l: 'prom. 12m' }, { n: '37%', l: 'ocup. jun' }],
+  // prom. 12m (jul25–jun26) + ocupación del último mes CERRADO (jun26) + "real" (con
+  // complementary) del último mes que TIENE Informe Diario (may26 = 22.8% -> 23%).
+  // TODO: al llegar el Informe Diario de junio -> pasar la 3ª a "real jun" (y sumar jun a COMPL_DATA).
+  stats: [{ n: '35%', l: 'prom. 12m' }, { n: '37%', l: 'ocup. jun' }, { n: '23%', l: 'real may' }],
   spark: [52, 41, 33, 53, 56, 24, 23, 37, 16, 25, 22, 37],   // ocupación % oficial, jul25–jun26
   last: 'actualizado 16 jul 2026', tool_url: 'sm-grand/ocupacion.html',
 };
