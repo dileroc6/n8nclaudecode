@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Campañas — ToqueFlow</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0a2230; --mute:#5b6b75; --line:#e2e6e9; --orange:#f15a24; --bg:#f6f7f8; --card:#fff; --green:#1f8a5b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sora",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+
+  .tool-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  .tool-top .brand { display:flex; align-items:center; gap:12px; }
+  .tool-top .brand b { font-size:15px; }
+  .tool-top .brand span { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); display:block; }
+  .tool-top .who { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .tool-top a.back { color:var(--orange); text-decoration:none; font-size:13px; }
+
+  .wrap { max-width:760px; margin:0 auto; padding:26px 22px 80px; display:flex; flex-direction:column; gap:20px; }
+
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
+  .panel h1 { font-size:20px; margin:0 0 4px; }
+  .panel h2 { font-size:16px; margin:0 0 14px; }
+  .panel p.sub { color:var(--mute); font-size:13.5px; margin:0 0 18px; }
+
+  label { display:block; font-size:12.5px; font-weight:600; margin:0 0 6px; }
+  .field { margin-bottom:16px; }
+  input[type=text], input[type=number], textarea, select {
+    width:100%; border:1px solid var(--line); border-radius:10px; padding:11px 12px;
+    font-family:inherit; font-size:14px; outline:none; background:#fff; color:var(--ink);
+  }
+  textarea { min-height:110px; resize:vertical; font-family:"JetBrains Mono",monospace; font-size:13px; }
+  input:focus, textarea:focus, select:focus { border-color:var(--orange); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:560px){ .grid2,.grid3 { grid-template-columns:1fr; } }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:6px 13px; font-size:13px; cursor:pointer; background:#fff; user-select:none; transition:.12s; }
+  .chip.on { background:var(--orange); border-color:var(--orange); color:#fff; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:10px; padding:12px 18px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-primary { background:var(--orange); color:#fff; }
+  .btn-primary:disabled { opacity:.55; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--ink); }
+  .row { display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+
+  .notice { border-radius:10px; padding:11px 13px; font-size:13px; margin-top:12px; display:none; }
+  .notice.show { display:block; }
+  .notice.ok { background:#e8f6ee; color:var(--green); }
+  .notice.error { background:#fdecea; color:#c0392b; }
+  .muted { color:var(--mute); font-size:12px; font-family:"JetBrains Mono",monospace; }
+  .count-pill { display:inline-block; background:#eef1f3; border-radius:999px; padding:3px 10px; font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--ink); }
+
+  .clist { display:flex; flex-direction:column; gap:10px; }
+  .citem { border:1px solid var(--line); border-radius:12px; padding:13px 15px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .citem .cname { font-weight:600; font-size:14px; }
+  .citem .cmeta { font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--mute); margin-top:2px; }
+  .badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; }
+  .badge.borrador { background:#eef1f3; color:var(--mute); }
+  .badge.activa   { background:#e8f6ee; color:var(--green); }
+  .badge.pausada  { background:#fff4e5; color:#b9770e; }
+  .badge.finalizada { background:#eef1f3; color:var(--mute); }
+
+  .help { font-size:11.5px; color:var(--mute); margin-top:6px; line-height:1.45; }
+  .help b { color:var(--ink); }
+
+  /* Pasos: cada bloque de configuración separado y claro */
+  .step { border:1px solid var(--line); border-radius:14px; padding:18px; margin-top:16px; background:#fcfdfd; }
+  .step-h { display:flex; align-items:center; gap:9px; font-size:15px; font-weight:600; margin-bottom:15px; }
+  .step-n { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:999px; background:var(--orange); color:#fff; font-size:13px; font-weight:700; flex:none; }
+  .step-sub { font-size:12px; font-weight:400; color:var(--mute); }
+
+  /* Filtros como lista de selección (checkboxes), no botones */
+  .checklist { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .check-item { display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:13.5px; cursor:pointer; background:#fff; transition:.12s; user-select:none; }
+  .check-item:hover { border-color:#cdd4d9; }
+  .check-item.on { border-color:var(--orange); background:#fff6f2; }
+  .check-item input { accent-color:var(--orange); width:16px; height:16px; margin:0; flex:none; }
+  .check-item span { text-transform:capitalize; }
+  .overlay { position:fixed; inset:0; background:rgba(10,34,48,.45); display:none; align-items:flex-start; justify-content:center; padding:40px 16px; z-index:50; overflow-y:auto; }
+  .overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:18px; width:100%; max-width:520px; padding:24px; box-shadow:0 20px 60px rgba(10,34,48,.25); }
+  .modal h2 { font-size:18px; margin:0 0 4px; }
+  .who-row { display:flex; justify-content:space-between; gap:10px; padding:8px 2px; border-bottom:1px solid #f0f2f4; font-size:13.5px; }
+  .who-row .p { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .prev-item { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; background:#fbfcfc; }
+  .prev-item .pv-body { font-size:13.5px; white-space:pre-wrap; line-height:1.45; }
+  .prev-item .pv-phone { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); margin-top:5px; }
+</style>
+</head>
+<body>
+<div class="tool-top">
+  <div class="brand">
+    <div>
+      <b>Campañas</b>
+      <span id="brand-company">ToqueFlow</span>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span class="who" id="who">—</span>
+    <a class="back" href="dashboard.html">← Volver al panel</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- ── Configurar campaña ── -->
+  <div class="panel">
+    <h1>Nueva campaña de reactivación</h1>
+    <p class="sub">Elige a quién contactar (segmento), qué mensaje enviar y cuándo. El sistema los contacta por WhatsApp de forma escalonada para no arriesgar el número.</p>
+
+    <div class="field">
+      <label for="c-name">Nombre de la campaña</label>
+      <input type="text" id="c-name" placeholder="Ej. Reactivación Karma julio" />
+    </div>
+
+    <!-- Paso 1: segmento -->
+    <div class="step">
+      <div class="step-h"><span class="step-n">1</span> ¿A quién contactar? <span class="step-sub">— elige uno o más filtros</span></div>
+      <div class="field"><label>Estado</label><div class="checklist" id="f-status"></div></div>
+      <div class="field"><label>Temperatura (lead)</label><div class="checklist" id="f-stage"></div></div>
+      <div class="field" style="margin-bottom:0;"><label>Tipo de servicio</label><div class="checklist" id="f-service"></div></div>
+      <div class="row" style="margin-top:14px;">
+        <span class="muted">Contactos que coinciden:</span>
+        <span class="count-pill" id="match-count">—</span>
+        <button class="btn btn-ghost" id="btn-who" style="padding:6px 12px;font-size:12.5px;">Ver a quiénes</button>
+      </div>
+    </div>
+
+    <!-- Paso 2: mensaje -->
+    <div class="step">
+      <div class="step-h"><span class="step-n">2</span> ¿Qué mensaje enviar?</div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="c-msg">Mensaje <span class="muted">— usa {nombre} para personalizar con el nombre de cada persona</span></label>
+        <textarea id="c-msg" placeholder="Hola {nombre}, te extrañamos en el estudio ..."></textarea>
+      </div>
+    </div>
+
+    <!-- Paso 3: frecuencia -->
+    <div class="step">
+      <div class="step-h"><span class="step-n">3</span> Frecuencia y envío</div>
+      <div class="field" style="margin-bottom:12px;">
+        <label for="c-freq">Repetición</label>
+        <select id="c-freq" style="max-width:280px;">
+          <option value="una_vez">Una sola vez</option>
+          <option value="diaria">Repetir cada día</option>
+          <option value="semanal">Repetir cada semana</option>
+        </select>
+      </div>
+      <div class="help" id="ritmo-info">Para cuidar el número, los mensajes se envían pausados: en grupos de 5, ~cada 12 min (~25 por hora).</div>
+      <div class="help" style="margin-top:8px; border-left:3px solid var(--line); padding-left:10px;">
+        <b>Recomendación para proteger nuestro número de WhatsApp:</b> no enviar más de ~150 mensajes al día. Si el número es nuevo o tiene poco uso, empieza con ~50/día la primera semana y sube de a poco. Las campañas grandes conviene repartirlas en varios días.
+      </div>
+    </div>
+
+    <!-- Paso 4: cuándo -->
+    <div class="step">
+      <div class="step-h"><span class="step-n">4</span> ¿Cuándo enviar?</div>
+      <div class="chips" id="when-chips">
+        <div class="chip on" data-when="ahora">Ahora</div>
+        <div class="chip" data-when="programar">Programar día y hora</div>
+      </div>
+      <div id="sched-wrap" style="display:none; margin-top:10px;">
+        <input type="datetime-local" id="c-sched" style="max-width:280px;" />
+        <div class="help">Se enviará en la fecha y hora que elijas (hora de <b>Colombia</b>). El sistema espera hasta ese momento.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-h"><span class="step-n">5</span> Modo de envío</div>
+      <div class="chips" id="mode-chips">
+        <div class="chip on" data-mode="prueba">Prueba (no envía)</div>
+        <div class="chip" data-mode="real">Envío real</div>
+      </div>
+      <div id="mode-hint" class="help" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <button class="btn btn-ghost" id="btn-save">Guardar borrador</button>
+      <button class="btn btn-primary" id="btn-run">Guardar y ejecutar ahora</button>
+    </div>
+    <div class="notice" id="notice"></div>
+  </div>
+
+  <!-- ── Campañas existentes ── -->
+  <div class="panel">
+    <h2>Campañas de la empresa</h2>
+    <p class="sub">Historial de campañas: su segmento, el mensaje, cuándo se envían y cómo les fue. Puedes volver a ejecutarlas o eliminarlas.</p>
+    <div class="clist" id="clist"><span class="muted">Cargando…</span></div>
+  </div>
+</div>
+
+<!-- Modal: vista previa de campaña en modo prueba -->
+<div class="overlay" id="ov-prev">
+  <div class="modal">
+    <h2>Vista previa — modo prueba</h2>
+    <p class="sub" id="prev-sub">Generando la vista previa…</p>
+    <div id="prev-list" style="max-height:55vh; overflow:auto;"><span class="muted">El motor está preparando los mensajes…</span></div>
+    <div style="display:flex; justify-content:space-between; gap:10px; margin-top:14px;">
+      <a href="modo-prueba.html#campana" class="btn btn-ghost" style="text-decoration:none;">Abrir chat de prueba →</a>
+      <button class="btn btn-ghost" id="prev-close">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: a quiénes se enviará -->
+<div class="overlay" id="ov-who">
+  <div class="modal">
+    <h2>A quiénes se les enviará</h2>
+    <p class="sub" id="who-sub">—</p>
+    <div id="who-list" style="max-height:52vh; overflow:auto;"></div>
+    <div style="display:flex; justify-content:flex-end; margin-top:14px;"><button class="btn btn-ghost" id="who-close">Cerrar</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script>
+(async function () {
+  const A = window.TF_AUTH;
+  const profile = await A.guard({});      // cualquier usuario logueado de la empresa
+  if (!profile) return;                    // guard ya redirige si no hay sesión
+  const sb = A.sb;
+  const company = window.TF_COMPANY || profile.company || {};
+  const companyId = profile.company_id;
+  if (!companyId) { setNotice('error', 'Tu usuario no tiene empresa asignada.'); return; }
+
+  document.getElementById('brand-company').textContent = company.name || company.slug || '—';
+  document.getElementById('who').textContent = profile.email || '';
+
+  // ── Filtros (chips multi-selección) ──
+  const OPTS = {
+    status:  ['activo','no_activo','prospecto','deudor','embajador'],
+    stage:   ['cliente','caliente','tibio','frio'],
+    service: ['karma','beja','uja','paquete'],
+  };
+  const sel = { status:new Set(), stage:new Set(), service:new Set() };
+  let whenMode = 'ahora'; // 'ahora' | 'programar'
+  const DISP = { uja: 'uha' }; // el código interno es 'uja'; en pantalla se muestra 'uha'
+  const disp = (v) => (DISP[v] || String(v || '')).replace('_', ' ');
+  const svgI = (p) => '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;opacity:.6;">' + p + '</svg>';
+  const IC = {
+    who: svgI('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    reach: svgI('<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>'),
+    repeat: svgI('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'),
+    clock: svgI('<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>'),
+    cal: svgI('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  };
+  function renderChecklist(key, elId) {
+    const el = document.getElementById(elId);
+    el.innerHTML = '';
+    OPTS[key].forEach((v) => {
+      const lab = document.createElement('label');
+      lab.className = 'check-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.value = v; cb.checked = sel[key].has(v);
+      const sp = document.createElement('span'); sp.textContent = disp(v);
+      cb.onchange = () => { if (cb.checked) { sel[key].add(v); lab.classList.add('on'); } else { sel[key].delete(v); lab.classList.remove('on'); } updateCount(); };
+      lab.appendChild(cb); lab.appendChild(sp);
+      el.appendChild(lab);
+    });
+  }
+  renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+
+  function buildFilters() {
+    const f = {};
+    if (sel.status.size)  f.status       = [...sel.status];
+    if (sel.stage.size)   f.lead_stage   = [...sel.stage];
+    if (sel.service.size) f.service_type = [...sel.service];
+    return f;
+  }
+
+  // ── Conteo en vivo de contactos que coinciden ──
+  let countTimer = null;
+  function updateCount() { clearTimeout(countTimer); countTimer = setTimeout(doCount, 250); }
+  async function doCount() {
+    let q = sb.from('contacts').select('id', { count:'exact', head:true }).eq('company_id', companyId);
+    if (sel.status.size)  q = q.in('status', [...sel.status]);
+    if (sel.stage.size)   q = q.in('lead_stage', [...sel.stage]);
+    if (sel.service.size) q = q.in('service_type', [...sel.service]);
+    const { count, error } = await q;
+    lastMatchCount = error ? null : (count ?? 0);
+    document.getElementById('match-count').textContent = lastMatchCount == null ? '—' : lastMatchCount + ' contactos';
+    updateRitmo();
+  }
+  // Texto informativo del paso 3: a cuántos, en lotes, y si se repite (antes de ejecutar).
+  let lastMatchCount = null;
+  function updateRitmo() {
+    const ri = document.getElementById('ritmo-info');
+    if (!ri) return;
+    const n = lastMatchCount;
+    const freq = document.getElementById('c-freq').value;
+    let t = 'Todos los mensajes salen desde <b>nuestro único número de WhatsApp</b> (el de ' + esc(company.name || 'la empresa') + '). Para que WhatsApp no lo bloquee por enviar muchos de golpe, se mandan pausados: en <b>grupos de 5, ~cada 12 min</b> (~25 por hora).';
+    if (n != null && n > 0) {
+      const min = Math.round(n * 2.4); // ~2,4 min por mensaje (12 min ÷ 5)
+      let dur;
+      if (min < 60) dur = 'unos ' + min + ' min';
+      else { const h = min / 60; dur = '~' + (h < 3 ? (Math.round(h * 10) / 10) : Math.round(h)) + ' h'; if (h >= 8) dur += ' (conviene repartir en varios días)'; }
+      t += ' Enviar a <b>' + n + ' contacto' + (n === 1 ? '' : 's') + '</b> tardaría ' + dur + '.';
+    }
+    if (freq === 'diaria' || freq === 'semanal') {
+      const cada = freq === 'diaria' ? 'cada día' : 'cada semana';
+      t += ' <b>Se repetirá ' + cada + '</b> ' + (whenMode === 'programar' ? 'desde la fecha y hora que elijas.' : 'a la hora en que la ejecutes.');
+    }
+    if (n != null && n > 150) t += ' <span style="color:#b9770e;"><b>Nota:</b> supera el máximo diario recomendado (150/día); considera repartirlo en varios días.</span>';
+    ri.innerHTML = t;
+  }
+  doCount();
+
+  // ── ¿Cuándo enviar? (ahora / programar) ──
+  document.querySelectorAll('#when-chips .chip').forEach((ch) => {
+    ch.onclick = () => {
+      document.querySelectorAll('#when-chips .chip').forEach((x) => x.classList.remove('on'));
+      ch.classList.add('on');
+      whenMode = ch.dataset.when;
+      document.getElementById('sched-wrap').style.display = whenMode === 'programar' ? 'block' : 'none';
+      updateMode();
+      updateRitmo();
+    };
+  });
+  document.getElementById('c-freq').addEventListener('change', updateRitmo);
+
+  // ── Modo de envío: prueba (no envía) vs real ──
+  let sendMode = 'prueba';
+  function updateMode() {
+    document.querySelectorAll('#mode-chips .chip').forEach((x) => x.classList.toggle('on', x.dataset.mode === sendMode));
+    const btn = document.getElementById('btn-run');
+    if (sendMode === 'prueba') btn.textContent = 'Guardar y probar';
+    else btn.textContent = whenMode === 'programar' ? 'Guardar y programar (envío real)' : 'Guardar y ENVIAR de verdad';
+    const mh = document.getElementById('mode-hint');
+    if (mh) mh.innerHTML = sendMode === 'prueba'
+      ? 'No se envía nada real: verás una <b>vista previa</b> y podés abrir el <a href="modo-prueba.html#campana" style="color:var(--orange);font-weight:600;">Chat de prueba →</a>'
+      : '<b style="color:#b9770e;">Envío real:</b> saldrá por WhatsApp de verdad desde el número de ' + esc(company.name || 'la empresa') + '. Te pediremos confirmar antes.';
+  }
+  document.querySelectorAll('#mode-chips .chip').forEach((ch) => { ch.onclick = () => { sendMode = ch.dataset.mode; updateMode(); }; });
+  updateMode();
+
+  // ── Ver a quiénes se enviará (todos los que coinciden) ──
+  async function recipientsQuery() {
+    let q = sb.from('contacts').select('full_name,phone,service_type,status').eq('company_id', companyId).order('full_name', { ascending:true });
+    if (sel.status.size)  q = q.in('status', [...sel.status]);
+    if (sel.stage.size)   q = q.in('lead_stage', [...sel.stage]);
+    if (sel.service.size) q = q.in('service_type', [...sel.service]);
+    return await q;
+  }
+  document.getElementById('btn-who').onclick = async () => {
+    document.getElementById('who-list').innerHTML = '<span class="muted">Cargando…</span>';
+    document.getElementById('ov-who').classList.add('show');
+    const { data, error } = await recipientsQuery();
+    if (error) { document.getElementById('who-list').innerHTML = '<span class="muted">Error: ' + esc(error.message) + '</span>'; return; }
+    const rows = data || [];
+    document.getElementById('who-sub').textContent = rows.length
+      ? rows.length + ' contacto' + (rows.length === 1 ? '' : 's') + ' del segmento:'
+      : 'Ningún contacto coincide con el segmento elegido.';
+    document.getElementById('who-list').innerHTML = rows.map((c) =>
+      '<div class="who-row"><span>' + esc(c.full_name || '—') + ' <span class="muted">· ' + esc(disp(c.service_type) || '—') + '/' + esc((c.status||'').replace('_',' ')) + '</span></span><span class="p">' + esc(c.phone || '—') + '</span></div>'
+    ).join('') || '<span class="muted">—</span>';
+  };
+  document.getElementById('who-close').onclick = () => document.getElementById('ov-who').classList.remove('show');
+  document.getElementById('ov-who').onclick = (e) => { if (e.target.id === 'ov-who') document.getElementById('ov-who').classList.remove('show'); };
+
+  // ── Guardar / ejecutar ──
+  let editingCampaignId = null; // si != null, estamos editando una campaña existente
+  const BATCH = 5;              // lote fijo (anti-baneo)
+
+  function readForm() {
+    const schedVal = document.getElementById('c-sched').value; // "YYYY-MM-DDTHH:MM"
+    // programar solo si NO es modo prueba (las de prueba se ejecutan al instante)
+    const scheduled_at = (whenMode === 'programar' && schedVal && sendMode === 'real') ? schedVal + ':00-05:00' : null; // hora Colombia
+    return {
+      name: document.getElementById('c-name').value.trim(),
+      filters: buildFilters(),
+      message_template: document.getElementById('c-msg').value.trim(),
+      quantity: null,        // sin tope: se envía a todos los que coinciden
+      frequency: document.getElementById('c-freq').value,
+      batch_size: BATCH,     // lote fijo de 5
+      scheduled_at,
+    };
+  }
+
+  // Próxima ocurrencia (ahora + intervalo) en ISO con hora Colombia -05:00.
+  function nextOccurrenceISO(freq) {
+    const d = new Date(Date.now() + (freq === 'diaria' ? 86400000 : 604800000));
+    const p = (n) => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '-05:00';
+  }
+
+  async function saveCampaign(requireSchedule) {
+    const form = readForm();
+    if (!form.name) { setNotice('error', 'Ponle un nombre a la campaña.'); return null; }
+    if (!form.message_template) { setNotice('error', 'Escribe el mensaje.'); return null; }
+    if (requireSchedule && whenMode === 'programar' && !form.scheduled_at) { setNotice('error', 'Elige la fecha y hora de envío, o cambia a "Ahora".'); return null; }
+    let res;
+    if (editingCampaignId) {
+      res = await sb.from('campaigns').update({
+        name: form.name, filters: form.filters, message_template: form.message_template,
+        quantity: form.quantity, frequency: form.frequency, batch_size: form.batch_size,
+        scheduled_at: form.scheduled_at,
+      }).eq('id', editingCampaignId).select().single();
+    } else {
+      res = await sb.from('campaigns').insert({
+        company_id: companyId, name: form.name, filters: form.filters,
+        message_template: form.message_template, quantity: form.quantity,
+        frequency: form.frequency, batch_size: form.batch_size,
+        scheduled_at: form.scheduled_at, status: 'borrador', created_by: profile.id,
+      }).select().single();
+    }
+    if (res.error) { setNotice('error', 'No se pudo guardar: ' + res.error.message); return null; }
+    return res.data;
+  }
+
+  // Cargar una campaña existente en el formulario para editarla (modo prueba desmarcado = producción).
+  function editCampaign(c) {
+    editingCampaignId = c.id;
+    document.getElementById('c-name').value = c.name || '';
+    document.getElementById('c-msg').value = c.message_template || '';
+    document.getElementById('c-freq').value = c.frequency || 'una_vez';
+    sendMode = 'prueba'; updateMode();
+    sel.status = new Set((c.filters && c.filters.status) || []);
+    sel.stage = new Set((c.filters && c.filters.lead_stage) || []);
+    sel.service = new Set((c.filters && c.filters.service_type) || []);
+    renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+    if (c.scheduled_at) {
+      whenMode = 'programar';
+      document.getElementById('c-sched').value = String(c.scheduled_at).slice(0, 16);
+      document.getElementById('sched-wrap').style.display = 'block';
+    } else {
+      whenMode = 'ahora';
+      document.getElementById('c-sched').value = '';
+      document.getElementById('sched-wrap').style.display = 'none';
+    }
+    document.querySelectorAll('#when-chips .chip').forEach((x) => x.classList.toggle('on', x.dataset.when === whenMode));
+    updateMode();
+    doCount();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setNotice('ok', 'Editando "' + c.name + '". Ajusta lo que quieras y ejecuta. (El modo prueba está desmarcado = envío real.)');
+  }
+
+  // Encola el evento ejecutar_campana en el outbox (RLS permite este evento al member).
+  async function enqueueRun(campaign) {
+    const payload = {
+      company_id: companyId,
+      company_slug: company.slug || null,
+      campaign_id: campaign.id,
+      filtros: campaign.filters,
+      mensaje: campaign.message_template,
+      cantidad: campaign.quantity,
+      frecuencia: campaign.frequency,
+      batch_size: campaign.batch_size,
+      programado_para: campaign.scheduled_at || null, // null = enviar ahora; si no, ISO con hora Colombia
+      test: sendMode === 'prueba', // prueba = va al chat de prueba, no WhatsApp real
+    };
+    const { error } = await sb.from('n8n_events').insert({
+      company_id: companyId, event: 'ejecutar_campana', payload,
+    });
+    if (error) { setNotice('error', 'Campaña guardada, pero no se pudo disparar: ' + error.message); return false; }
+    return true;
+  }
+
+  document.getElementById('btn-save').onclick = async (e) => {
+    e.target.disabled = true;
+    const c = await saveCampaign();
+    if (c) { setNotice('ok', 'Campaña guardada como borrador.'); resetForm(); loadList(); }
+    e.target.disabled = false;
+  };
+  // Vista previa de campaña en modo prueba: lee test_messages (flow='campana') que escribe n8n.
+  function openPreview() {
+    document.getElementById('prev-sub').textContent = 'Generando la vista previa…';
+    document.getElementById('prev-list').innerHTML = '<span class="muted">El motor está preparando los mensajes…</span>';
+    document.getElementById('ov-prev').classList.add('show');
+    let tries = 0;
+    const poll = async () => {
+      const { data } = await sb.from('test_messages').select('telefono,body')
+        .eq('company_id', companyId).eq('flow', 'campana').order('created_at', { ascending: true }).limit(500);
+      const rows = data || [];
+      if (rows.length) {
+        document.getElementById('prev-sub').textContent = rows.length + ' mensaje(s) que se enviarían — no se envió nada real:';
+        document.getElementById('prev-list').innerHTML = rows.map((r) =>
+          '<div class="prev-item"><div class="pv-body">' + esc(r.body || '') + '</div><div class="pv-phone">' + esc(r.telefono || '') + '</div></div>').join('');
+      }
+      tries++;
+      if (document.getElementById('ov-prev').classList.contains('show') && tries < 12) setTimeout(poll, 2000);
+    };
+    poll();
+  }
+  document.getElementById('prev-close').onclick = () => document.getElementById('ov-prev').classList.remove('show');
+  document.getElementById('ov-prev').onclick = (e) => { if (e.target.id === 'ov-prev') document.getElementById('ov-prev').classList.remove('show'); };
+
+
+  document.getElementById('btn-run').onclick = async (e) => {
+    e.target.disabled = true;
+    const esTest = sendMode === 'prueba';
+    const programada = whenMode === 'programar' && !esTest;
+    if (!esTest) {
+      const nStr = lastMatchCount != null ? (lastMatchCount + ' contacto' + (lastMatchCount === 1 ? '' : 's')) : 'los contactos del segmento';
+      const emp = company.name || 'la empresa';
+      const msg = whenMode === 'programar'
+        ? 'Vas a PROGRAMAR un envío de WhatsApp REAL a ' + nStr + ' desde el número de ' + emp + '. ¿Confirmás?'
+        : 'Vas a ENVIAR AHORA mensajes de WhatsApp REALES a ' + nStr + ' desde el número de ' + emp + '. ¿Confirmás el envío real?';
+      if (!confirm(msg)) { e.target.disabled = false; return; }
+    }
+    if (esTest) await sb.from('test_messages').delete().eq('company_id', companyId).eq('flow', 'campana'); // limpia previews viejas
+    const c = await saveCampaign(true);
+    if (!c) { e.target.disabled = false; return; }
+
+    if (esTest) {
+      // Modo prueba: se ejecuta ahora y se ve en la vista previa (no toca WhatsApp).
+      if (await enqueueRun(c)) { setNotice('ok', 'Modo prueba: mira la vista previa (no salió nada por WhatsApp).'); openPreview(); resetForm(); loadList(); }
+    } else if (programada) {
+      // Programada: NO se dispara ahora; el sistema la envía a la hora (scheduler).
+      await sb.from('campaigns').update({ status: 'activa' }).eq('id', c.id);
+      const f = String(c.scheduled_at).slice(0, 16).replace('T', ' a las ');
+      setNotice('ok', 'Campaña programada para el ' + f + ' (hora Colombia). El sistema la enviará sola a esa hora.');
+      resetForm(); loadList();
+    } else {
+      // Ahora: se dispara al instante. Si tiene frecuencia, se programa la recurrencia.
+      if (await enqueueRun(c)) {
+        let extra = '';
+        if (c.frequency && c.frequency !== 'una_vez') {
+          await sb.from('campaigns').update({ status: 'activa', scheduled_at: nextOccurrenceISO(c.frequency) }).eq('id', c.id);
+          extra = ' Se repetirá ' + (c.frequency === 'diaria' ? 'cada día' : 'cada semana') + ' a esta misma hora.';
+        } else {
+          await sb.from('campaigns').update({ status: 'finalizada' }).eq('id', c.id);
+        }
+        setNotice('ok', 'La campaña se ejecutó ahora, en lotes de ' + BATCH + '.' + extra);
+        resetForm(); loadList();
+      }
+    }
+    e.target.disabled = false;
+  };
+
+  // ── Lista de campañas de la empresa ──
+  async function loadList() {
+    const el = document.getElementById('clist');
+    const [{ data, error }, runsRes] = await Promise.all([
+      sb.from('campaigns').select('*').eq('company_id', companyId).order('created_at', { ascending:false }).limit(20),
+      sb.from('campaign_runs').select('campaign_id,status').eq('company_id', companyId),
+    ]);
+    if (error) { el.innerHTML = '<span class="muted">Error cargando: ' + error.message + '</span>'; return; }
+    if (!data.length) { el.innerHTML = '<span class="muted">Aún no hay campañas.</span>'; return; }
+    // Agrupa resultados por campaña.
+    const byCamp = {};
+    (runsRes.data || []).forEach((r) => {
+      (byCamp[r.campaign_id] = byCamp[r.campaign_id] || {})[r.status] = (byCamp[r.campaign_id]?.[r.status] || 0) + 1;
+    });
+    function resumen(id) {
+      const r = byCamp[id]; if (!r) return '<span class="muted">sin envíos aún</span>';
+      const parts = [];
+      if (r.sent)    parts.push('' + r.sent + ' enviados');
+      if (r.replied) parts.push('' + r.replied + ' respondieron');
+      if (r.failed)  parts.push('' + r.failed + ' fallidos');
+      if (r.queued)  parts.push('⏳ ' + r.queued + ' en cola');
+      return '<span class="muted">' + (parts.join(' · ') || 'sin envíos aún') + '</span>';
+    }
+    const SEGLBL = { status:'Estado', lead_stage:'Temperatura', service_type:'Servicio' };
+    const FREQLBL = { una_vez:'una sola vez', diaria:'cada día', semanal:'cada semana' };
+    el.innerHTML = '';
+    data.forEach((c) => {
+      const seg = Object.entries(c.filters || {}).map(([k, v]) => (SEGLBL[k]||k) + ': ' + (Array.isArray(v) ? v.map(disp).join('/') : disp(v))).join(' · ') || 'todos los contactos';
+      const msg = (c.message_template || '').replace(/\s+/g, ' ').trim();
+      const msgPrev = msg ? (msg.length > 100 ? msg.slice(0, 100) + '…' : msg) : '(sin mensaje)';
+      const cuando = c.scheduled_at ? 'Próxima ejecución: ' + String(c.scheduled_at).slice(0, 16).replace('T', ' ') : 'Envío inmediato';
+      const created = c.created_at ? 'creada el ' + String(c.created_at).slice(0, 10) : '';
+      const div = document.createElement('div');
+      div.className = 'citem';
+      div.style.alignItems = 'stretch'; div.style.flexDirection = 'column';
+      div.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+          '<div class="cname">' + esc(c.name) + '</div>' +
+          '<span class="badge ' + esc(c.status) + '">' + esc(c.status) + '</span>' +
+        '</div>' +
+        '<div style="font-size:13px;margin:6px 0 8px;color:var(--ink);">“' + esc(msgPrev) + '”</div>' +
+        '<div class="cmeta">' + IC.who + '<b>A quién:</b> ' + esc(seg) + '</div>' +
+        '<div class="cmeta">' + IC.reach + '<b>Alcance:</b> todos los del segmento · lotes de ' + (c.batch_size || 5) + '</div>' +
+        '<div class="cmeta">' + IC.repeat + '<b>Frecuencia:</b> ' + esc(FREQLBL[c.frequency] || c.frequency) + '</div>' +
+        '<div class="cmeta">' + IC.clock + '<b>Cuándo:</b> ' + cuando + '</div>' +
+        '<div class="cmeta" style="margin-top:2px;">' + IC.cal + esc(created) + '</div>' +
+        '<div style="margin-top:8px;">Resultados: ' + resumen(c.id) + '</div>' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;">' +
+          '<button class="btn btn-ghost btn-del" style="padding:8px 12px;font-size:13px;color:#c1272d;">Eliminar</button>' +
+          '<button class="btn btn-ghost btn-edit" style="padding:8px 12px;font-size:13px;">Editar</button>' +
+          '<button class="btn btn-primary btn-run2" style="padding:8px 14px;font-size:13px;">Ejecutar ahora</button>' +
+        '</div>';
+      div.querySelector('.btn-edit').onclick = () => editCampaign(c);
+      div.querySelector('.btn-run2').onclick = async (ev) => {
+        ev.target.disabled = true;
+        if (await enqueueRun(c)) {
+          let extra = '';
+          if (c.frequency && c.frequency !== 'una_vez') {
+            await sb.from('campaigns').update({ status: 'activa', scheduled_at: nextOccurrenceISO(c.frequency) }).eq('id', c.id);
+            extra = ' (se repetirá ' + (c.frequency === 'diaria' ? 'cada día' : 'cada semana') + ')';
+          } else {
+            await sb.from('campaigns').update({ status: 'finalizada' }).eq('id', c.id);
+          }
+          setNotice('ok', '"' + c.name + '" ejecutada' + extra + '.');
+        }
+        loadList();
+      };
+      div.querySelector('.btn-del').onclick = async () => {
+        if (!confirm('¿Eliminar la campaña "' + c.name + '"? Esta acción no se puede deshacer.')) return;
+        const { error } = await sb.from('campaigns').delete().eq('id', c.id);
+        if (error) { setNotice('error', 'No se pudo eliminar: ' + error.message); return; }
+        setNotice('ok', 'Campaña eliminada.'); loadList();
+      };
+      el.appendChild(div);
+    });
+  }
+  loadList();
+
+  // ── util ──
+  function setNotice(kind, msg) {
+    const n = document.getElementById('notice');
+    n.className = 'notice show ' + kind; n.textContent = msg;
+    if (kind === 'ok') setTimeout(() => n.classList.remove('show'), 6000);
+  }
+  function resetForm() {
+    editingCampaignId = null;
+    document.getElementById('c-name').value = '';
+    document.getElementById('c-msg').value = '';
+    document.getElementById('c-sched').value = '';
+    document.getElementById('c-freq').value = 'una_vez';
+    sendMode = 'prueba';
+    whenMode = 'ahora';
+    document.querySelectorAll('#when-chips .chip').forEach((x) => x.classList.toggle('on', x.dataset.when === 'ahora'));
+    document.getElementById('sched-wrap').style.display = 'none';
+    updateMode();
+    sel.status.clear(); sel.stage.clear(); sel.service.clear();
+    renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+    doCount();
+  }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m])); }
+})();
+</script>
+</body>
+</html>

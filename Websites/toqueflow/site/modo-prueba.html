@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Modo prueba — ToqueFlow</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0a2230; --mute:#5b6b75; --line:#e2e6e9; --orange:#f15a24; --bg:#f6f7f8; --card:#fff; --green:#1f8a5b; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sora",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  .tool-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  .tool-top .brand b { font-size:15px; }
+  .tool-top .brand span { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); display:block; }
+  .tool-top .who { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .tool-top a.back { color:var(--orange); text-decoration:none; font-size:13px; }
+
+  .wrap { max-width:640px; margin:0 auto; padding:22px 22px 40px; }
+  .banner { background:#fff6f2; border:1px solid #f6c6b0; color:#a3421c; border-radius:12px; padding:11px 14px; font-size:13px; margin-bottom:14px; }
+  .banner b { color:#8a3517; }
+
+  .tabs { display:flex; gap:6px; margin-bottom:12px; }
+  .tab { flex:1; text-align:center; border:1px solid var(--line); background:#fff; border-radius:11px; padding:10px 8px; font-size:13.5px; font-weight:600; cursor:pointer; color:var(--mute); }
+  .tab.on { background:var(--orange); border-color:var(--orange); color:#fff; }
+
+  .chat-card { background:var(--card); border:1px solid var(--line); border-radius:16px; display:flex; flex-direction:column; height:62vh; min-height:400px; overflow:hidden; }
+  .ctx-hint { padding:11px 15px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--mute); background:#fbfcfc; }
+  .util-bar { padding:9px 14px; border-bottom:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-util { border:1px solid var(--line); background:#fff; border-radius:10px; padding:7px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--ink); }
+  .btn-util:hover { border-color:#cdd4d9; } .btn-util:disabled { opacity:.5; cursor:default; }
+  .chat-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; background:#fbfcfc; }
+  .msg { max-width:80%; padding:9px 13px; border-radius:14px; font-size:14px; line-height:1.4; white-space:pre-wrap; word-wrap:break-word; }
+  .msg .who { display:block; font-size:10.5px; font-weight:600; margin-bottom:2px; opacity:.7; text-transform:uppercase; letter-spacing:.03em; }
+  .msg.in  { align-self:flex-end; background:var(--orange); color:#fff; border-bottom-right-radius:4px; }
+  .msg.out { align-self:flex-start; background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.out.admin { background:#eef6ff; border-color:#cfe2f7; }
+  .msg.out.sistema { background:#f3f4f5; color:var(--mute); font-size:12.5px; align-self:center; border-radius:999px; }
+  .prev-item { align-self:stretch; max-width:100%; background:#fff; border:1px solid var(--line); border-radius:12px; padding:11px 13px; }
+  .prev-item .pv-phone { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); margin-top:5px; }
+  .empty { color:var(--mute); font-size:13px; text-align:center; margin:auto; padding:0 20px; }
+  .waiting { align-self:flex-start; font-size:12px; color:var(--mute); font-style:italic; }
+  .chat-foot { padding:12px 14px; border-top:1px solid var(--line); display:flex; gap:10px; }
+  .chat-foot input { flex:1; border:1px solid var(--line); border-radius:999px; padding:11px 15px; font-family:inherit; font-size:14px; outline:none; }
+  .chat-foot input:focus { border-color:var(--orange); }
+  .foot-note { padding:12px 14px; border-top:1px solid var(--line); font-size:12.5px; color:var(--mute); text-align:center; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:none; border-radius:999px; padding:11px 18px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn-primary { background:var(--orange); color:#fff; } .btn-primary:disabled{opacity:.5;cursor:default;}
+</style>
+</head>
+<body>
+<div class="tool-top">
+  <div class="brand"><div><b>Modo prueba</b><span id="brand-company">ToqueFlow</span></div></div>
+  <div style="display:flex; align-items:center; gap:16px;">
+    <span class="who" id="who">—</span>
+    <a class="back" href="dashboard.html">← Volver al panel</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="banner"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/></svg><b>Modo prueba.</b> Todo lo que hagas aquí es simulado: <b>nada sale por WhatsApp</b> ni a clientes ni a admins, y no se tocan los datos reales. Elige una pestaña según lo que quieras probar.</div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-tab="cliente"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Cliente</div>
+    <div class="tab" data-tab="admin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/></svg>Admin</div>
+    <div class="tab" data-tab="campana"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Campañas</div>
+  </div>
+
+  <div class="chat-card">
+    <div class="ctx-hint" id="ctx-hint">—</div>
+    <div class="util-bar" id="util-bar">
+      <button class="btn-util" id="btn-saldo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Reiniciar saldo de prueba</button>
+      <button class="btn-util" id="btn-deudor"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Simular pago fallido</button>
+      <button class="btn-util" id="btn-clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Borrar historial</button>
+    </div>
+    <div class="chat-body" id="chat"></div>
+    <div class="chat-foot" id="foot">
+      <input type="text" id="msg" placeholder="Escribe…" autocomplete="off" />
+      <button class="btn btn-primary" id="send">Enviar</button>
+    </div>
+    <div class="foot-note" id="foot-note" style="display:none;">Las campañas se lanzan desde el panel de <b>Campañas</b> (marca “Modo prueba”). Aquí ves su vista previa.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script>
+(async function () {
+  const A = window.TF_AUTH;
+  const profile = await A.guard({});
+  if (!profile) return;
+  const sb = A.sb;
+  const company = window.TF_COMPANY || profile.company || {};
+  const companyId = profile.company_id;
+  document.getElementById('brand-company').textContent = company.name || company.slug || '—';
+  document.getElementById('who').textContent = profile.email || '';
+
+  const TEST_PHONE = '+573000000001';
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,(m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+  const $ = (id) => document.getElementById(id);
+
+  let testContact = null;
+  try {
+    const { data } = await sb.from('contacts').select('id,full_name,phone').eq('company_id', companyId).eq('phone', TEST_PHONE).maybeSingle();
+    testContact = data || null;
+  } catch (e) {}
+
+  const TABS = {
+    cliente: { flows:['agente_atencion'], rol:'cliente', flow:'agente_atencion', input:true,
+      hint:'Escribe como un cliente por WhatsApp: dudas, horarios, agenda, reactivación. Responde el agente de atención.',
+      ph:'Escribe como cliente… (ej. ¿tienen clases el sábado?)', utils:['clear'] },
+    admin: { flows:['gestion_clases','deudor'], rol:'admin', flow:'gestion_clases', input:true,
+      hint:'Escribe comandos de admin: recarga (+N), consulta de saldo, asistencia (−1). También puedes simular un pago fallido. Opera sobre el contacto de prueba.',
+      ph:'Escribe como admin… (ej. recárgale 8 · ¿cuántas clases le quedan?)', utils:['saldo','deudor','clear'] },
+    campana: { flows:['campana'], input:false,
+      hint:'Vista previa de las campañas lanzadas en modo prueba: el mensaje que recibiría cada persona.', utils:['clear'] },
+  };
+  let active = 'cliente';
+  const h = (location.hash || '').replace('#', '');
+  if (TABS[h]) active = h;
+  let lastKey = '', waiting = false;
+
+  function applyTab() {
+    const t = TABS[active];
+    document.querySelectorAll('#tabs .tab').forEach((x) => x.classList.toggle('on', x.dataset.tab === active));
+    $('ctx-hint').textContent = t.hint;
+    // utilidades visibles según pestaña
+    $('btn-saldo').style.display  = t.utils.includes('saldo')  ? '' : 'none';
+    $('btn-deudor').style.display = t.utils.includes('deudor') ? '' : 'none';
+    $('btn-clear').style.display  = t.utils.includes('clear')  ? '' : 'none';
+    // input vs nota
+    $('foot').style.display = t.input ? 'flex' : 'none';
+    $('foot-note').style.display = t.input ? 'none' : 'block';
+    if (t.input) $('msg').placeholder = t.ph;
+    lastKey = ''; waiting = false;
+    load();
+  }
+
+  function bubble(m) {
+    if (m.flow === 'campana') {
+      return '<div class="prev-item"><div>' + esc(m.body || '') + '</div><div class="pv-phone">' + esc(m.telefono || '') + '</div></div>';
+    }
+    const who = { cliente:'Tú (cliente)', admin: m.direction === 'in' ? 'Tú (admin)' : 'Aviso admin', bot:'Agente', sistema:'Sistema' }[m.author] || m.author;
+    const cls = m.direction === 'in' ? 'in' : 'out ' + (m.author || '');
+    return '<div class="msg ' + cls + '"><span class="who">' + esc(who) + '</span>' + esc(m.body || '') + '</div>';
+  }
+
+  async function load() {
+    const t = TABS[active];
+    const { data, error } = await sb.from('test_messages').select('*')
+      .eq('company_id', companyId).in('flow', t.flows).order('created_at', { ascending:true }).limit(300);
+    if (error) return;
+    const rows = data || [];
+    const key = rows.length + '|' + (rows.length ? rows[rows.length-1].id : '') + '|' + waiting;
+    if (key === lastKey) return;
+    lastKey = key;
+    const chat = $('chat');
+    if (!rows.length) {
+      chat.innerHTML = '<div class="empty">' + (active === 'campana'
+        ? 'Aún no hay campañas de prueba. Lánzalas desde el panel de Campañas con “Modo prueba”.'
+        : 'Escribe un mensaje para empezar a probar.') + '</div>';
+      return;
+    }
+    chat.innerHTML = rows.map(bubble).join('') + (waiting ? '<div class="waiting">El agente está escribiendo…</div>' : '');
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // Tabs
+  document.querySelectorAll('#tabs .tab').forEach((tab) => { tab.onclick = () => { active = tab.dataset.tab; applyTab(); }; });
+
+  // Enviar (cliente / admin)
+  async function send() {
+    const t = TABS[active];
+    if (!t.input) return;
+    const input = $('msg');
+    const texto = input.value.trim();
+    if (!texto) return;
+    input.value = '';
+    $('send').disabled = true;
+    const authorIn = active === 'admin' ? 'admin' : 'cliente';
+    await sb.from('test_messages').insert({ company_id: companyId, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, direction: 'in', author: authorIn, body: texto, flow: t.flow });
+    await sb.from('n8n_events').insert({ company_id: companyId, event: 'mensaje_prueba', payload: {
+      test: true, rol: t.rol, flow: t.flow, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, texto,
+      company_id: companyId, company_slug: company.slug || null,
+    }});
+    waiting = true; lastKey = ''; await load();
+    $('send').disabled = false; input.focus();
+    setTimeout(() => { waiting = false; }, 25000);
+  }
+  $('send').onclick = send;
+  $('msg').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+
+  // Borrar historial del contexto actual
+  $('btn-clear').onclick = async () => {
+    const t = TABS[active];
+    if (!confirm('¿Borrar el historial de esta pestaña? (no afecta datos reales)')) return;
+    await sb.from('test_messages').delete().eq('company_id', companyId).in('flow', t.flows);
+    lastKey = ''; waiting = false; await load();
+  };
+
+  // Reiniciar saldo del contacto de prueba
+  $('btn-saldo').onclick = async (e) => {
+    const val = prompt('¿Con cuántas clases quieres dejar el contacto de prueba?\n(es solo un número inicial para probar recarga/consulta)', '8');
+    if (val === null) return;
+    const BASE = parseInt(val, 10);
+    if (!Number.isFinite(BASE) || BASE < 0) { alert('Escribe un número válido (ej. 8).'); return; }
+    e.target.disabled = true;
+    const { error } = await sb.from('contacts').update({ clases_restantes: BASE, service_type: 'paquete' }).eq('company_id', companyId).eq('phone', TEST_PHONE);
+    if (error) alert('No se pudo reiniciar: ' + error.message);
+    else {
+      await sb.from('test_messages').insert({ company_id: companyId, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, direction: 'out', author: 'sistema', body: 'Saldo de prueba dejado en ' + BASE + ' clases. Ya puedes probar recarga/consulta.', flow: 'gestion_clases' });
+      lastKey = ''; await load();
+    }
+    e.target.disabled = false;
+  };
+
+  // Simular pago fallido → dispara pago_fallido (test)
+  $('btn-deudor').onclick = async (e) => {
+    e.target.disabled = true;
+    await sb.from('test_messages').insert({ company_id: companyId, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, direction: 'in', author: 'sistema', body: 'Simulando un pago fallido del contacto de prueba…', flow: 'deudor' });
+    await sb.from('n8n_events').insert({ company_id: companyId, event: 'pago_fallido', payload: {
+      test: true, company_id: companyId, company_slug: company.slug || null,
+      contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, service_type: 'paquete', aplica_deudor: true,
+      payment: { monto: 120000, moneda: 'COP', referencia: 'test_' + Math.floor(performance.now()), proveedor: 'prueba', motivo: 'DECLINED' },
+    }});
+    waiting = true; lastKey = ''; await load();
+    e.target.disabled = false;
+  };
+
+  applyTab();
+  setInterval(() => {
+    if (waiting) {
+      // corta el "escribiendo" si ya llegó una respuesta out en el contexto
+      sb.from('test_messages').select('direction').eq('company_id', companyId).in('flow', TABS[active].flows).order('created_at', { ascending:false }).limit(1)
+        .then(({ data }) => { if (data && data[0] && data[0].direction === 'out') { waiting = false; } });
+    }
+    load();
+  }, 2500);
+})();
+</script>
+</body>
+</html>

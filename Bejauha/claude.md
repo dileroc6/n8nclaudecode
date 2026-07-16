@@ -1,9 +1,8 @@
 # Bejauha — Yoga & Bienestar · Agentes WhatsApp IA
 
-> **Única Fuente de Verdad (SSOT)** del proyecto. Toda decisión de
-> arquitectura, credencial teórica, estado de datos y regla de negocio se
-> documenta aquí. Si algo cambia en el código o la infraestructura, se
-> actualiza este archivo primero.
+> ⚠️ **DOCUMENTO LEGADO (obsoleto desde 2026-07).** Describe el sistema viejo sobre Postgres/Google Sheet. El sistema actual está migrado a **Supabase** (plataforma Toque).
+> **Fuente de verdad actual:** [docs/estado-mvp.md](docs/estado-mvp.md) · **contrato técnico:** [docs/contrato-n8n.md](docs/contrato-n8n.md) · **arquitectura:** [docs/arquitectura-toque.md](docs/arquitectura-toque.md).
+> Lo de abajo se conserva solo como histórico.
 >
 > Estado: **Sprint 1 — cimientos.** Falta información que el cliente irá
 > entregando; las secciones marcadas con ⏳ están pendientes.

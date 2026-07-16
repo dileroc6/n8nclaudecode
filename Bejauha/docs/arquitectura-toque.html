@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toque · Arquitectura objetivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --sage:#7c8a6f; --sage-dark:#5f6c54; --cream:#f6f3ea; --cream-2:#efe9db; --ink:#3a3f36; --line:#e3ddcd; --gold:#c9a24b; --blue:#8b9aa8; }
+  body{margin:0;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--ink);padding:0 0 60px}
+  header{background:#3a3f36;color:var(--cream);padding:18px 30px}
+  header h1{margin:0;font-weight:700;font-size:1.25rem}
+  header .pf{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;opacity:.92}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+  h2{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;color:var(--sage-dark);margin:30px 0 6px;font-size:1.35rem}
+  p.sub{color:#8b9182;margin:0 0 8px;font-size:.9rem}
+  .legend{display:flex;gap:18px;margin:6px 0 14px;font-size:.82rem;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .dot.plat{background:#efe4c6;border:1px solid var(--gold)}
+  .dot.n8n{background:#e6efe0;border:1px solid var(--sage)}
+  .dot.ext{background:#eef1f5;border:1px solid var(--blue)}
+  .diagram{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;overflow-x:auto}
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:24px}
+  .rule{background:#fff;border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:14px 16px}
+  .rule b{color:var(--sage-dark);display:block;margin-bottom:4px}
+  .rule p{margin:0;font-size:.86rem;color:#5a5f52;line-height:1.5}
+  .note{background:var(--cream-2);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:22px;font-size:.88rem;line-height:1.55}
+  .note b{color:var(--sage-dark)}
+</style>
+</head>
+<body>
+  <header><h1>Toque <span class="pf">· Arquitectura objetivo (multi-cliente)</span></h1></header>
+  <div class="wrap">
+    <p class="sub">Cómo debería funcionar Toque para Bejauha y para cualquier servicio que llegue después.</p>
+    <div class="legend">
+      <span><i class="dot plat"></i> Plataforma Toque (cerebro + datos)</span>
+      <span><i class="dot n8n"></i> n8n (worker de integración)</span>
+      <span><i class="dot ext"></i> Servicios externos</span>
+    </div>
+
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+    subgraph TEN[" Clientes de Toque (multi-tenant) "]
+        direction LR
+        C1["Bejauha"]
+        C2["Cliente 2"]
+        C3["Cliente N..."]
+    end
+
+    subgraph PLAT[" Plataforma Toque - cerebro, datos y UI "]
+        UI["Portal por cliente<br/>(dashboards, config de campanas, filtros)"]
+        PAY["Pagos / Auth / Tenants"]
+        DB[("Base de datos<br/>FUENTE DE VERDAD")]
+        API["API + Webhooks<br/>(el contrato)"]
+        UI --- DB
+        PAY --- DB
+        DB --- API
+    end
+
+    subgraph N8N[" n8n - capa de integracion / worker (sin estado) "]
+        ORQ["Orquestador multi-cliente<br/>(parametrizado por tenant)"]
+        F["Flujos: reactivacion, bots,<br/>recordatorios, crons, envios"]
+        ORQ --> F
+    end
+
+    subgraph EXT[" Servicios externos "]
+        direction LR
+        WA["WhatsApp<br/>(Evolution)"]
+        IA["IA / LLM"]
+        MAIL["Email / otros"]
+    end
+
+    EU["Usuarios finales<br/>(los clientes de cada negocio)"]
+
+    C1 --> UI
+    C2 --> UI
+    C3 --> UI
+    API -->|"dispara: ejecuta campana del tenant Y"| ORQ
+    F -->|"lee config y datos"| API
+    F -->|"reporta resultados"| API
+    F --> WA
+    F --> IA
+    F --> MAIL
+    WA --> EU
+    EU -->|"mensaje entrante"| WA
+    WA --> ORQ
+
+    style TEN fill:#f6f3ea,stroke:#d9cfb8
+    style PLAT fill:#efe4c6,stroke:#c9a24b
+    style N8N fill:#e6efe0,stroke:#7c8a6f
+    style EXT fill:#eef1f5,stroke:#8b9aa8
+    style DB fill:#fff,stroke:#c9a24b
+</pre>
+    </div>
+
+    <h2>Vista de infraestructura — dónde vive cada cosa</h2>
+    <p class="sub">Las mismas piezas, pero por ubicación: qué corre en el VPS de Hostinger y qué es de terceros. El puente plataforma↔n8n es el outbox <code>n8n_events</code> + webhook al receptor; n8n escribe con el rol <b>n8n_worker</b> (mínimos privilegios).</p>
+    <div class="diagram">
+<pre class="mermaid">
+flowchart TB
+    subgraph HOST[" Hostinger (misma cuenta) "]
+        subgraph VPS[" VPS (Docker) "]
+            direction LR
+            N8N["n8n (worker / motor)<br/>receptor toque-events<br/>+ handlers"]
+            EVO["Evolution API<br/>(gateway WhatsApp)"]
+            PG[("PostgreSQL<br/>(Evolution + otros clientes)")]
+        end
+        APP["Plataforma Toque<br/>(frontend HTML)"]
+    end
+    subgraph EXT[" Externo (nube de terceros) "]
+        direction LR
+        subgraph SUPA[" Supabase - FUENTE DE VERDAD "]
+            SDB[("BD negocio<br/>contacts, campaigns,<br/>payments, message_log")]
+            SOUT[("n8n_events<br/>outbox + pg_net")]
+            SEDGE["Edge Function<br/>pago-webhook"]
+        end
+        WA["WhatsApp / Meta"]
+        IA["IA / LLM (OpenAI)"]
+        PAY["Pasarela de pagos<br/>(Wompi)"]
+    end
+
+    APP <-->|"lee/escribe"| SDB
+    SOUT -->|"webhook: POST evento<br/>(X-Toque-Signature)"| N8N
+    N8N -->|"rol n8n_worker<br/>Postgres directo<br/>(minimos privilegios)"| SDB
+    N8N --> IA
+    N8N -->|"envio (APAGADO)"| EVO
+    EVO <--> WA
+    N8N --- PG
+    PAY --> SEDGE
+    SEDGE --> SDB
+
+    style HOST fill:#eaf0e4,stroke:#7c8a6f
+    style VPS fill:#d8e6cd,stroke:#7c8a6f
+    style EXT fill:#eef1f5,stroke:#8b9aa8
+    style SUPA fill:#fff,stroke:#3ecf8e
+</pre>
+    </div>
+    <p class="sub">La plataforma Toque (frontend <b>HTML</b>) vive en <b>Hostinger</b>, misma cuenta del VPS. La fuente de verdad es <b>Supabase</b> (BD + API + Auth) — que además es el <b>contrato natural</b> con n8n: su API REST + los webhooks de base de datos.</p>
+
+    <h2>Las 3 reglas de oro</h2>
+    <div class="rules">
+      <div class="rule"><b>1. La plataforma es dueña de los datos</b><p>La base de datos de Toque es la única fuente de verdad. Ni n8n ni un Sheet guardan el estado del negocio.</p></div>
+      <div class="rule"><b>2. n8n es un worker sin estado</b><p>Solo integra y ejecuta (WhatsApp, IA, crons, envíos). La plataforma lo dispara; él reporta de vuelta. No guarda reglas ni datos críticos.</p></div>
+      <div class="rule"><b>3. Se hablan por un contrato</b><p>API + webhooks entre plataforma y n8n. Nada de bases compartidas ni lógica duplicada en dos lados.</p></div>
+    </div>
+
+    <div class="note">
+      <b>Por qué escala:</b> el mismo motor de n8n sirve a todos los clientes de Toque. Sumar un cliente nuevo
+      es <b>configurarlo en la plataforma</b> (tenant, campañas, plantillas), no rehacer flujos.<br/><br/>
+      <b>Dónde estamos hoy (MVP Bejauha, 2026-07-09):</b> migrado a <b>Supabase</b> (Sheet cerrado). Admin, inbound, campañas
+      (con agendamiento Opción A + candado de frescura), pago fallido y recordatorio corren sobre Supabase vía rol
+      <b>n8n_worker</b> (mínimos privilegios, <code>maxConnections=4</code>). Hay <b>sandbox</b> (<code>test:true</code> →
+      <code>test_messages</code>) con ruteo por rol cliente/admin. <b>Envíos WhatsApp apagados</b> hasta el go-live controlado.
+    </div>
+  </div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose', theme: 'base',
+    themeVariables: { primaryColor: '#eef2e8', primaryBorderColor: '#7c8a6f', primaryTextColor: '#3a3f36',
+      lineColor: '#7c8a6f', fontFamily: 'Poppins, sans-serif', fontSize: '14px' } });
+</script>
+</body>
+</html>

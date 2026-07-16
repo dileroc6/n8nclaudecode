@@ -4,6 +4,14 @@
 node_modules/
 .next/
 
+# Secretos: nunca versionar credenciales (Supabase keys, passwords, etc.)
+credentials.env
+**/credentials.env
+*.local.txt
+*.local.sql
+**/*.local.txt
+**/*.local.sql
+
 # Artefactos de deploy (zips de build) — no versionar
 *_deploy_*.zip
 

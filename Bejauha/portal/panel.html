@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bejauha · Panel de Clientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --sage:#7c8a6f; --sage-dark:#5f6c54; --cream:#f6f3ea; --cream-2:#efe9db;
+    --ink:#3a3f36; --muted:#8b9182; --line:#e3ddcd; --warn:#c98a2b; --danger:#c0533b; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Poppins',sans-serif;background:var(--cream);color:var(--ink)}
+  header{background:var(--sage);color:var(--cream);padding:16px 26px;display:flex;align-items:center;gap:14px}
+  header h1{margin:0;font-weight:700;font-size:1.2rem}
+  header .pf{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;opacity:.92}
+  header button{margin-left:auto;background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:20px;
+    padding:7px 16px;font-family:inherit;font-weight:600;cursor:pointer;font-size:.82rem}
+  .wrap{padding:24px 26px;max-width:1200px;margin:0 auto}
+  .cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;min-width:120px;flex:1}
+  .card .n{font-size:1.8rem;font-weight:700;color:var(--sage-dark)}
+  .card .l{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  h2{font-family:'Playfair Display',serif;font-style:italic;font-weight:600;color:var(--sage-dark);margin:26px 0 12px}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:11px 14px;font-size:.88rem;border-bottom:1px solid var(--line)}
+  th{background:var(--cream-2);font-weight:600;color:var(--sage-dark);font-size:.74rem;text-transform:uppercase;letter-spacing:.5px}
+  tr:last-child td{border-bottom:0}
+  .pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+  .pill.cli{background:#e3ece0;color:var(--sage-dark)} .pill.cal{background:#f7ddd5;color:var(--danger)}
+  .pill.tib{background:#fbeccd;color:var(--warn)} .pill.fri{background:#e6eaf0;color:#6b7280}
+  .saldo{font-weight:700} .saldo.low{color:var(--danger)} .saldo.mid{color:var(--warn)}
+  .filter{margin:0 0 10px}.filter select{font-family:inherit;border:1px solid var(--line);border-radius:10px;padding:7px 10px;font-size:.84rem;background:#fff}
+  .muted{color:var(--muted)} .empty{color:var(--muted);padding:18px;text-align:center}
+  .ts{font-size:.72rem;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Bejauha <span class="pf">· Panel de Clientes</span></h1>
+    <button id="refresh">↻ Actualizar</button>
+  </header>
+  <div class="wrap">
+    <div class="cards" id="cards"></div>
+
+    <h2>Clientes de Paquete</h2>
+    <div id="paquetes"></div>
+
+    <h2>Otros contactos</h2>
+    <div class="filter">
+      <select id="fTipo"><option value="">Todos los servicios</option></select>
+      <select id="fLead"><option value="">Todos los leads</option></select>
+    </div>
+    <div id="otros"></div>
+    <div class="ts" id="ts"></div>
+  </div>
+
+<script>
+const DATA = "https://n8n.srv1398596.hstgr.cloud/webhook/bejauha-panel-data";
+let state = { paquetes:[], otros:[], resumen:{} };
+
+function pill(lead){
+  const l=(lead||'').toLowerCase();
+  const c = l==='cliente'?'cli':l==='caliente'?'cal':l==='tibio'?'tib':l==='frio'?'fri':'fri';
+  return lead ? `<span class="pill ${c}">${lead}</span>` : '<span class="muted">—</span>';
+}
+function saldoCell(n){
+  const cls = n<=1?'low':n<=2?'mid':'';
+  return `<span class="saldo ${cls}">${n}</span>`;
+}
+function renderCards(){
+  const r=state.resumen||{};
+  const el=document.getElementById('cards'); el.innerHTML='';
+  const total=Object.values(r).reduce((a,b)=>a+b,0);
+  const order=[['Total',total],...Object.entries(r)];
+  for(const [k,v] of order){
+    const d=document.createElement('div'); d.className='card';
+    d.innerHTML=`<div class="n">${v}</div><div class="l">${k}</div>`; el.appendChild(d);
+  }
+}
+function renderPaquetes(){
+  const rows=[...state.paquetes].sort((a,b)=>a.clases-b.clases);
+  const el=document.getElementById('paquetes');
+  if(!rows.length){ el.innerHTML='<div class="empty">Sin clientes de paquete.</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Clases restantes</th><th>Lead</th><th>Último contacto</th></tr></thead><tbody>${
+    rows.map(p=>`<tr><td>${p.nombre||'—'}</td><td>${p.telefono||'—'}</td><td>${saldoCell(p.clases)}</td><td>${pill(p.lead)}</td><td class="muted">${p.ultimo||'—'}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function renderOtros(){
+  const ft=document.getElementById('fTipo').value, fl=document.getElementById('fLead').value;
+  const rows=state.otros.filter(o=>(!ft||o.tipo===ft)&&(!fl||o.lead===fl));
+  const el=document.getElementById('otros');
+  if(!rows.length){ el.innerHTML='<div class="empty">Sin contactos.</div>'; return; }
+  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Servicio</th><th>Lead</th><th>Seguimiento</th><th>Último contacto</th></tr></thead><tbody>${
+    rows.map(o=>`<tr><td>${o.nombre||'—'}</td><td>${o.telefono||'—'}</td><td>${o.tipo||'—'}</td><td>${pill(o.lead)}</td><td class="muted">${o.seguimiento||'—'}</td><td class="muted">${o.ultimo||'—'}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+function fillFilters(){
+  const tipos=[...new Set(state.otros.map(o=>o.tipo).filter(Boolean))];
+  const leads=[...new Set([...state.paquetes,...state.otros].map(o=>o.lead).filter(Boolean))];
+  const ft=document.getElementById('fTipo'), fl=document.getElementById('fLead');
+  ft.innerHTML='<option value="">Todos los servicios</option>'+tipos.map(t=>`<option>${t}</option>`).join('');
+  fl.innerHTML='<option value="">Todos los leads</option>'+leads.map(l=>`<option>${l}</option>`).join('');
+}
+async function load(){
+  document.getElementById('ts').textContent='Cargando…';
+  try{
+    const r=await fetch(DATA); state=await r.json();
+    renderCards(); renderPaquetes(); fillFilters(); renderOtros();
+    document.getElementById('ts').textContent='Datos del Google Sheet · actualizado ahora';
+  }catch(e){ document.getElementById('ts').textContent='⚠️ Error al cargar datos.'; }
+}
+document.getElementById('refresh').onclick=load;
+document.getElementById('fTipo').onchange=renderOtros;
+document.getElementById('fLead').onchange=renderOtros;
+load();
+</script>
+</body>
+</html>
