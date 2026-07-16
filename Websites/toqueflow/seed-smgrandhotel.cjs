@@ -41,10 +41,11 @@ const FLOW = {
   name: 'KPI de Ocupación', type: 'chart', kind: 'automatización', status: 'activo', sede: null,
   desc: 'Dashboard de ocupación hotelera (49 habitaciones), actualizado periódicamente desde el Excel de reservas.',
   channels: [],
-  // prom. 12m (oficial), ocup. último mes (may, oficial), real último mes (may, con complementary)
-  stats: [{ n: '36%', l: 'prom. 12m' }, { n: '22%', l: 'ocup. may' }, { n: '23%', l: 'real may' }],
-  spark: [54, 52, 41, 33, 53, 57, 24, 23, 37, 16, 25, 22],   // ocupación % oficial, jun25–may26
-  last: 'actualizado 26 jun 2026', tool_url: 'sm-grand/ocupacion.html',
+  // prom. 12m (jul25–jun26) + ocupación del último mes CERRADO (jun26).
+  // La 3ª métrica ("real" con complementary) vuelve cuando llegue el Informe Diario de junio.
+  stats: [{ n: '35%', l: 'prom. 12m' }, { n: '37%', l: 'ocup. jun' }],
+  spark: [52, 41, 33, 53, 56, 24, 23, 37, 16, 25, 22, 37],   // ocupación % oficial, jul25–jun26
+  last: 'actualizado 16 jul 2026', tool_url: 'sm-grand/ocupacion.html',
 };
 
 async function getOrCreate(table, matchQS, insertBody) {
