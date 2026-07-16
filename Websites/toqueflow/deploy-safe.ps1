@@ -66,9 +66,15 @@ function Build-SiteZip($outZip) {
 
 # Verifica que las URLs clave respondan 200 (con reintentos para esperar la propagacion)
 function Test-Live {
+  # OJO: incluir AQUI la herramienta (tool_url) de CADA cliente. Si un flow apunta a una
+  # pagina que no esta en site/, el cliente ve 404 y el deploy pasaba en verde sin avisar
+  # (paso con Bejauha: contactos/campanas/modo-prueba vivian solo en main).
   $urls = @(
     'index.html','dashboard.html','admin.html','login.html','nosotros.html',
-    'rappi-bogota.html','sm-grand/ocupacion.html','assets/toqueflow-logo.png'
+    'rappi-bogota.html','rappi-medellin.html',              # FerreteriaYa
+    'sm-grand/ocupacion.html',                              # SM Grand Hotel
+    'contactos.html','campanas.html','modo-prueba.html',    # Bejauha
+    'assets/toqueflow-logo.png'
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()
