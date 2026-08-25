@@ -7,6 +7,10 @@ node_modules/
 # Secretos: nunca versionar credenciales (Supabase keys, passwords, etc.)
 credentials.env
 **/credentials.env
+
+# Ajustes locales de Claude Code (por máquina; aquí viven las llaves de los MCP)
+.claude/settings.local.json
+**/.claude/settings.local.json
 *.local.txt
 *.local.sql
 **/*.local.txt

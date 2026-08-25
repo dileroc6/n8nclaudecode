@@ -1,8 +1,6 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p /home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/Zoe/*)",
-      "Bash(find /home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/Zoe/* -type f)",
       "Bash(psql -h * -U * -d * -f *)",
       "Bash(psql -h * -U * -d * -c *)",
       "mcp__n8n__n8n_create_workflow",
@@ -19,11 +17,7 @@
       "Bash(curl -s -X PUT https://n8n.srv1398596.hstgr.cloud/api/v1/workflows/* -H * -d *)",
       "Bash(curl -s -X POST https://evolution.srv1398596.hstgr.cloud/* -H *)",
       "Bash(curl -s https://evolution.srv1398596.hstgr.cloud/* -H *)",
-      "Bash(python3 -m json.tool)",
       "Bash(jq *)"
-    ],
-    "additionalDirectories": [
-      "/tmp"
     ]
   },
   "enableAllProjectMcpServers": true,
@@ -34,7 +28,7 @@
     "n8n-skills-local": {
       "source": {
         "source": "directory",
-        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-skills"
+        "path": "../n8n-skills"
       }
     }
   }

@@ -1,88 +1,131 @@
 ---
-description: Da de alta un cliente nuevo — crea su carpeta, archivos base y deja listos los pasos manuales (esquema PG, registro en settings)
+description: Da de alta un cliente nuevo en la plataforma ToqueFlow — empresa, usuario y flows en Supabase, más su carpeta de trabajo en el repo
 argument-hint: [Nombre del cliente]
 ---
 
-Vas a dar de alta un cliente nuevo en el workspace N8N-ClaudeCode, replicando
-la estructura estándar que ya usan Bejauha, Savia, Zoe y LuxeSmile.
+Vas a dar de alta un cliente nuevo en **ToqueFlow**, la plataforma de automatizaciones.
 
-Nombre del cliente solicitado: **$ARGUMENTS**
+Cliente solicitado: **$ARGUMENTS**
 (Si viene vacío, pregúntalo antes de continuar.)
+
+---
+
+## Cómo funciona ToqueFlow (léelo antes de tocar nada)
+
+Un cliente nuevo **no** es un esquema de Postgres ni una instalación aparte. Es una fila en
+Supabase. Las tres reglas de oro:
+
+1. **La plataforma es dueña de los datos.** Supabase es la única fuente de verdad, multi-tenant
+   por `company_id` con RLS. Nada de bases por cliente.
+2. **n8n es un worker sin estado.** Solo integra y ejecuta. La plataforma lo dispara por el
+   outbox `n8n_events` → Database Webhook → receptor `toque-events`.
+3. **Se hablan por un contrato.** Ver `Websites/toqueflow/_docs/contrato-n8n.md`.
+
+El patrón de referencia es **Bejauha**, el cliente más integrado. Ver
+`Bejauha/docs/estado-mvp.md` (fuente única de verdad de su estado real).
+
+⚠️ Los documentos que describen esquemas Postgres por cliente (`bejauha`, `leadai`,
+contenedor `evolution_postgres`, `PG_SCHEMA`) pertenecen al **sistema viejo, obsoleto**.
+No los uses como referencia.
+
+---
 
 ## Paso 0 — Recoger lo esencial
 
-Antes de crear nada, pregúntale al usuario (usa AskUserQuestion donde aplique)
-y NO inventes valores:
+Pregúntale al usuario (usa AskUserQuestion donde aplique) y **no inventes valores**:
 
-1. **Sector / tipo de negocio** (ej. yoga, clínica dental, activewear).
-2. **Ciudad y país** de operación.
-3. **Canal(es)** del bot (Evolution API / Cloud API de WhatsApp / web…).
-4. **Esquema de Postgres**: propón un slug en minúsculas derivado del nombre
-   (ej. "Mi Marca" → `mi_marca`) y confírmalo. Vive en la DB `leadai`,
-   contenedor `evolution_postgres`, owner `leadai_user`. NUNCA `public`.
-5. **Qué se va a construir** (cuántos agentes/workflows, a grandes rasgos).
+1. **Nombre comercial** exacto y **slug** en minúsculas (ej. "Mi Marca" → `mi_marca`).
+2. **Sector y ciudad** de operación.
+3. **Correo y nombre** de la persona que va a entrar al portal.
+4. **Qué automatizaciones** se van a construir, a grandes rasgos.
+5. **¿Hay logo?** Si no, la card muestra las iniciales — es válido arrancar sin él.
 
-Si el usuario no tiene algún dato, márcalo como ⏳ pendiente en el CLAUDE.md
-y sigue. No bloquees la creación por datos de negocio.
+Si falta un dato de negocio, márcalo como ⏳ pendiente y sigue. No bloquees por eso.
 
-## Paso 1 — Crear la estructura de carpetas
+---
 
-Carpeta raíz: `[Nombre]/` (respeta mayúsculas como las quiera el usuario).
-Subcarpetas: `workflows/`, `prompts/`, `database/`, `docs/`, `.claude/`.
+## Paso 1 — El seed de Supabase (esto es lo que da de alta al cliente)
 
-## Paso 2 — Generar los archivos base
+Clona el seed más parecido de `Websites/toqueflow/` — `seed-savia.cjs` es el más simple,
+`seed-bejauha.cjs` el más completo — y ajústalo:
 
-- **`.mcp.json`**: cópialo EXACTO desde `Bejauha/.mcp.json` (es idéntico en
-  todos los clientes — mismo binario node, mismo entry point del MCP, misma
-  N8N_API_URL y N8N_API_KEY). No lo modifiques.
+```js
+const COMPANY = { name: 'Nombre', slug: 'slug', city: 'Ciudad', logo_url: null };
+const USER    = { email: '...', password: '...', name: '...' };
+const FLOWS   = [
+  { name: 'Agente de atención a cliente', type: 'chat', kind: 'agente',
+    status: 'próximamente', desc: '...', channels: ['wa'],
+    stats: [], spark: [], last: 'en preparación' },
+];
+```
 
-- **`.gitignore`**: usa como base `Bejauha/.gitignore` (ignora `.env*`,
-  dumps `*.dump`/`*.sql.gz`, `workflows/*.credentials.json`, basura de
-  editores). Ajusta el prefijo de los dumps al slug del cliente.
+Reglas del seed:
 
-- **`.env.example`**: replica la estructura de `Bejauha/.env.example`
-  (secciones: Evolution API, PostgreSQL, LLM, Lógica de negocio) pero con los
-  valores y el nombre del cliente nuevo. Reglas que SIEMPRE aplican:
-  - `PG_HOST=evolution_postgres`, `PG_DB=leadai`, `PG_USER=leadai_user`,
-    `PG_SCHEMA=<slug>`, password vacío.
-  - Incluir `<SLUG>_TIMEZONE=America/Bogota` con el recordatorio de que el
-    container n8n corre en Europe/Berlin y todo cron necesita
-    `settings.timezone`.
-  - Sin valores reales (API keys vacías). El `.env` real lo llena el usuario.
+- Lee `credentials.env` y usa **solo** la `service_role`. Nunca hardcodear llaves.
+- Es **idempotente**: re-correrlo refresca empresa, usuario y flows sin duplicar.
+- Los flows arrancan en `status: 'próximamente'` con `tool_url: null` — solo la card,
+  sin herramienta detrás, hasta que exista.
+- El usuario se crea en Auth + `profiles` con `role: 'member'` y `status: 'active'`.
 
-- **`CLAUDE.md`**: crea un esqueleto SSOT (Única Fuente de Verdad) siguiendo
-  el estilo de `Bejauha/claude.md`. Encabezado con la nota de SSOT y estado
-  "Sprint 1 — cimientos". Secciones mínimas (rellena lo que sepas del Paso 0,
-  deja ⏳ en lo pendiente):
-  1. Qué es el cliente (resumen del negocio)
-  2. Arquitectura (agentes/workflows previstos)
-  3. Infraestructura (n8n, Evolution, esquema PG `<slug>`, timezone)
-  4. Reglas de negocio / tono
-  5. Estado y pendientes
-  No copies contenido de otro cliente; este archivo es propio.
+Correr:
 
-- **`.claude/settings.json`**: replica el de `Savia/.claude/settings.json`
-  (ajústalo al cliente nuevo).
+```
+node seed-<cliente>.cjs
+```
 
-## Paso 3 — Registrar el cliente en el workspace
+Esto es **DATA**: no necesita deploy. El cliente ya puede entrar por `login.html`.
 
-- Añade la ruta absoluta de la carpeta nueva a `additionalDirectories` en
-  `.claude/settings.json` de la RAÍZ del workspace (como ya está LuxeSmile).
+---
 
-## Paso 4 — Recordar los pasos manuales (NO los ejecutes tú)
+## Paso 2 — La carpeta de trabajo en el repo
 
-Al terminar, dale al usuario una checklist clara de lo que falta a mano:
+Crea `<Nombre>/` en la raíz, con la estructura estándar:
 
-1. **Crear el esquema en Postgres**: conéctate al contenedor
-   `evolution_postgres` y `CREATE SCHEMA <slug> AUTHORIZATION leadai_user;`
-   (luego correr los `database/*.sql` cuando existan).
-2. **Copiar `.env.example` → `.env`** y llenar las credenciales reales.
-3. **Crear el workflow en n8n** con la convención `[Cliente] - [Función]` y
-   sus tags.
-4. Recordatorio: todo workflow con cron necesita
-   `settings.timezone="America/Bogota"`.
+```
+<Nombre>/
+├── CLAUDE.md          ← única fuente de verdad del cliente
+├── .mcp.json          ← cópialo EXACTO de Bejauha/.mcp.json
+├── .claude/settings.json
+├── workflows/         ← los JSON de n8n
+├── prompts/           ← prompts de los agentes + tono de marca
+├── database/          ← migraciones SQL numeradas e idempotentes
+└── docs/
+```
+
+- **`.mcp.json`**: copia literal de `Bejauha/.mcp.json`. Usa `npx` y toma la llave de
+  `${N8N_API_KEY}`. **Nunca escribas una API key dentro del archivo.**
+- **`.claude/settings.json`**: replica el de `Savia/`. Rutas relativas, sin secretos.
+- **`CLAUDE.md`**: esqueleto propio del cliente — qué es el negocio, qué automatizaciones,
+  reglas de negocio y tono, estado y pendientes. No copies contenido de otro cliente.
+
+---
+
+## Paso 3 — Si el cliente va a tener herramienta propia en el portal
+
+Solo si en el Paso 0 quedó claro que necesita una página (tipo `contactos.html`,
+`campanas.html` o una herramienta a medida):
+
+1. Crea la página en `Websites/toqueflow/site/`, autocontenida y con RLS por member.
+2. Apunta el `tool_url` del flow correspondiente a esa página.
+3. **Agrega la URL a la función `Test-Live` de `deploy-safe.ps1`.** Si no lo haces, el
+   cliente ve un 404 y el deploy pasa en verde sin avisar.
+4. Despliega — ahora sí — con el skill `deploy-toqueflow`.
+
+---
+
+## Paso 4 — Checklist manual para el usuario (NO la ejecutes tú)
+
+1. **Verificar el acceso**: entrar a `toqueflow.com/login.html` con el correo y la
+   contraseña temporal, y cambiarla.
+2. **Crear los workflows en n8n** con la convención `[Cliente] - [Función]` y sus tags.
+3. **Todo cron necesita `settings.timezone = "America/Bogota"`** — el contenedor de n8n
+   corre en Europe/Berlin.
+4. **Antes de encender envíos de WhatsApp**: probar en modo prueba (`test: true` →
+   `test_messages`), luego un número propio, y solo entonces go-live con warm-up.
+
+---
 
 ## Reporte final
 
-Muestra el árbol de archivos creados y la checklist de pasos manuales
-pendientes. Sé conciso.
+Muestra el árbol de lo creado, confirma qué quedó en Supabase (empresa, usuario, flows)
+y la checklist de pasos manuales. Sé conciso.

@@ -12,12 +12,8 @@
       "Bash(curl -s -X POST https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
       "Bash(curl -s -X PUT https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
       "Bash(curl -s -X DELETE https://n8n.srv1398596.hstgr.cloud/api/v1/* -H 'X-N8N-API-KEY: *')",
-      "Bash(python3 -m json.tool)",
       "Bash(jq *)",
       "Bash(psql *)"
-    ],
-    "additionalDirectories": [
-      "/tmp"
     ]
   },
   "enableAllProjectMcpServers": true,
@@ -28,7 +24,7 @@
     "n8n-skills-local": {
       "source": {
         "source": "directory",
-        "path": "/home/dileroc/Documentos/Chango/Proyectos/N8N-ClaudeCode/n8n-skills"
+        "path": "../n8n-skills"
       }
     }
   }
