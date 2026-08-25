@@ -4,7 +4,7 @@
 
 ---
 
-**Contexto — Toque.** Este repo (Websites) es la **plataforma Toque**: nuestro producto multi-cliente de automatizaciones. Frontend **HTML** hospedado en **Hostinger**, base de datos y backend en **Supabase**. Existe un segundo sistema, en **n8n** (VPS Hostinger, junto a Evolution API y una Postgres compartida), que es el **motor de integración**: WhatsApp vía Evolution, IA/LLM, crons y envíos. Los dos sistemas se desarrollan en repos separados y se coordinan por un contrato. Revisa `docs/arquitectura-toque.md` (diagramas lógico e infraestructura) y `docs/diagramas-mvp.md` (flujos del primer cliente).
+**Contexto — Toque.** Este repo (Websites) es la **plataforma Toque**: nuestro producto multi-cliente de automatizaciones. Frontend **HTML** hospedado en **Hostinger**, base de datos y backend en **Supabase**. Existe un segundo sistema, en **n8n** (VPS Hostinger, junto a Evolution API y una Postgres compartida), que es el **motor de integración**: WhatsApp vía Evolution, IA/LLM, crons y envíos. Los dos sistemas se desarrollan en repos separados y se coordinan por un contrato. Revisa `../ToqueFlow/arquitectura/arquitectura-toque.md` (diagramas lógico e infraestructura) y `docs/diagramas-mvp.md` (flujos del primer cliente).
 
 **Las 3 reglas de arquitectura:**
 1. **La plataforma (Supabase) es dueña de los datos** — única fuente de verdad. n8n NO guarda estado de negocio.

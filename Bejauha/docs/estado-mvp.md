@@ -5,7 +5,7 @@
 ## 1. Arquitectura actual
 - **Fuente de verdad: Supabase** (proyecto ToqueFlow, ref `pyoauvbwqxuuzamnjwfd`). El Google Sheet **quedó cerrado** (migración completa).
 - **Plataforma Toque** (Supabase + panel HTML en Hostinger) es dueña de los datos. **n8n** (VPS Hostinger) es el worker que integra WhatsApp/IA/envíos.
-- **Puente:** outbox `n8n_events` + Database Webhook (pg_net) → **receptor n8n `toque-events`** (multi-tenant, valida `X-Toque-Signature`). Detalle en [contrato-n8n.md](contrato-n8n.md).
+- **Puente:** outbox `n8n_events` + Database Webhook (pg_net) → **receptor n8n `toque-events`** (multi-tenant, valida `X-Toque-Signature`). Detalle en [contrato-n8n.md](../../ToqueFlow/arquitectura/contrato-n8n.md).
 - **Auth n8n → Supabase:** conexión directa Postgres con rol **`n8n_worker`** (usuario/contraseña, **mínimos privilegios**) vía pooler. Ya no se usa `service_role` ni la REST.
 
 ## 2. Flujos (estado)

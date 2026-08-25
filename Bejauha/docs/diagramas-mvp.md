@@ -2,7 +2,7 @@
 
 > Actualizado 2026-07-09. Fuente única de datos: **Supabase** (plataforma Toque). Envíos por **Evolution (WhatsApp)**.
 >
-> **Reparto:** lo que toca WhatsApp + IA + envíos → **n8n (worker sin estado)**. Interfaz, configuración, pagos, agendamiento y dashboards → **plataforma Toque**. Se comunican por un **contrato**: outbox `n8n_events` + webhook → receptor n8n, y n8n lee/escribe Supabase con el rol **`n8n_worker`** (mínimos privilegios). Detalle en [contrato-n8n.md](contrato-n8n.md).
+> **Reparto:** lo que toca WhatsApp + IA + envíos → **n8n (worker sin estado)**. Interfaz, configuración, pagos, agendamiento y dashboards → **plataforma Toque**. Se comunican por un **contrato**: outbox `n8n_events` + webhook → receptor n8n, y n8n lee/escribe Supabase con el rol **`n8n_worker`** (mínimos privilegios). Detalle en [contrato-n8n.md](../../ToqueFlow/arquitectura/contrato-n8n.md).
 >
 > ⚠️ **Todos los envíos de WhatsApp están APAGADOS** (blindados) hasta el go-live controlado.
 

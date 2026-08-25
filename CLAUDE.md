@@ -35,11 +35,11 @@ Cliente (pyme) ──> Portal ToqueFlow (HTML en Hostinger)
 
 **Escala:** sumar un cliente = configurarlo en la plataforma, no rehacer flujos.
 
-Detalle: [arquitectura](Websites/toqueflow/_docs/arquitectura-toque.md) · [contrato n8n](Websites/toqueflow/_docs/contrato-n8n.md) · [modo prueba](Websites/toqueflow/_docs/modo-prueba-sandbox.md)
+Detalle: [arquitectura](ToqueFlow/arquitectura/arquitectura-toque.md) · [contrato n8n](ToqueFlow/arquitectura/contrato-n8n.md) · [modo prueba](ToqueFlow/arquitectura/modo-prueba-sandbox.md)
 
 ## Crecimiento
 
-Cómo consigue clientes ToqueFlow: [estrategia-leads.md](Websites/toqueflow/_docs/estrategia-leads.md) — ICP por vertical, escalera de oferta, máquina outbound sobre Google Maps y plan de implementación por fases.
+Cómo consigue clientes ToqueFlow: [captacion-leads.md](ToqueFlow/estrategia/captacion-leads.md) — ICP por vertical, escalera de oferta, máquina outbound sobre Google Maps y plan de implementación por fases.
 
 ---
 
@@ -47,10 +47,15 @@ Cómo consigue clientes ToqueFlow: [estrategia-leads.md](Websites/toqueflow/_doc
 
 ```
 toque-flow/
-├── Websites/toqueflow/   # ★ LA PLATAFORMA: portal + backend Supabase + deploy
+├── ToqueFlow/            # ★ EL NEGOCIO: estrategia, arquitectura canónica, máquina de leads
+│   ├── TABLERO.md        #   estado vivo de las tareas — empezar por aquí
+│   ├── estrategia/       #   captación de clientes
+│   └── arquitectura/     #   las 3 reglas de oro, contrato n8n, sandbox (CANÓNICO)
+│
+├── Websites/toqueflow/   # ★ LA PLATAFORMA: código del sitio y del portal
 │   ├── site/             #   frontend (público + panel del cliente)
 │   ├── site/supabase/    #   schema, RLS, edge functions (NO se publica)
-│   └── _docs/            #   arquitectura, contrato n8n, sandbox, estado MVP
+│   └── _docs/            #   docs del sitio: deploy, Cloudflare R2
 │
 ├── Bejauha/              # ★ CLIENTE DE REFERENCIA (el más integrado) — ver abajo
 ├── FerreteríaYa/         # catálogo, agentes e impresión Rappi
@@ -63,11 +68,13 @@ toque-flow/
 ├── Websites/QDMP/        # sitio de cliente (estático)
 ├── Websites/insighta/    # sitio de cliente (estático)
 │
-├── n8n-mcp/              # servidor MCP de n8n  ⚠ vacío (ver Estado del repo)
-└── n8n-skills/           # skills de Claude Code para n8n  ⚠ vacío
+├── n8n-mcp/              # vacío: el MCP corre por npx, ya no hace falta la carpeta
+└── n8n-skills/           # los 7 skills de n8n (plugin de czlonkowski/n8n-skills)
 ```
 
 Cada carpeta de cliente es autónoma: su propio `CLAUDE.md`, `.mcp.json`, `.env` y `.claude/settings.json`.
+
+⚠️ **`ToqueFlow/` vs `Websites/toqueflow/`:** el primero es el negocio (estrategia y arquitectura); el segundo es el código. ToqueFlow tiene carpeta de cliente porque, por decisión de arquitectura, **es una empresa más dentro de su propia plataforma**.
 
 ---
 
@@ -104,7 +111,7 @@ Dónde mirar:
 | Archivo | Qué es |
 |---|---|
 | [Bejauha/docs/estado-mvp.md](Bejauha/docs/estado-mvp.md) | **fuente única de verdad** del estado real |
-| [Bejauha/docs/contrato-n8n.md](Bejauha/docs/contrato-n8n.md) | eventos, payloads, auth |
+| [ToqueFlow/arquitectura/contrato-n8n.md](ToqueFlow/arquitectura/contrato-n8n.md) | eventos, payloads, auth |
 | [Bejauha/workflows/](Bejauha/workflows/) | los JSON de n8n |
 | [Bejauha/prompts/](Bejauha/prompts/) | prompts de los agentes + tono de marca |
 | [Bejauha/database/](Bejauha/database/) | migraciones SQL numeradas |

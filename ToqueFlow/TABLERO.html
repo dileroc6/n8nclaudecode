@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tablero ToqueFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Audiowide&display=swap">
+
+<style>
+:root{
+  --brand-1:#c1272d;
+  --brand-2:#f15a24;
+  --grad:linear-gradient(135deg,#c1272d 0%,#f15a24 100%);
+
+  --bg:#ffffff;
+  --bg-2:#f6f6f4;
+  --ink:#0a2230;
+  --mute:rgba(10,34,48,.66);
+  --faint:rgba(10,34,48,.44);
+  --line:rgba(10,34,48,.13);
+  --line-soft:rgba(10,34,48,.07);
+  --card:rgba(10,34,48,.022);
+
+  --crit:#c1272d;      --crit-bg:rgba(193,39,45,.075);
+  --warn:#a8611a;      --warn-bg:rgba(168,97,26,.085);
+  --hold:#4a6b7c;      --hold-bg:rgba(74,107,124,.09);
+  --done:#1c6b52;      --done-bg:rgba(28,107,82,.085);
+  --drop:rgba(10,34,48,.40); --drop-bg:rgba(10,34,48,.05);
+
+  --sans:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --body:"Manrope",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --brandface:"Audiowide","Sora",sans-serif;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a2230;
+    --bg-2:#0f2a3a;
+    --ink:#e9ecee;
+    --mute:rgba(233,236,238,.66);
+    --faint:rgba(233,236,238,.44);
+    --line:rgba(233,236,238,.15);
+    --line-soft:rgba(233,236,238,.08);
+    --card:rgba(255,255,255,.035);
+
+    --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
+    --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
+    --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
+    --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
+    --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a2230;
+  --bg-2:#0f2a3a;
+  --ink:#e9ecee;
+  --mute:rgba(233,236,238,.66);
+  --faint:rgba(233,236,238,.44);
+  --line:rgba(233,236,238,.15);
+  --line-soft:rgba(233,236,238,.08);
+  --card:rgba(255,255,255,.035);
+
+  --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
+  --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
+  --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
+  --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
+  --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px 110px}
+
+/* masthead */
+.top{padding:56px 0 30px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.mark{
+  font-family:var(--brandface);
+  font-size:.78rem;letter-spacing:.05em;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  margin:0 0 22px;
+}
+.top h1{
+  font-family:var(--sans);font-weight:700;
+  font-size:clamp(1.95rem,5vw,3rem);
+  line-height:1.06;letter-spacing:-.028em;margin:0 0 14px;
+}
+.top .sub{color:var(--mute);margin:0 0 28px;max-width:62ch;font-size:1.03rem}
+.top .sub code{font-family:var(--mono);font-size:.86em}
+
+/* counters */
+.counts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+@media (min-width:640px){.counts{grid-template-columns:repeat(4,1fr)}}
+.ct{background:var(--bg);padding:15px 17px}
+.ct .n{font-family:var(--mono);font-size:1.72rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;display:block;margin-bottom:6px}
+.ct .l{font-family:var(--mono);font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.ct.c-crit .n{color:var(--crit)} .ct.c-warn .n{color:var(--warn)}
+.ct.c-hold .n{color:var(--hold)} .ct.c-done .n{color:var(--done)}
+
+/* groups */
+.group{margin-top:46px}
+.ghead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.ghead h2{font-family:var(--sans);font-weight:650;font-size:1.24rem;letter-spacing:-.02em;margin:0}
+.ghead .gc{font-family:var(--mono);font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.gnote{color:var(--mute);font-size:.93rem;margin:0 0 16px;max-width:70ch}
+
+.list{border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.row{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  gap:0 12px;
+  padding:15px 17px 15px 14px;
+  border-bottom:1px solid var(--line-soft);
+  border-left:3px solid transparent;
+  background:var(--bg);
+}
+.row:last-child{border-bottom:0}
+@media (min-width:760px){
+  .row{grid-template-columns:36px minmax(0,1fr) 140px}
+}
+.row .id{font-family:var(--mono);font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:3px}
+.row .ttl{font-family:var(--sans);font-weight:600;font-size:.985rem;letter-spacing:-.012em;margin:0 0 4px;text-wrap:balance}
+.row .det{font-size:.895rem;color:var(--mute);margin:0}
+.row .det code{font-family:var(--mono);font-size:.85em;background:var(--card);border:1px solid var(--line-soft);border-radius:3px;padding:.08em .3em}
+.row .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;padding-top:2px;margin-top:9px}
+@media (min-width:760px){.row .meta{margin-top:2px;justify-content:flex-end}}
+
+.chip{
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;white-space:nowrap;font-weight:500;
+}
+.chip.who{background:var(--card);color:var(--mute);border:1px solid var(--line)}
+.chip.st-crit{background:var(--crit-bg);color:var(--crit)}
+.chip.st-warn{background:var(--warn-bg);color:var(--warn)}
+.chip.st-hold{background:var(--hold-bg);color:var(--hold)}
+.chip.st-done{background:var(--done-bg);color:var(--done)}
+.chip.st-drop{background:var(--drop-bg);color:var(--drop)}
+
+.row.r-crit{border-left-color:var(--crit)}
+.row.r-warn{border-left-color:var(--warn)}
+.row.r-hold{border-left-color:var(--hold)}
+.row.r-done{border-left-color:var(--done)}
+.row.r-drop{border-left-color:transparent}
+.row.r-done .ttl,.row.r-drop .ttl{font-weight:550}
+
+/* callout */
+.note{
+  border-left:3px solid var(--crit);
+  background:var(--crit-bg);
+  padding:14px 17px;border-radius:0 4px 4px 0;
+  margin:16px 0 0;max-width:74ch;
+}
+.note p{margin:0;font-size:.91rem}
+.note .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--crit);font-weight:600;display:block;margin-bottom:5px}
+
+/* order */
+.order{margin-top:52px;border-top:1px solid var(--line);padding-top:30px}
+.order h2{font-family:var(--sans);font-weight:650;font-size:1.24rem;letter-spacing:-.02em;margin:0 0 16px}
+.steps{list-style:none;padding:0;margin:0;counter-reset:s;display:flex;flex-direction:column;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:13px;max-width:74ch}
+.steps li::before{
+  content:counter(s);
+  font-family:var(--mono);font-size:.78rem;font-weight:600;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--grad);color:#fff;
+  display:grid;place-items:center;margin-top:1px;
+}
+.steps b{font-family:var(--sans);font-weight:600;font-size:.99rem;letter-spacing:-.01em;display:block;margin-bottom:1px}
+.steps span{font-size:.9rem;color:var(--mute)}
+
+footer{margin-top:46px;border-top:1px solid var(--line);padding-top:20px;font-size:.83rem;color:var(--faint);max-width:74ch}
+footer p{margin:0 0 6px}
+footer code{font-family:var(--mono);font-size:.9em}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="mark">TOQUEFLOW</p>
+  <h1>Tablero de tareas</h1>
+  <p class="sub">Estado al 25 de agosto de 2026, despues de traer los archivos del portatil viejo y reordenar el repo.</p>
+  <div class="counts">
+    <div class="ct c-crit"><span class="n">4</span><span class="l">Bloquean</span></div>
+    <div class="ct c-warn"><span class="n">7</span><span class="l">Pendientes</span></div>
+    <div class="ct c-hold"><span class="n">13</span><span class="l">Por decidir</span></div>
+    <div class="ct c-done"><span class="n">16</span><span class="l">Hechas</span></div>
+  </div>
+</header>
+
+<section class="group">
+  <div class="ghead"><h2>Produccion rota — pendiente por decision</h2><span class="gc">3 tareas</span></div>
+  <p class="gnote">Las tres se destraban juntas cuando aparezca una version usable del logo.</p>
+  <div class="list">
+    <div class="row r-crit"><span class="id">01</span><div>
+      <p class="ttl">El logo y el favicon dan 404 en toqueflow.com</p>
+      <p class="det">Los archivos <strong>se perdieron</strong>: no estan en el repo, ni en el portatil viejo, ni en Cloudflare R2. El logo es un <code>&lt;img&gt;</code> plano en el nav y el footer de <code>chrome.jsx</code>, asi que esta roto en todas las paginas, incluido el portal de los clientes. Lo unico que sobrevive es <code>FerreteriaYa/Impresion Rappi/Logo-ToqueFlow-blanco.png</code> — sirve solo sobre fondo oscuro.</p>
+    </div><div class="meta"><span class="chip st-crit">roto</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-crit"><span class="id">02</span><div>
+      <p class="ttl">deploy-safe.ps1 haria rollback de un deploy sano</p>
+      <p class="det">Su lista <code>Test-Live</code> exige 200 en el logo, que da 404. De 12 URLs, 11 pasan. Se arregla al resolver la tarea 01, o sacando esa URL de la lista.</p>
+    </div><div class="meta"><span class="chip st-crit">roto</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-crit"><span class="id">03</span><div>
+      <p class="ttl">No existe backups/last-good-site.zip</p>
+      <p class="det">Tampoco estaba en el portatil viejo: el deploy lleva tiempo corriendo <strong>sin red de seguridad</strong>. Se crea con <code>deploy-safe.ps1 -SeedLastGood</code>, que no despliega nada.</p>
+    </div><div class="meta"><span class="chip st-crit">sin red</span><span class="chip who">Claude</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Entorno</h2><span class="gc">5 tareas</span></div>
+  <div class="list">
+    <div class="row r-warn"><span class="id">04</span><div><p class="ttl">Reiniciar Claude Code</p><p class="det">Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesion nueva.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-warn"><span class="id">05</span><div><p class="ttl">Instalar dependencias de Node</p><p class="det"><code>npm i pg --no-save</code> en <code>Websites/toqueflow/</code>.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-warn"><span class="id">06</span><div><p class="ttl">Registrar los submodulos</p><p class="det"><code>n8n-skills</code> ya tiene contenido y su origen es <code>czlonkowski/n8n-skills</code>. Falta el <code>.gitmodules</code>. <code>n8n-mcp</code> sigue vacio y ya no hace falta: corre por <code>npx</code>.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-hold"><span class="id">07</span><div><p class="ttl">Instalar Python</p><p class="det">Opcional. Solo lo necesita un script de Bejauha.</p></div><div class="meta"><span class="chip st-hold">opcional</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-done"><span class="id">08</span><div><p class="ttl">Subir el trabajo a GitHub</p><p class="det">Verificado antes de cada push: cero secretos en el diff.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Seguridad</h2><span class="gc">6 tareas</span></div>
+  <div class="list">
+    <div class="row r-done"><span class="id">09</span><div><p class="ttl">Rotar la N8N_API_KEY expuesta</p><p class="det">La nueva responde HTTP 200. La vieja esta muerta.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">10</span><div><p class="ttl">Sacar los secretos del repo</p><p class="det">Los 6 archivos sensibles verificados como ignorados por git.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-hold"><span class="id">11</span><div><p class="ttl">Rotar el token de Hostinger</p><p class="det">Quedo impreso en la terminal al extraerlo. No se filtro a ningun lado, pero rotarlo es gratis.</p></div><div class="meta"><span class="chip st-hold">opcional</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-warn"><span class="id">12</span><div><p class="ttl">Auditar los usos de service_role</p><p class="det">RLS esta bien construido, pero la <code>service_role</code> <strong>se salta RLS por completo</strong> y la usan todos los <code>.cjs</code> y las edge functions. Ahi es donde un bug filtraria datos entre clientes.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-warn"><span class="id">13</span><div><p class="ttl">Probar el aislamiento con datos reales</p><p class="det">Entrar como usuario de un cliente e intentar leer los de otro. Ya se puede: las credenciales funcionan.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-hold"><span class="id">14</span><div><p class="ttl">Decidir sobre el historial de git</p><p class="det">La llave vieja sigue en commits anteriores. Ya revocada, asi que es cosmetico.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Tu</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Hecho</h2><span class="gc">13 tareas</span></div>
+  <div class="list">
+    <div class="row r-done"><span class="id">15</span><div><p class="ttl">Clonar y sincronizar el repo</p><p class="det">Fast-forward sin conflictos.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">16</span><div><p class="ttl">Reconectar los 9 MCP</p><p class="det">De rutas absolutas de Linux a <code>npx</code>. Verificado que arranca en esta maquina.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">17</span><div><p class="ttl">Limpiar 6 settings.json por cliente</p><p class="det"><code>LuxeSmile</code> tenia la API key en texto plano <strong>dos veces mas</strong>, dentro de reglas de <code>curl</code>.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">18</span><div><p class="ttl">Corregir la variable de Hostinger</p><p class="det">El config viejo usaba <code>APITOKEN</code>, que <strong>el paquete no lee</strong>: ignoraba el token y se iba por OAuth. Ahora <code>HOSTINGER_API_TOKEN</code>.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">19</span><div><p class="ttl">Traer los archivos del portatil viejo</p><p class="det">Verificado contra Supabase: 4 empresas, 8 perfiles, RLS protegiendo.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">20</span><div><p class="ttl">Reescribir el CLAUDE.md raiz</p><p class="det">Describe ToqueFlow como producto, el portal y Bejauha como referencia.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">21</span><div><p class="ttl">Corregir CONTEXT.md</p><p class="det">Describia un sitio que ya no existe: stack, paleta, fuentes, URL y paginas.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">22</span><div><p class="ttl">Escribir la estrategia de captacion</p><p class="det">Verticales, escalera de oferta, outbound sobre Google Maps y plan por fases.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">23</span><div><p class="ttl">Reescribir /nuevo-cliente</p><p class="det">Enseñaba la arquitectura <strong>obsoleta</strong>. Ahora enseña Supabase multi-tenant.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">24</span><div><p class="ttl">Crear el skill deploy-toqueflow</p><p class="det">Nunca un deploy parcial, siempre <code>deploy-safe.ps1</code>.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">25</span><div><p class="ttl">Simplificar la maquina de leads</p><p class="det"><code>contacts</code>, <code>campaigns</code> y la vista Prospectos <strong>ya sirven</strong>. De 5 tablas nuevas a 1 tabla + 1 indice.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">26</span><div><p class="ttl">Escribir schema-prospeccion.sql</p><p class="det">Indice unico por <code>place_id</code>, <code>outreach_events</code>, <code>outreach_optouts</code> (bajas) y <code>demos</code>, con RLS.</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+    <div class="row r-done"><span class="id">27</span><div><p class="ttl">Reordenar el repo</p><p class="det">Nueva carpeta <code>ToqueFlow/</code> con la estrategia y la arquitectura canonica. Se eliminaron <strong>5 documentos duplicados</strong> que vivian identicos en dos sitios, incluido <code>estado-mvp.md</code>, que se declara "fuente unica de verdad".</p></div><div class="meta"><span class="chip st-done">hecha</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Skills y documentacion</h2><span class="gc">4 tareas</span></div>
+  <div class="list">
+    <div class="row r-hold"><span class="id">28</span><div><p class="ttl">/nuevo-flow</p><p class="det">Encodar el contrato: outbox <code>n8n_events</code>, receptor <code>toque-events</code>, modo prueba obligatorio.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
+    <div class="row r-hold"><span class="id">29</span><div><p class="ttl">/migracion</p><p class="det">SQL numerado e idempotente al estilo <code>Bejauha/database/</code>.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
+    <div class="row r-drop"><span class="id">30</span><div><p class="ttl">Superpowers</p><p class="det">Metodologia con TDD y subagentes. Este repo no tiene pruebas ni build. Reevaluar si la maquina de leads crece a software con pruebas.</p></div><div class="meta"><span class="chip st-drop">descartado</span></div></div>
+    <div class="row r-hold"><span class="id">31</span><div><p class="ttl">Retirar los docs obsoletos de Bejauha</p><p class="det"><code>claude.md</code> y <code>manual-admins*</code> describen el sistema viejo de Postgres.</p></div><div class="meta"><span class="chip st-hold">cuando se pueda</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Maquina de leads — Fase 0</h2><span class="gc">9 tareas</span></div>
+  <p class="gnote"><strong>Decision tomada: Opcion A.</strong> ToqueFlow se da de alta como una empresa mas en su propia plataforma. Sus prospectos viven en <code>contacts</code> con <code>status='prospecto'</code>, reusando la vista Prospectos y <code>campanas.html</code>.</p>
+  <div class="list">
+    <div class="row r-warn"><span class="id">32</span><div><p class="ttl">Completar el bloque USER de seed-toqueflow.cjs y correrlo</p><p class="det">Es el usuario con el que entras a ver tus prospectos.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-warn"><span class="id">33</span><div><p class="ttl">Correr schema-prospeccion.sql en Supabase</p><p class="det">Ya esta escrito e idempotente.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-hold"><span class="id">34</span><div><p class="ttl">Confirmar vertical y ciudad</p><p class="det">Recomendacion: spas, Bogota.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-crit"><span class="id">35</span><div><p class="ttl">Comprar el dominio de outbound y arrancar el warm-up</p><p class="det"><strong>Camino critico: 3–4 semanas.</strong> Va primero aunque el resto no este listo.</p></div><div class="meta"><span class="chip st-crit">primero</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-hold"><span class="id">36</span><div><p class="ttl">Configurar SPF, DKIM y DMARC</p><p class="det">Antes del primer envio.</p></div><div class="meta"><span class="chip st-hold">despues del 35</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-hold"><span class="id">37</span><div><p class="ttl">Cerrar precio y alcance del piloto</p><p class="det">Propuesta a validar: ~$1.500.000 + $350.000/mes.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-hold"><span class="id">38</span><div><p class="ttl">Places API directa o proveedor gestionado</p><p class="det">Estimar costo por 1.000 fichas. Scrapear a mano viola los terminos de Google.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Tu + Claude</span></div></div>
+    <div class="row r-hold"><span class="id">39</span><div><p class="ttl">Definir capacidad mensual de implementacion</p><p class="det">El cuello de botella no sera conseguir leads, sera poder atenderlos.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-hold"><span class="id">40</span><div><p class="ttl">Revisar 008_prospeccion.sql de Bejauha</p><p class="det">Ya hay precedente, no diseñar desde cero.</p></div><div class="meta"><span class="chip st-hold">por decidir</span><span class="chip who">Claude</span></div></div>
+  </div>
+</section>
+
+<section class="order">
+  <h2>Orden sugerido</h2>
+  <ol class="steps">
+    <li><div><b>Reiniciar Claude Code</b><span>Tarea 04, para que carguen el MCP de n8n y los 7 skills.</span></div></li>
+    <li><div><b>Arrancar el warm-up del dominio</b><span>Tarea 35. Tarda semanas: cada dia que pasa retrasa la maquina completa.</span></div></li>
+    <li><div><b>Correr el seed y el schema</b><span>Tareas 32 y 33. Con eso ToqueFlow existe en su propia plataforma y la Fase 1 puede empezar.</span></div></li>
+    <li><div><b>El logo</b><span>Tareas 01 a 03, cuando aparezca una version usable.</span></div></li>
+  </ol>
+</section>
+
+<footer>
+  <p>Versionado en <code>ToqueFlow/TABLERO.md</code>. Estrategia completa en <code>ToqueFlow/estrategia/captacion-leads.md</code>.</p>
+  <p>25 de agosto de 2026.</p>
+</footer>
+
+</div>

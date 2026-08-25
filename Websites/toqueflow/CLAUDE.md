@@ -8,8 +8,8 @@ Frontend HTML/JS custom (sin CMS) en Hostinger + backend en **Supabase** (BD + A
 - **Esquema:** `site/supabase/schema.sql` (plataforma) + `site/supabase/schema-negocio.sql` (tablas de negocio: contacts, campaigns, campaign_runs, message_log, payments, n8n_events + RLS + rol `n8n_worker` + outbox + trigger pg_net). Idempotentes.
 - **Edge functions:** `site/supabase/functions/` (admin-users, vassco-retencion, rappi-print, pago-webhook). Deploy: `node deploy-edge-fn.cjs <slug>` (requiere `SUPABASE_ACCESS_TOKEN`).
 - **n8n:** lee/escribe por **Postgres directo** con el rol `n8n_worker` (least-privilege); la plataforma lo dispara por el outbox `n8n_events` → Database Webhook → `webhook/toque-events`.
-- **Contrato completo (tablas, eventos, payloads, auth):** ver **`_docs/contrato-n8n.md`**.
-- **Modo prueba / sandbox** (probar flujos n8n sin WhatsApp real): ver **`_docs/modo-prueba-sandbox.md`**.
+- **Contrato completo (tablas, eventos, payloads, auth):** ver **`../../ToqueFlow/arquitectura/contrato-n8n.md`**.
+- **Modo prueba / sandbox** (probar flujos n8n sin WhatsApp real): ver **`../../ToqueFlow/arquitectura/modo-prueba-sandbox.md`**.
 
 ### Páginas del panel del cliente (tool pages, self-contained, RLS por member)
 - `site/dashboard.html` — cards de flows (desde tabla `flows`; `tool_url` abre la herramienta).

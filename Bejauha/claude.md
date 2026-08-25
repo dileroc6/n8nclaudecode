@@ -1,7 +1,7 @@
 # Bejauha — Yoga & Bienestar · Agentes WhatsApp IA
 
 > ⚠️ **DOCUMENTO LEGADO (obsoleto desde 2026-07).** Describe el sistema viejo sobre Postgres/Google Sheet. El sistema actual está migrado a **Supabase** (plataforma Toque).
-> **Fuente de verdad actual:** [docs/estado-mvp.md](docs/estado-mvp.md) · **contrato técnico:** [docs/contrato-n8n.md](docs/contrato-n8n.md) · **arquitectura:** [docs/arquitectura-toque.md](docs/arquitectura-toque.md).
+> **Fuente de verdad actual:** [docs/estado-mvp.md](docs/estado-mvp.md) · **contrato técnico:** [ToqueFlow/arquitectura/contrato-n8n.md](../ToqueFlow/arquitectura/contrato-n8n.md) · **arquitectura:** [ToqueFlow/arquitectura/arquitectura-toque.md](../ToqueFlow/arquitectura/arquitectura-toque.md).
 > Lo de abajo se conserva solo como histórico.
 >
 > Estado: **Sprint 1 — cimientos.** Falta información que el cliente irá

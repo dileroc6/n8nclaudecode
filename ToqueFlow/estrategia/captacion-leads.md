@@ -24,7 +24,7 @@ Además, verticalizar convierte cada implementación en la siguiente: el segundo
 
 ### Vertical A — Spas, centros de estética y bienestar
 
-**Por qué:** existe [Zoe](../../../Zoe/PROPUESTA_COMERCIAL.md), un sistema completo en producción con propuesta comercial, precios y ROI ya modelado. Es el caso de éxito listo para citar.
+**Por qué:** existe [Zoe](../../Zoe/PROPUESTA_COMERCIAL.md), un sistema completo en producción con propuesta comercial, precios y ROI ya modelado. Es el caso de éxito listo para citar.
 
 | Dolor | Evidencia que ya tienes |
 |---|---|
@@ -39,7 +39,7 @@ Además, verticalizar convierte cada implementación en la siguiente: el segundo
 
 Yoga, pilates, danza, crossfit, funcional, natación, academias de música.
 
-**Por qué:** [Bejauha](../../../Bejauha/docs/estado-mvp.md) es el cliente más integrado con el portal, y su lógica de negocio —saldo de clases, asistencia que descuenta, recarga, aviso automático al quedar 1 clase, campañas de reactivación— **no es un proyecto, es un producto**. Ningún competidor genérico tiene eso resuelto.
+**Por qué:** [Bejauha](../../Bejauha/docs/estado-mvp.md) es el cliente más integrado con el portal, y su lógica de negocio —saldo de clases, asistencia que descuenta, recarga, aviso automático al quedar 1 clase, campañas de reactivación— **no es un proyecto, es un producto**. Ningún competidor genérico tiene eso resuelto.
 
 | Dolor | Lo que Bejauha ya resuelve |
 |---|---|
@@ -188,7 +188,7 @@ Es medible: cada visita a esa URL es una señal de intención mucho más fuerte 
 
 ### 4.5 El bot demo — el diferenciador
 
-**Esto ya está construido.** El sandbox de Bejauha (`test: true` → tabla `test_messages` → chat web en [modo-prueba.html](../site/modo-prueba.html)) permite correr un flujo real de n8n y desviar la salida a un chat en el navegador, sin tocar WhatsApp.
+**Esto ya está construido.** El sandbox de Bejauha (`test: true` → tabla `test_messages` → chat web en [modo-prueba.html](../../Websites/toqueflow/site/modo-prueba.html)) permite correr un flujo real de n8n y desviar la salida a un chat en el navegador, sin tocar WhatsApp.
 
 Apuntado hacia afuera, se convierte en la mejor herramienta de ventas posible: el prospecto entra a una página, escribe *"¿cuánto cuesta el masaje de pareja?"* y **su propio negocio le responde correctamente**, con sus servicios y sus precios, a las 11 de la noche.
 
@@ -215,7 +215,7 @@ Un agente clasifica cada respuesta en `interesado` / `después` / `no` / `fuera 
 
 ## 5. Qué construir — arquitectura
 
-Todo respeta las tres reglas de oro del proyecto: la plataforma es dueña de los datos, n8n es un worker sin estado, se hablan por el contrato. Ver [arquitectura-toque.md](arquitectura-toque.md).
+Todo respeta las tres reglas de oro del proyecto: la plataforma es dueña de los datos, n8n es un worker sin estado, se hablan por el contrato. Ver [arquitectura-toque.md](../arquitectura/arquitectura-toque.md).
 
 **ToqueFlow se vuelve un tenant más de su propia plataforma.** Esto tiene dos beneficios: se prueba el producto contra el caso más exigente (el propio), y la funcionalidad de prospección queda lista para vendérsela después a los clientes como un módulo más.
 
@@ -243,11 +243,11 @@ Solo tres cosas:
 2. **Aperturas y clics de email.** `campaign_runs` cubre enviado/fallido/respondido, pero no abrió ni hizo clic. O se extiende esa tabla, o se agrega una tabla de eventos de outreach.
 3. **`demos`** — la landing personalizada y el bot demo por prospecto: slug, configuración, visitas, mensajes intercambiados.
 
-Todo multi-tenant por `company_id` con RLS, igual que el resto. Migraciones idempotentes y numeradas, siguiendo el patrón de [Bejauha/database/](../../../Bejauha/database/).
+Todo multi-tenant por `company_id` con RLS, igual que el resto. Migraciones idempotentes y numeradas, siguiendo el patrón de [Bejauha/database/](../../Bejauha/database/).
 
 > **Implicación:** la Fase 1 se acorta mucho. En vez de diseñar y migrar cinco tablas nuevas, es un índice, una tabla y dar de alta a ToqueFlow como empresa con su propio `seed-toqueflow.cjs`. El CRM de prospección de la Fase 6 **ya está construido** — es la vista Prospectos que se acaba de subir.
 
-Precedente adicional: Bejauha tiene [008_prospeccion.sql](../../../Bejauha/database/008_prospeccion.sql) y un [agente de filtrado](../../../Bejauha/prompts/agente1-filtrado-prospeccion.md). Revisar antes de escribir nada.
+Precedente adicional: Bejauha tiene [008_prospeccion.sql](../../Bejauha/database/008_prospeccion.sql) y un [agente de filtrado](../../Bejauha/prompts/agente1-filtrado-prospeccion.md). Revisar antes de escribir nada.
 
 ### Workflows de n8n
 
@@ -260,13 +260,13 @@ Precedente adicional: Bejauha tiene [008_prospeccion.sql](../../../Bejauha/datab
 | `Toque - Secuencia outbound` | Cron diario | Envía el paso que corresponde, respeta límites y pausas |
 | `Toque - Receptor de respuestas` | Webhook del proveedor de email | Clasifica, actualiza estado, notifica |
 
-Todos se disparan por el outbox `n8n_events` y el receptor `toque-events` existente. Ver [contrato-n8n.md](contrato-n8n.md).
+Todos se disparan por el outbox `n8n_events` y el receptor `toque-events` existente. Ver [contrato-n8n.md](../arquitectura/contrato-n8n.md).
 
 ### Portal
 
 Un dashboard interno de ToqueFlow que es, en la práctica, el CRM de prospección: cola de prospectos por score, estado de cada secuencia, quién abrió el diagnóstico, quién probó el bot, y la bandeja de respuestas por atender.
 
-Se construye con las mismas piezas que [contactos.html](../site/contactos.html) y [campanas.html](../site/campanas.html), que ya resuelven listar, filtrar, segmentar y medir.
+Se construye con las mismas piezas que [contactos.html](../../Websites/toqueflow/site/contactos.html) y [campanas.html](../../Websites/toqueflow/site/campanas.html), que ya resuelven listar, filtrar, segmentar y medir.
 
 ---
 
@@ -288,7 +288,7 @@ Aplica la **Ley 1581 de 2012** y el **Decreto 1377 de 2013**. En la práctica:
 
 ### WhatsApp en frío: no
 
-**No usar WhatsApp para el primer contacto.** El riesgo de baneo es alto y el proyecto ya tuvo un incidente el 2026-07-07 que llevó a apagar físicamente todos los nodos de envío (ver [estado-mvp.md](../../../Bejauha/docs/estado-mvp.md)). Perder el número no cuesta solo la campaña: cuesta la operación de los clientes que ya están corriendo.
+**No usar WhatsApp para el primer contacto.** El riesgo de baneo es alto y el proyecto ya tuvo un incidente el 2026-07-07 que llevó a apagar físicamente todos los nodos de envío (ver [estado-mvp.md](../../Bejauha/docs/estado-mvp.md)). Perder el número no cuesta solo la campaña: cuesta la operación de los clientes que ya están corriendo.
 
 WhatsApp entra **solo después** de que el prospecto responda o deje su número en el diagnóstico.
 
@@ -349,7 +349,7 @@ Principio rector: **validar a mano antes de automatizar.** Automatizar un mensaj
 - [ ] Configurar SPF, DKIM, DMARC
 - [ ] Cerrar el precio y el alcance exacto del nivel 2 (piloto)
 - [ ] Elegir proveedor: Places API directa o servicio gestionado, y estimar costo por 1.000 fichas
-- [ ] Revisar el precedente de [008_prospeccion.sql](../../../Bejauha/database/008_prospeccion.sql)
+- [ ] Revisar el precedente de [008_prospeccion.sql](../../Bejauha/database/008_prospeccion.sql)
 
 ### Fase 1 — Semanas 2–3: lista y calificación
 
@@ -425,8 +425,8 @@ Principio rector: **validar a mano antes de automatizar.** Automatizar un mensaj
 
 ## Referencias
 
-- [Arquitectura Toque](arquitectura-toque.md) — las tres reglas de oro
-- [Contrato n8n](contrato-n8n.md) — eventos, payloads, auth
-- [Modo prueba / sandbox](modo-prueba-sandbox.md) — la base del bot demo
-- [Bejauha — estado del MVP](../../../Bejauha/docs/estado-mvp.md) — el patrón de referencia
-- [Zoe — propuesta comercial](../../../Zoe/PROPUESTA_COMERCIAL.md) — precios y ROI del caso spa
+- [Arquitectura Toque](../arquitectura/arquitectura-toque.md) — las tres reglas de oro
+- [Contrato n8n](../arquitectura/contrato-n8n.md) — eventos, payloads, auth
+- [Modo prueba / sandbox](../arquitectura/modo-prueba-sandbox.md) — la base del bot demo
+- [Bejauha — estado del MVP](../../Bejauha/docs/estado-mvp.md) — el patrón de referencia
+- [Zoe — propuesta comercial](../../Zoe/PROPUESTA_COMERCIAL.md) — precios y ROI del caso spa

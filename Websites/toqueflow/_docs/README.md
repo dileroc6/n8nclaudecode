@@ -8,7 +8,9 @@ Sitio en **toqueflow.com** (Hostinger, dominio addon). HTML + JSX en el navegado
 - `credentials.env` — secretos (Supabase service_role, Hostinger, etc.). **gitignored**, nunca subir.
 - `.mcp.json` — config del MCP de Hostinger. gitignored.
 - `backups/` — snapshots fechados de cada deploy + `last-good-site.zip`. gitignored.
-- `_docs/` — esta documentación. Ver **[cloudflare-r2.md](cloudflare-r2.md)** (plan para aligerar los deploys) y **[estrategia-leads.md](estrategia-leads.md)** (captación de clientes para ToqueFlow: ICP, oferta, máquina outbound y plan por fases).
+- `_docs/` — documentación **del sitio**. Ver **[cloudflare-r2.md](cloudflare-r2.md)** (plan para aligerar los deploys).
+
+> La documentación **a nivel Toque** (arquitectura, contrato con n8n, sandbox y estrategia) vive en **[`ToqueFlow/`](../../../ToqueFlow/CLAUDE.md)**, en la raíz del repo. Antes estaba duplicada aquí y en `Bejauha/docs/`; ahora hay una sola copia.
 
 ## Cómo desplegar
 ```

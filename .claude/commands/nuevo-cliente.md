@@ -19,7 +19,7 @@ Supabase. Las tres reglas de oro:
    por `company_id` con RLS. Nada de bases por cliente.
 2. **n8n es un worker sin estado.** Solo integra y ejecuta. La plataforma lo dispara por el
    outbox `n8n_events` → Database Webhook → receptor `toque-events`.
-3. **Se hablan por un contrato.** Ver `Websites/toqueflow/_docs/contrato-n8n.md`.
+3. **Se hablan por un contrato.** Ver `ToqueFlow/arquitectura/contrato-n8n.md`.
 
 El patrón de referencia es **Bejauha**, el cliente más integrado. Ver
 `Bejauha/docs/estado-mvp.md` (fuente única de verdad de su estado real).
