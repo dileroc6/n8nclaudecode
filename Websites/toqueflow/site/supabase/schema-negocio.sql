@@ -36,7 +36,8 @@ create table if not exists public.contacts (
   -- (modelo final): un único saldo + fecha de renovación como columnas del
   -- contacto. Para karma/beja/uja quedan en NULL.
   clases_restantes int,
-  fecha_renovacion date,
+  fecha_inicio     date,                       -- SOLO paquetes: fecha de inicio del paquete
+  fecha_renovacion date,                       -- SOLO paquetes: fecha de vencimiento
   segment         jsonb       not null default '[]',   -- tags/segmentos
   source          text,
   last_contact_at timestamptz,
@@ -46,6 +47,8 @@ create table if not exists public.contacts (
 );
 -- email: la fuente (Sheet Bejauha) lo trae; additivo para instalaciones ya creadas.
 alter table public.contacts add column if not exists email text;
+-- fecha_inicio: fecha de inicio del paquete (additivo para instalaciones ya creadas).
+alter table public.contacts add column if not exists fecha_inicio date;
 create unique index if not exists contacts_company_phone_uidx on public.contacts (company_id, phone);
 create index if not exists contacts_company_status_idx on public.contacts (company_id, status);
 create index if not exists contacts_company_stage_idx  on public.contacts (company_id, lead_stage);
