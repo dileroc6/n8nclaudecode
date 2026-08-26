@@ -16,8 +16,9 @@ credentials.env
 **/*.local.txt
 **/*.local.sql
 
-# Artefactos de deploy (zips de build) — no versionar
+# Artefactos de deploy y respaldos comprimidos — no versionar
 *_deploy_*.zip
+*.rar
 
 # Bejauha NO es de ToqueFlow: repo/proyecto aparte (plataforma/ con .env.local, media pesada, .ai 496MB)
 Websites/Bejauha/
