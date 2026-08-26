@@ -140,6 +140,21 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
+  // ── ¿Quien llama? ────────────────────────────────────────────────────────────
+  // El llamante es el Apps Script de Vassco (Vassco/vassco-ingesta.gs), no un
+  // usuario del portal, asi que no hay JWT que validar: va secreto compartido.
+  // Sin esto, cualquiera con la URL y la llave anonima (publica) podia gastar la
+  // API key de Anthropic.
+  // Configurar: secreto VASSCO_SHARED_SECRET en la funcion + la MISMA cadena en
+  // CONFIG.SHARED_SECRET del Apps Script, que la manda en X-Vassco-Secret.
+  const SECRET = Deno.env.get("VASSCO_SHARED_SECRET") || "";
+  if (!SECRET) return json({ error: "Falta VASSCO_SHARED_SECRET en los secretos de la función." }, 500);
+  const enviado = req.headers.get("x-vassco-secret") || "";
+  // Comparacion de tiempo constante: no filtra el secreto por diferencia de latencia.
+  const iguales = enviado.length === SECRET.length &&
+    enviado.split("").reduce((acc, ch, i) => acc | (ch.charCodeAt(0) ^ SECRET.charCodeAt(i)), 0) === 0;
+  if (!iguales) return json({ error: "No autorizado." }, 401);
+
   let p: any = {};
   try { p = await req.json(); } catch { /* noop */ }
   const total = Number(p.total || 0);

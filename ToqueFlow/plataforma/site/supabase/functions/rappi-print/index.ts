@@ -84,10 +84,32 @@ Deno.serve(async (req: Request) => {
   const KEY = Deno.env.get("ANTHROPIC_API_KEY");
   if (!KEY) return json({ error: "Falta ANTHROPIC_API_KEY en los secretos de la función." }, 500);
 
+  // ── ¿Quien llama? ────────────────────────────────────────────────────────────
+  // Sin esto, cualquiera con la URL y la llave anonima (que es publica, va en el
+  // frontend) podia gastar la API key de Anthropic y atribuir el costo a la
+  // empresa que quisiera, porque company_id venia del payload.
+  // Ahora el company_id sale del PERFIL del usuario autenticado, no del cuerpo.
+  const SBURL = Deno.env.get("SUPABASE_URL") || "";
+  const SVC = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+  if (!token) return json({ error: "Sin sesion." }, 401);
+  const meRes = await fetch(SBURL + "/auth/v1/user", { headers: { apikey: SVC, Authorization: "Bearer " + token } });
+  if (!meRes.ok) return json({ error: "Sesion invalida." }, 401);
+  const me = await meRes.json();
+  const prof = await fetch(
+    SBURL + "/rest/v1/profiles?id=eq." + me.id + "&select=company_id,status",
+    { headers: { apikey: SVC, Authorization: "Bearer " + SVC } },
+  ).then((r) => r.json()).catch(() => null);
+  if (!Array.isArray(prof) || !prof[0] || prof[0].status !== "active") {
+    return json({ error: "Usuario sin acceso." }, 403);
+  }
+  const companyId = prof[0].company_id;
+
   let payload: any = {};
   try { payload = await req.json(); } catch (_) { /* noop */ }
   const pedido = payload.pedido || "";
-  const meta = { company_id: payload.company_id, sede: payload.sede, sede_id: payload.sede_id };
+  // company_id NO se toma del payload: se deriva del perfil autenticado.
+  const meta = { company_id: companyId, sede: payload.sede, sede_id: payload.sede_id };
   if (!pedido.trim()) return json({ error: "Pega el texto del pedido." }, 400);
 
   // Llama a Claude con reintentos ante errores transitorios (5xx, 429, 529 overloaded, fallos de red).

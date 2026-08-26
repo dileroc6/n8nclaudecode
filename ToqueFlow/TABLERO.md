@@ -22,7 +22,7 @@
 
 | # | Tarea | Detalle | Quién |
 |---|---|---|---|
-| 4 | **Reiniciar Claude Code** | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
+| 4 | ~~Reiniciar Claude Code~~ ✅ **Hecho** — MCP de n8n y Hostinger cargados | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
 | 5 | ~~Instalar dependencias de Node~~ | ✅ **Hecho.** `pg` 8.23.0 instalado y verificado en `ToqueFlow/plataforma/` | — |
 | 6 | ~~Registrar los submódulos~~ | ✅ **Hecho.** Los dos gitlinks fantasma eliminados. `n8n-mcp/` borrada (estaba vacía, corre por `npx`); `n8n-skills` ahora se instala como plugin desde GitHub. Ambas gitignoreadas | — |
 | 7 | Instalar Python *(opcional)* | Solo lo necesita `Bejauha/scripts/importar_seguimiento.py` | Tú |
@@ -39,7 +39,7 @@
 | 11 | Rotar el token de Hostinger *(opcional)* | 🟡 Quedó impreso en la terminal al extraerlo. No se filtró a ningún lado, pero rotarlo es gratis | Tú |
 | 12 | ~~Auditar los usos de `service_role`~~ | ✅ **Hecho.** Los `.cjs` son herramientas de admin que corres a mano: acceso total esperado. **Hallazgo en las Edge Functions** — ver tarea 15 abajo | — |
 | 13 | ~~Probar el aislamiento con datos reales~~ | ✅ **Hecho: 9/9 pruebas pasaron.** Usuario temporal en FerreteríaYa intentando alcanzar los 46 contactos de Bejauha: cero filas en contacts, campaigns, campaign_runs, message_log, payments y profiles; UPDATE afectó 0 filas; INSERT rechazado con 403. Repetible con `plataforma/test-aislamiento.cjs` | — |
-| 15 | **`rappi-print` y `vassco-retencion` no verifican quién las llama** | 🟠 Toman `company_id` del payload y usan `service_role`, sin comprobar el token del llamante. **No leen datos de negocio** (solo escriben en `ai_usage`), así que no hay fuga entre clientes — pero cualquiera con la URL y la llave anónima pública puede gastar tu API key de Anthropic y ensuciar el registro de costos atribuyéndolo a otra empresa | Claude |
+| 15 | ~~`rappi-print` y `vassco-retencion` no verifican quién las llama~~ ✅ **Hecho** | 🟠 Toman `company_id` del payload y usan `service_role`, sin comprobar el token del llamante. **No leen datos de negocio** (solo escriben en `ai_usage`), así que no hay fuga entre clientes — pero cualquiera con la URL y la llave anónima pública puede gastar tu API key de Anthropic y ensuciar el registro de costos atribuyéndolo a otra empresa | Claude |
 | 14 | Decidir sobre el historial de git | 🟡 La llave vieja sigue en commits anteriores. Ya revocada, así que es cosmético | Tú |
 
 ---
@@ -78,7 +78,7 @@
 
 | # | Tarea | Detalle |
 |---|---|---|
-| 31 | Retirar los docs obsoletos de Bejauha | `claude.md` y `manual-admins*` describen el sistema viejo de Postgres |
+| 31 | ~~Retirar los docs obsoletos de Bejauha~~ ✅ **Hecho** | `claude.md` y `manual-admins*` describen el sistema viejo de Postgres |
 
 ---
 

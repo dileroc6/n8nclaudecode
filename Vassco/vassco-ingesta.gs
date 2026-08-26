@@ -34,6 +34,10 @@ const CONFIG = {
   // Supabase → Project Settings → API → "anon public". Pégala aquí.
   RETENCION_URL:     'https://pyoauvbwqxuuzamnjwfd.supabase.co/functions/v1/vassco-retencion',
   SUPABASE_ANON_KEY: 'PEGA_AQUI_LA_ANON_KEY_PUBLICA',
+  // Secreto compartido con la edge function: la ANON key es pública y no
+  // autentica a nadie. Debe ser IDÉNTICO al secreto VASSCO_SHARED_SECRET
+  // configurado en Supabase → Edge Functions → vassco-retencion → Secrets.
+  SHARED_SECRET:     'PEGA_AQUI_EL_SECRETO_COMPARTIDO',
 };
 
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO',
@@ -161,7 +165,11 @@ function sugerirRetenciones_(inv) {
   try {
     const res = UrlFetchApp.fetch(CONFIG.RETENCION_URL, {
       method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-      headers: { Authorization: 'Bearer ' + CONFIG.SUPABASE_ANON_KEY, apikey: CONFIG.SUPABASE_ANON_KEY },
+      headers: {
+        Authorization: 'Bearer ' + CONFIG.SUPABASE_ANON_KEY,
+        apikey: CONFIG.SUPABASE_ANON_KEY,
+        'X-Vassco-Secret': CONFIG.SHARED_SECRET,
+      },
       payload: JSON.stringify({
         emisor_nit: inv.nit, emisor_nombre: inv.nombre, fecha: inv.fechaISO,
         total: inv.total, base_gravada: inv.baseGrav, base_no_gravada: inv.baseNoGrav,
