@@ -47,15 +47,16 @@ Cómo consigue clientes ToqueFlow: [captacion-leads.md](ToqueFlow/estrategia/cap
 
 ```
 toque-flow/
-├── ToqueFlow/            # ★ EL NEGOCIO: estrategia, arquitectura canónica, máquina de leads
+├── ToqueFlow/            # ★ TODO LO QUE ES TOQUEFLOW
 │   ├── TABLERO.md        #   estado vivo de las tareas — empezar por aquí
 │   ├── estrategia/       #   captación de clientes
-│   └── arquitectura/     #   las 3 reglas de oro, contrato n8n, sandbox (CANÓNICO)
-│
-├── Websites/toqueflow/   # ★ LA PLATAFORMA: código del sitio y del portal
-│   ├── site/             #   frontend (público + panel del cliente)
-│   ├── site/supabase/    #   schema, RLS, edge functions (NO se publica)
-│   └── _docs/            #   docs del sitio: deploy, Cloudflare R2
+│   ├── arquitectura/     #   las 3 reglas de oro, contrato n8n, sandbox (CANÓNICO)
+│   ├── workflows/        #   los n8n de la máquina de leads
+│   ├── prompts/          #   scoring y correos outbound
+│   └── plataforma/       #   ★ EL CÓDIGO: sitio público + portal + Supabase + deploy
+│       ├── site/         #     frontend (público y panel del cliente)
+│       ├── site/supabase/#     schema, RLS, edge functions (NO se publica)
+│       └── _docs/        #     docs del sitio: deploy, Cloudflare R2
 │
 ├── Bejauha/              # ★ CLIENTE DE REFERENCIA (el más integrado) — ver abajo
 ├── FerreteríaYa/         # catálogo, agentes e impresión Rappi
@@ -74,7 +75,7 @@ toque-flow/
 
 Cada carpeta de cliente es autónoma: su propio `CLAUDE.md`, `.mcp.json`, `.env` y `.claude/settings.json`.
 
-⚠️ **`ToqueFlow/` vs `Websites/toqueflow/`:** el primero es el negocio (estrategia y arquitectura); el segundo es el código. ToqueFlow tiene carpeta de cliente porque, por decisión de arquitectura, **es una empresa más dentro de su propia plataforma**.
+**Dentro de `ToqueFlow/`:** las carpetas de arriba son el negocio —qué vendes, a quién y cómo está diseñada la plataforma— y `plataforma/` es el código que corre en producción. `Websites/` quedó solo con sitios estáticos de clientes.
 
 ---
 
@@ -84,14 +85,14 @@ Frontend HTML/CSS/JS puro (sin framework, sin CMS), desplegado estático en Host
 
 | Página | Para qué |
 |---|---|
-| [login.html](Websites/toqueflow/site/login.html) | entrada del cliente |
-| [dashboard.html](Websites/toqueflow/site/dashboard.html) | cards de sus flows (tabla `flows`; `tool_url` abre la herramienta) |
-| [contactos.html](Websites/toqueflow/site/contactos.html) | base de datos: ver, filtrar, agregar, editar, importar (sin borrar) |
-| [campanas.html](Websites/toqueflow/site/campanas.html) | segmentar, redactar, programar y medir campañas |
-| [modo-prueba.html](Websites/toqueflow/site/modo-prueba.html) | sandbox: probar flujos reales sin WhatsApp real |
-| [admin.html](Websites/toqueflow/site/admin.html) | administración (superadmin ToqueFlow) |
+| [login.html](ToqueFlow/plataforma/site/login.html) | entrada del cliente |
+| [dashboard.html](ToqueFlow/plataforma/site/dashboard.html) | cards de sus flows (tabla `flows`; `tool_url` abre la herramienta) |
+| [contactos.html](ToqueFlow/plataforma/site/contactos.html) | base de datos: ver, filtrar, agregar, editar, importar (sin borrar) |
+| [campanas.html](ToqueFlow/plataforma/site/campanas.html) | segmentar, redactar, programar y medir campañas |
+| [modo-prueba.html](ToqueFlow/plataforma/site/modo-prueba.html) | sandbox: probar flujos reales sin WhatsApp real |
+| [admin.html](ToqueFlow/plataforma/site/admin.html) | administración (superadmin ToqueFlow) |
 
-Guía de la plataforma: [Websites/toqueflow/CLAUDE.md](Websites/toqueflow/CLAUDE.md)
+Guía de la plataforma: [ToqueFlow/plataforma/CLAUDE.md](ToqueFlow/plataforma/CLAUDE.md)
 
 ---
 
@@ -124,7 +125,7 @@ Dónde mirar:
 
 ### Supabase (backend de la plataforma)
 - Proyecto `pyoauvbwqxuuzamnjwfd` — multi-tenant por `company_id` / `company_slug`.
-- Esquemas idempotentes en `Websites/toqueflow/site/supabase/`.
+- Esquemas idempotentes en `ToqueFlow/plataforma/site/supabase/`.
 - Edge Functions: `admin-users`, `vassco-retencion`, `rappi-print`, `pago-webhook`.
 
 ### n8n (motor de automatización)

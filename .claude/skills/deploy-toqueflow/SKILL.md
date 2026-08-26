@@ -15,7 +15,7 @@ El único camino válido es el script, que construye el sitio completo, respalda
 powershell -File deploy-safe.ps1
 ```
 
-Se corre desde `Websites/toqueflow/`. No armes zips a mano, no llames `mcp-deploy.cjs` directamente, no uses el MCP de Hostinger por tu cuenta.
+Se corre desde `ToqueFlow/plataforma/`. No armes zips a mano, no llames `mcp-deploy.cjs` directamente, no uses el MCP de Hostinger por tu cuenta.
 
 ## Antes de desplegar: verificar requisitos
 
@@ -23,8 +23,8 @@ Si falta cualquiera de estos, **detente y dilo** — no intentes el deploy:
 
 | Requisito | Cómo comprobar |
 |---|---|
-| `Websites/toqueflow/credentials.env` | Debe existir. Gitignoreado, vive solo en la máquina |
-| `Websites/toqueflow/.mcp.json` | Con `HOSTINGER_API_TOKEN` resuelto, no el placeholder |
+| `ToqueFlow/plataforma/credentials.env` | Debe existir. Gitignoreado, vive solo en la máquina |
+| `ToqueFlow/plataforma/.mcp.json` | Con `HOSTINGER_API_TOKEN` resuelto, no el placeholder |
 | `site/assets/` con las imágenes | `toqueflow-logo.png`, `favicon.png`, logos de clientes. **Están gitignoreados: un clone nuevo NO los trae** |
 | `backups/last-good-site.zip` | Si no existe no hay rollback posible. Sembrarlo primero con `-SeedLastGood` |
 
@@ -66,6 +66,6 @@ Solo se despliega cuando cambian archivos dentro de `site/`.
 
 ## Referencias
 
-- `Websites/toqueflow/_docs/README.md` — guía operativa completa
-- `Websites/toqueflow/CONTEXT.md` — cómo está construido el sitio
-- `Websites/toqueflow/_docs/cloudflare-r2.md` — qué media se movió a R2 y ya no se despliega
+- `ToqueFlow/plataforma/_docs/README.md` — guía operativa completa
+- `ToqueFlow/plataforma/CONTEXT.md` — cómo está construido el sitio
+- `ToqueFlow/plataforma/_docs/cloudflare-r2.md` — qué media se movió a R2 y ya no se despliega

@@ -46,7 +46,7 @@ Si falta un dato de negocio, márcalo como ⏳ pendiente y sigue. No bloquees po
 
 ## Paso 1 — El seed de Supabase (esto es lo que da de alta al cliente)
 
-Clona el seed más parecido de `Websites/toqueflow/` — `seed-savia.cjs` es el más simple,
+Clona el seed más parecido de `ToqueFlow/plataforma/` — `seed-savia.cjs` es el más simple,
 `seed-bejauha.cjs` el más completo — y ajústalo:
 
 ```js
@@ -105,7 +105,7 @@ Crea `<Nombre>/` en la raíz, con la estructura estándar:
 Solo si en el Paso 0 quedó claro que necesita una página (tipo `contactos.html`,
 `campanas.html` o una herramienta a medida):
 
-1. Crea la página en `Websites/toqueflow/site/`, autocontenida y con RLS por member.
+1. Crea la página en `ToqueFlow/plataforma/site/`, autocontenida y con RLS por member.
 2. Apunta el `tool_url` del flow correspondiente a esa página.
 3. **Agrega la URL a la función `Test-Live` de `deploy-safe.ps1`.** Si no lo haces, el
    cliente ve un 404 y el deploy pasa en verde sin avisar.

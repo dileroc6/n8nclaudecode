@@ -23,7 +23,7 @@
 | # | Tarea | Detalle | Quién |
 |---|---|---|---|
 | 4 | **Reiniciar Claude Code** | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
-| 5 | `npm i pg --no-save` en `Websites/toqueflow/` | No hay `node_modules`. Los scripts que hablan con Supabase por Postgres directo lo necesitan | Claude |
+| 5 | `npm i pg --no-save` en `ToqueFlow/plataforma/` | No hay `node_modules`. Los scripts que hablan con Supabase por Postgres directo lo necesitan | Claude |
 | 6 | Registrar los submódulos | `n8n-skills` ya tiene contenido y su origen es `github.com/czlonkowski/n8n-skills`. Falta crear el `.gitmodules` o convertirlo en carpeta normal. `n8n-mcp` sigue vacío y ya no hace falta: ahora corre por `npx` | Claude |
 | 7 | Instalar Python *(opcional)* | Solo lo necesita `Bejauha/scripts/importar_seguimiento.py` | Tú |
 | 8 | Commitear el trabajo de hoy | Nada versionado aún | Tú decides |

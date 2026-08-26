@@ -4,8 +4,8 @@ Esta carpeta es **el nivel Toque**: la estrategia, la arquitectura de la platafo
 
 Sigue la misma convención que las carpetas de cliente (`Bejauha/`, `Savia/`, `Zoe/`) y no es casualidad: por decisión de arquitectura, **ToqueFlow se da de alta como una empresa más en su propia plataforma**. Sus prospectos viven en `contacts` con `status='prospecto'`, reusando la vista Prospectos de `contactos.html` y `campanas.html` igual que cualquier cliente.
 
-> No confundir con `Websites/toqueflow/`, que es **el código** del sitio y del portal.
-> Aquí vive el negocio; allá vive la implementación.
+> El código vive en la subcarpeta `plataforma/`. En este nivel vive el negocio:
+> qué vendes, a quién y cómo está diseñada la plataforma.
 
 ---
 
@@ -22,10 +22,11 @@ ToqueFlow/
 │   ├── contrato-n8n.md            ← eventos, payloads, auth entre plataforma y n8n
 │   └── modo-prueba-sandbox.md     ← probar flujos sin WhatsApp real
 ├── workflows/          ← los JSON de n8n de la máquina de leads
-└── prompts/            ← prompts del scoring y de los correos outbound
+├── prompts/            ← prompts del scoring y de los correos outbound
+└── plataforma/         ← EL CÓDIGO: sitio, portal, Supabase y deploy
 ```
 
-**`arquitectura/` es canónico.** Esos tres documentos describen cómo funciona la plataforma para *todos* los clientes, no solo para uno. Antes vivían duplicados en `Websites/toqueflow/_docs/` y en `Bejauha/docs/`; ahora hay una sola copia y los demás apuntan aquí.
+**`arquitectura/` es canónico.** Esos tres documentos describen cómo funciona la plataforma para *todos* los clientes, no solo para uno. Antes vivían duplicados en los docs de la plataforma y en `Bejauha/docs/`; ahora hay una sola copia y los demás apuntan aquí.
 
 ---
 
@@ -40,10 +41,10 @@ Lo que ya está escrito y espera para correr:
 
 | Archivo | Qué hace |
 |---|---|
-| `../Websites/toqueflow/seed-toqueflow.cjs` | Da de alta ToqueFlow como empresa con sus 4 flows. **Falta completar el bloque `USER`** |
-| `../Websites/toqueflow/site/supabase/schema-prospeccion.sql` | Índice único por `place_id`, `outreach_events`, `outreach_optouts` y `demos`, con RLS |
+| `plataforma/seed-toqueflow.cjs` | Da de alta ToqueFlow como empresa con sus 4 flows. **Falta completar el bloque `USER`** |
+| `plataforma/site/supabase/schema-prospeccion.sql` | Índice único por `place_id`, `outreach_events`, `outreach_optouts` y `demos`, con RLS |
 
-Esos dos viven allá a propósito: el seed va junto a los demás `seed-*.cjs`, y el schema junto a `schema.sql` y `schema-negocio.sql`, que se corren en orden.
+Esos dos viven en `plataforma/` a propósito: el seed va junto a los demás `seed-*.cjs`, y el schema junto a `schema.sql` y `schema-negocio.sql`, que se corren en orden.
 
 ---
 

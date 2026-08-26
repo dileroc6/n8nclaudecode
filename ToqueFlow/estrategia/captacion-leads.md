@@ -188,7 +188,7 @@ Es medible: cada visita a esa URL es una señal de intención mucho más fuerte 
 
 ### 4.5 El bot demo — el diferenciador
 
-**Esto ya está construido.** El sandbox de Bejauha (`test: true` → tabla `test_messages` → chat web en [modo-prueba.html](../../Websites/toqueflow/site/modo-prueba.html)) permite correr un flujo real de n8n y desviar la salida a un chat en el navegador, sin tocar WhatsApp.
+**Esto ya está construido.** El sandbox de Bejauha (`test: true` → tabla `test_messages` → chat web en [modo-prueba.html](../plataforma/site/modo-prueba.html)) permite correr un flujo real de n8n y desviar la salida a un chat en el navegador, sin tocar WhatsApp.
 
 Apuntado hacia afuera, se convierte en la mejor herramienta de ventas posible: el prospecto entra a una página, escribe *"¿cuánto cuesta el masaje de pareja?"* y **su propio negocio le responde correctamente**, con sus servicios y sus precios, a las 11 de la noche.
 
@@ -266,7 +266,7 @@ Todos se disparan por el outbox `n8n_events` y el receptor `toque-events` existe
 
 Un dashboard interno de ToqueFlow que es, en la práctica, el CRM de prospección: cola de prospectos por score, estado de cada secuencia, quién abrió el diagnóstico, quién probó el bot, y la bandeja de respuestas por atender.
 
-Se construye con las mismas piezas que [contactos.html](../../Websites/toqueflow/site/contactos.html) y [campanas.html](../../Websites/toqueflow/site/campanas.html), que ya resuelven listar, filtrar, segmentar y medir.
+Se construye con las mismas piezas que [contactos.html](../plataforma/site/contactos.html) y [campanas.html](../plataforma/site/campanas.html), que ya resuelven listar, filtrar, segmentar y medir.
 
 ---
 
