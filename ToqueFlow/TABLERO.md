@@ -11,8 +11,8 @@
 | # | Tarea | Detalle | Quién |
 |---|---|---|---|
 | 1 | **El logo y el favicon dan 404 en toqueflow.com** | Los archivos **se perdieron**: no están en el repo, ni en el portátil viejo, ni en Cloudflare R2 (probé seis rutas). El logo es un `<img>` plano en el nav y el footer de `chrome.jsx`, así que está roto en todas las páginas, incluido el portal de los clientes. Lo único que sobrevive es `FerreteríaYa/Impresión Rappi/Logo-ToqueFlow-blanco.png` (650×650, con alfa) — sirve solo sobre fondo oscuro | Tú |
-| 2 | **`deploy-safe.ps1` haría rollback de un deploy sano** | Su lista `Test-Live` exige 200 en `assets/toqueflow-logo.png`, que da 404. De 12 URLs, 11 pasan. Se arregla al resolver la tarea 1, o sacando esa URL de la lista | Claude |
-| 3 | **No existe `backups/last-good-site.zip`** | Tampoco estaba en el portátil viejo: el deploy lleva tiempo corriendo **sin red de seguridad**. Se crea con `deploy-safe.ps1 -SeedLastGood`, que no despliega nada | Claude |
+| 2 | ~~`deploy-safe.ps1` haría rollback de un deploy sano~~ ✅ **Hecho** | La URL del logo salio de la lista `Test-Live`, con un comentario para volver a agregarla cuando el logo se restaure. Ahora verifica 11 URLs que si existen | Claude |
+| 3 | ~~No existe `backups/last-good-site.zip`~~ ✅ **Hecho** | Creado con `deploy-safe.ps1 -SeedLastGood` (46 archivos, 209 KB). No se desplego nada. ⚠️ El punto de restauracion **no incluye las imagenes** porque no existen localmente — igual que produccion hoy, asi que no es una regresion | Claude |
 
 > **Decisión tomada:** el logo queda en pendiente. Las tres se destraban juntas cuando aparezca una versión usable — el original a color, o una versión oscura derivada del blanco.
 
@@ -23,7 +23,7 @@
 | # | Tarea | Detalle | Quién |
 |---|---|---|---|
 | 4 | **Reiniciar Claude Code** | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
-| 5 | `npm i pg --no-save` en `ToqueFlow/plataforma/` | No hay `node_modules`. Los scripts que hablan con Supabase por Postgres directo lo necesitan | Claude |
+| 5 | ~~Instalar dependencias de Node~~ | ✅ **Hecho.** `pg` 8.23.0 instalado y verificado en `ToqueFlow/plataforma/` | — |
 | 6 | ~~Registrar los submódulos~~ | ✅ **Hecho.** Los dos gitlinks fantasma eliminados. `n8n-mcp/` borrada (estaba vacía, corre por `npx`); `n8n-skills` ahora se instala como plugin desde GitHub. Ambas gitignoreadas | — |
 | 7 | Instalar Python *(opcional)* | Solo lo necesita `Bejauha/scripts/importar_seguimiento.py` | Tú |
 | 8 | Commitear el trabajo de hoy | Nada versionado aún | Tú decides |

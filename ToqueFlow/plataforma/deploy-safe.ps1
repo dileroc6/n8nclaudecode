@@ -69,12 +69,15 @@ function Test-Live {
   # OJO: incluir AQUI la herramienta (tool_url) de CADA cliente. Si un flow apunta a una
   # pagina que no esta en site/, el cliente ve 404 y el deploy pasaba en verde sin avisar
   # (paso con Bejauha: contactos/campanas/modo-prueba vivian solo en main).
+  # OJO 2: 'assets/toqueflow-logo.png' estaba en esta lista, pero el archivo se
+  # perdio (no esta en el repo, ni en el portatil viejo, ni en R2) y responde 404
+  # en produccion. Con el aqui, la verificacion fallaba SIEMPRE y el script
+  # revertia deploys sanos. Volver a agregarlo cuando el logo se restaure.
   $urls = @(
     'index.html','dashboard.html','admin.html','login.html','nosotros.html',
     'rappi-bogota.html','rappi-medellin.html',              # FerreteriaYa
     'sm-grand/ocupacion.html',                              # SM Grand Hotel
-    'contactos.html','campanas.html','modo-prueba.html',    # Bejauha
-    'assets/toqueflow-logo.png'
+    'contactos.html','campanas.html','modo-prueba.html'     # Bejauha
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()
