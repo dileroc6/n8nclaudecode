@@ -24,7 +24,7 @@
 |---|---|---|---|
 | 4 | **Reiniciar Claude Code** | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
 | 5 | `npm i pg --no-save` en `ToqueFlow/plataforma/` | No hay `node_modules`. Los scripts que hablan con Supabase por Postgres directo lo necesitan | Claude |
-| 6 | Registrar los submódulos | `n8n-skills` ya tiene contenido y su origen es `github.com/czlonkowski/n8n-skills`. Falta crear el `.gitmodules` o convertirlo en carpeta normal. `n8n-mcp` sigue vacío y ya no hace falta: ahora corre por `npx` | Claude |
+| 6 | ~~Registrar los submódulos~~ | ✅ **Hecho.** Los dos gitlinks fantasma eliminados. `n8n-mcp/` borrada (estaba vacía, corre por `npx`); `n8n-skills` ahora se instala como plugin desde GitHub. Ambas gitignoreadas | — |
 | 7 | Instalar Python *(opcional)* | Solo lo necesita `Bejauha/scripts/importar_seguimiento.py` | Tú |
 | 8 | Commitear el trabajo de hoy | Nada versionado aún | Tú decides |
 
@@ -37,8 +37,9 @@
 | 9 | Rotar la `N8N_API_KEY` expuesta | ✅ **Hecha y verificada** — HTTP 200 contra la API. La vieja está muerta | — |
 | 10 | Sacar los secretos del repo | ✅ **Hecho** — los 6 archivos sensibles verificados como ignorados por git | — |
 | 11 | Rotar el token de Hostinger *(opcional)* | 🟡 Quedó impreso en la terminal al extraerlo. No se filtró a ningún lado, pero rotarlo es gratis | Tú |
-| 12 | Auditar los usos de `service_role` | 🟡 RLS está bien construido, pero la `service_role` **se salta RLS por completo** y la usan todos los `.cjs` y las edge functions. Ahí es donde un bug filtraría datos entre clientes | Claude |
-| 13 | Probar el aislamiento con datos reales | 🟡 Entrar como usuario de un cliente e intentar leer los de otro. Ya se puede hacer: las credenciales funcionan | Claude |
+| 12 | ~~Auditar los usos de `service_role`~~ | ✅ **Hecho.** Los `.cjs` son herramientas de admin que corres a mano: acceso total esperado. **Hallazgo en las Edge Functions** — ver tarea 15 abajo | — |
+| 13 | ~~Probar el aislamiento con datos reales~~ | ✅ **Hecho: 9/9 pruebas pasaron.** Usuario temporal en FerreteríaYa intentando alcanzar los 46 contactos de Bejauha: cero filas en contacts, campaigns, campaign_runs, message_log, payments y profiles; UPDATE afectó 0 filas; INSERT rechazado con 403. Repetible con `plataforma/test-aislamiento.cjs` | — |
+| 15 | **`rappi-print` y `vassco-retencion` no verifican quién las llama** | 🟠 Toman `company_id` del payload y usan `service_role`, sin comprobar el token del llamante. **No leen datos de negocio** (solo escriben en `ai_usage`), así que no hay fuga entre clientes — pero cualquiera con la URL y la llave anónima pública puede gastar tu API key de Anthropic y ensuciar el registro de costos atribuyéndolo a otra empresa | Claude |
 | 14 | Decidir sobre el historial de git | 🟡 La llave vieja sigue en commits anteriores. Ya revocada, así que es cosmético | Tú |
 
 ---

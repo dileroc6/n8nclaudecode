@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "n8n-mcp"],
+      "env": {
+        "N8N_API_URL": "https://n8n.srv1398596.hstgr.cloud/api/v1",
+        "N8N_API_KEY": "${N8N_API_KEY}"
+      }
+    },
+    "hostinger": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "hostinger-api-mcp"],
+      "env": {
+        "HOSTINGER_API_TOKEN": "${HOSTINGER_API_TOKEN}",
+        "DEBUG": "false"
+      }
+    }
+  }
+}

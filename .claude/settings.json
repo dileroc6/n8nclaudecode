@@ -3,15 +3,15 @@
     "allow": []
   },
   "extraKnownMarketplaces": {
-    "n8n-skills-local": {
+    "n8n-skills": {
       "source": {
-        "source": "directory",
-        "path": "./n8n-skills"
+        "source": "github",
+        "repo": "czlonkowski/n8n-skills"
       }
     }
   },
   "enabledPlugins": {
-    "n8n-mcp-skills@n8n-skills-local": true
+    "n8n-mcp-skills@n8n-skills": true
   },
   "enableAllProjectMcpServers": true
 }

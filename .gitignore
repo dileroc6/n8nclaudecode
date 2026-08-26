@@ -29,3 +29,8 @@ Websites/Bejauha/
 # Vassco: datos fiscales reales (facturas DIAN, RUT) — no publicar en GitHub
 Vassco/*.zip
 Vassco/Rut*.pdf
+
+# Herramientas externas: n8n-mcp corre por npx; n8n-skills se instala como
+# plugin desde github.com/czlonkowski/n8n-skills. Ninguna se versiona aqui.
+n8n-mcp/
+n8n-skills/
