@@ -1,0 +1,553 @@
+{
+  "name": "ToqueFlow - Agente de Atencion (generico)",
+  "nodes": [
+    {
+      "id": "a1",
+      "name": "Entrada WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "toque-agente",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "notes": "Un solo webhook para TODOS los clientes. La empresa se resuelve por el nombre de la instancia de Evolution, no por la URL."
+    },
+    {
+      "id": "a2",
+      "name": "Extraer mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Evolution manda TODO lo que pasa en la línea: acuses de entrega, ediciones,\n// mensajes que el propio negocio escribió desde el celular. Aquí se decide, sin\n// gastar un peso ni tocar la base, si esto merece atención.\nconst raw = $input.first().json;\nconst b   = raw.body || raw;\nconst d   = b.data || {};\nconst key = d.key || {};\nconst jid = String(key.remoteJid || '');\nconst msg = d.message || {};\n\nconst texto = String(\n  msg.conversation ||\n  (msg.extendedTextMessage && msg.extendedTextMessage.text) ||\n  ''\n).trim();\n\nconst telefono = jid.split('@')[0].replace(/\\D/g, '');\n\n// El modo prueba lo manda el panel del sandbox. Evolution nunca lo manda.\nconst test = b.test === true || d.test === true;\n\n// Se guarda el motivo del descarte, no solo un booleano. Cuando alguien diga\n// \"el bot no me contestó\", la respuesta está en el log de ejecuciones.\nconst razon =\n  key.fromMe             ? 'mensaje propio del negocio' :\n  jid.includes('@g.us')  ? 'viene de un grupo' :\n  !texto                 ? 'sin texto (audio, imagen, sticker o estado)' :\n  telefono.length < 8    ? 'remitente sin numero valido' :\n  texto.length > 1500    ? 'mensaje absurdamente largo' : null;\n\nreturn [{ json: {\n  instance: b.instance || d.instance || '',\n  telefono: telefono,\n  texto: texto,\n  wa_id: key.id || null,\n  test: test,\n  atender: razon === null,\n  razon: razon\n}}];"
+      }
+    },
+    {
+      "id": "a3",
+      "name": "¿Vale la pena mirarlo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -180,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.atender }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a4",
+      "name": "Contexto del inquilino",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        60,
+        200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_agente_contexto($1, $2) as ctx;",
+        "options": {
+          "queryReplacement": "={{ [ $json.instance, $json.telefono ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase — ToqueFlow"
+        }
+      },
+      "notes": "Una consulta y no siete. Devuelve null si la instancia no existe o el agente esta apagado."
+    },
+    {
+      "id": "a5",
+      "name": "¿Hay agente activo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ctx }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.ctx.asignado_humano }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "notes": "Dos razones para callarse: la linea no tiene agente configurado, o un humano ya se metio en la conversacion. En ninguna de las dos hay que avisar nada."
+    },
+    {
+      "id": "a6",
+      "name": "Armar el prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        120
+      ],
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════════════════════════════════════════\n// CUIDADO AL EDITAR ESTE NODO.\n//\n// El caché de Anthropic es un match de prefijo BYTE A BYTE. Si en el bloque\n// \"estable\" de abajo se cuela algo que cambie entre un mensaje y el siguiente\n// —la fecha, la hora, el nombre de quien escribe, un id— el caché deja de\n// servir y la factura se multiplica por diez. Sin error, sin aviso, sin nada\n// raro en los logs: solo llega la cuenta más alta a fin de mes.\n//\n// Lo que cambia va ABAJO, en los mensajes. Nunca aquí.\n// ═══════════════════════════════════════════════════════════════════════════\nconst e    = $('Extraer mensaje').first().json;\nconst ctx  = $input.first().json.ctx;\nconst cfg  = ctx.config || {};\nconst id   = cfg.identidad || {};\nconst lim  = cfg.limites || {};\nconst cap  = cfg.captura || {};\nconst enr  = cfg.enrutamiento || {};\n\nconst negocio = id.negocio || ctx.empresa;\n\nconst partes = [];\npartes.push('Eres el asistente de ' + negocio + ' y atiendes por WhatsApp.');\n\npartes.push('\\n## Como hablas');\npartes.push(id.tono || 'Cercano y directo, tuteando, en espanol de Colombia.');\npartes.push(\n  'Respondes CORTO: esto es WhatsApp, no un correo. Dos o tres frases. Sin ' +\n  'listas largas, sin negritas, sin titulos. Si te preguntan varias cosas, ' +\n  'contestas todas pero breve.'\n);\n\npartes.push('\\n## Lo que NO haces');\npartes.push('- No inventas NADA. Si algo no esta escrito mas abajo, no existe.');\npartes.push('- No prometes precios, plazos, cupos ni descuentos que no esten escritos.');\npartes.push('- Si no sabes algo, lo dices sin rodeos y ofreces pasarlo a una persona.');\nif (Array.isArray(lim.nunca)) {\n  for (const r of lim.nunca) partes.push('- ' + r);\n}\n\n// Los campos a capturar. Sin ellos el agente responde bien pero no deja nada\n// util: el negocio se queda con una conversacion amable y ningun dato.\nconst campos = Array.isArray(cap.campos) ? cap.campos : [];\nif (campos.length) {\n  partes.push('\\n## Lo que tienes que averiguar');\n  for (const c of campos) {\n    partes.push('- ' + (c.etiqueta || c.clave) + (c.obligatorio ? ' (importante)' : ''));\n  }\n  partes.push(\n    'No los pides todos de una: eso espanta. Los vas pidiendo de a uno, cuando ' +\n    'venga al caso en la conversacion.'\n  );\n}\n\nconst reglas = Array.isArray(enr.reglas) ? enr.reglas : [];\nif (reglas.length) {\n  partes.push('\\n## Cuando dejar de responder tu');\n  for (const r of reglas) {\n    partes.push('- Si ' + r.si + ' -> ' + r.accion + (r.destino ? ' (' + r.destino + ')' : ''));\n  }\n}\nif (Array.isArray(lim.escalar_si)) {\n  for (const r of lim.escalar_si) partes.push('- Si ' + r + ' -> escalar');\n}\n\npartes.push('\\n## Lo que sabes de ' + negocio);\npartes.push(cfg.conocimiento && cfg.conocimiento.trim()\n  ? cfg.conocimiento\n  : '(Todavia no hay informacion cargada. No inventes: di que lo confirmas y escala.)');\n\nconst sistema = partes.join('\\n');\n\n// La herramienta obliga a que la respuesta venga estructurada. Pedirle el JSON\n// \"por favor\" en el prompt funciona el 95% de las veces, y el 5% restante son\n// mensajes rotos que le llegan a un cliente real.\nconst herramienta = {\n  name: 'responder',\n  description: 'Responde al cliente por WhatsApp. Usala siempre, una sola vez por mensaje.',\n  input_schema: {\n    type: 'object',\n    properties: {\n      respuesta: { type: 'string', description: 'Lo que se le escribe al cliente. Dos o tres frases.' },\n      datos: {\n        type: 'object',\n        description: 'Datos del cliente que quedaron CLAROS en este mensaje. Vacio si no quedo claro ninguno. Nunca adivinar.',\n        additionalProperties: { type: 'string' }\n      },\n      accion: {\n        type: 'string',\n        enum: ['responder', 'escalar', 'enviar_link', 'agendar'],\n        description: 'responder = ya quedo resuelto. escalar = necesita una persona. enviar_link = mandarlo a una pagina. agendar = quiere una cita.'\n      },\n      destino: { type: 'string', description: 'A donde: la url del link, o a que grupo escalar. Vacio si accion es responder.' },\n      motivo:  { type: 'string', description: 'En una linea, por que elegiste esa accion. Para el log, el cliente no lo ve.' }\n    },\n    required: ['respuesta', 'accion']\n  }\n};\n\n// El historial viene viejo->nuevo. Se colapsan turnos seguidos del mismo lado:\n// la API exige que user y assistant se alternen.\nconst mensajes = [];\nfor (const h of (ctx.historial || [])) {\n  const rol = h.dir === 'in' ? 'user' : 'assistant';\n  if (mensajes.length && mensajes[mensajes.length - 1].role === rol) {\n    mensajes[mensajes.length - 1].content += '\\n' + h.texto;\n  } else {\n    mensajes.push({ role: rol, content: h.texto });\n  }\n}\n\n// Lo que cambia en cada mensaje va aqui abajo, DESPUES del prefijo cacheado.\n// El nombre de quien escribe incluido: meterlo en el sistema le daria a cada\n// cliente su propio prefijo y no se cachearia nunca nada.\nconst quien = ctx.contacto && ctx.contacto.nombre;\nconst ultimo = (quien ? '[Escribe ' + quien + ']\\n' : '') + e.texto;\nif (mensajes.length && mensajes[mensajes.length - 1].role === 'user') {\n  mensajes[mensajes.length - 1].content += '\\n' + ultimo;\n} else {\n  mensajes.push({ role: 'user', content: ultimo });\n}\n\nconst modelo = $env.TOQUE_MODELO_AGENTE || 'claude-haiku-4-5-20251001';\n\nreturn [{ json: {\n  modelo: modelo,\n  // Haiku 4.5 solo cachea prefijos de 4096 tokens o mas. Por debajo de eso el\n  // marcador no da error: simplemente no cachea. Se estima a 4 caracteres por\n  // token para poder avisarlo en el log en vez de descubrirlo en la factura.\n  prefijo_tokens_aprox: Math.round(sistema.length / 4),\n  cachea: Math.round(sistema.length / 4) >= 4096,\n  cuerpo: {\n    model: modelo,\n    max_tokens: 700,\n    system: [{\n      type: 'text',\n      text: sistema,\n      cache_control: { type: 'ephemeral', ttl: '1h' }\n    }],\n    tools: [herramienta],\n    tool_choice: { type: 'tool', name: 'responder' },\n    messages: mensajes\n  }\n}}];"
+      },
+      "notes": "El bloque estable va en system con cache_control de 1h. Lo que cambia va en messages. Confundirlos multiplica la factura por diez sin dar error."
+    },
+    {
+      "id": "a7",
+      "name": "Claude responde",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.cuerpo) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "a8",
+      "name": "Leer la respuesta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        120
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst e = $('Extraer mensaje').first().json;\nconst a = $('Armar el prompt').first().json;\n\nconst bloque = (r.content || []).find(c => c.type === 'tool_use');\nif (!bloque) {\n  // Con tool_choice forzado esto no deberia pasar nunca. Si pasa, se prefiere\n  // el silencio a mandarle al cliente un mensaje roto o vacio.\n  throw new Error('Claude no uso la herramienta. stop_reason=' + r.stop_reason);\n}\n\nconst out = bloque.input || {};\nconst u   = r.usage || {};\n\n// Si el prefijo era cacheable y aun asi no hubo lectura, algo lo esta\n// invalidando. Queda escrito en el log: es la unica forma de enterarse.\nconst leido = u.cache_read_input_tokens || 0;\nconst alerta = (a.cachea && leido === 0) ? 'CACHE NO LEIDO: revisar que nada cambie en el bloque estable' : null;\n\nreturn [{ json: {\n  respuesta: String(out.respuesta || '').trim(),\n  datos:     out.datos || {},\n  accion:    out.accion || 'responder',\n  destino:   out.destino || '',\n  motivo:    out.motivo || '',\n\n  // Un solo jsonb para la funcion de registro: sin comas que contar.\n  registro: {\n    instance:    e.instance,\n    telefono:    e.telefono,\n    entrante:    e.texto,\n    respuesta:   String(out.respuesta || '').trim(),\n    datos:       out.datos || {},\n    wa_id:       e.wa_id,\n    model:       a.modelo,\n    input:       u.input_tokens || 0,\n    output:      u.output_tokens || 0,\n    cache_read:  leido,\n    cache_write: u.cache_creation_input_tokens || 0,\n    test:        e.test\n  },\n\n  diagnostico: {\n    prefijo_tokens: a.prefijo_tokens_aprox,\n    cachea: a.cachea,\n    cache_read: leido,\n    cache_write: u.cache_creation_input_tokens || 0,\n    alerta: alerta\n  }\n}}];"
+      }
+    },
+    {
+      "id": "a9",
+      "name": "Guardar el turno",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1160,
+        120
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_agente_registrar($1::jsonb) as res;",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json.registro) ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REEMPLAZAR",
+          "name": "Supabase — ToqueFlow"
+        }
+      },
+      "notes": "Contacto, conversacion y consumo en UNA transaccion. Un solo jsonb: el texto del cliente lleva comas y el nodo de n8n separa parametros por coma."
+    },
+    {
+      "id": "a10",
+      "name": "¿Es modo prueba?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1380,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Leer la respuesta').first().json.registro.test }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a11",
+      "name": "Queda en el sandbox",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        20
+      ],
+      "parameters": {},
+      "notes": "En modo prueba la respuesta ya quedo en test_messages, que es lo que lee el panel. No se manda ningun WhatsApp: ese es todo el punto del sandbox."
+    },
+    {
+      "id": "a12",
+      "name": "Enviar por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $('Extraer mensaje').first().json.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Extraer mensaje').first().json.telefono, delay: 1200, linkPreview: false, text: $('Leer la respuesta').first().json.respuesta }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000
+    },
+    {
+      "id": "a13",
+      "name": "¿Escalar a un humano?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1820,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Leer la respuesta').first().json.accion }}",
+              "rightValue": "escalar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a14",
+      "name": "Avisar al humano",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2040,
+        160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $('Extraer mensaje').first().json.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Leer la respuesta').first().json.destino || $env.TOQUE_GRUPO_FALLBACK, delay: 500, linkPreview: false, text: 'Necesitan a alguien.\\n\\nCliente: ' + $('Extraer mensaje').first().json.telefono + '\\nEscribio: ' + $('Extraer mensaje').first().json.texto + '\\nMotivo: ' + $('Leer la respuesta').first().json.motivo }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "notes": "Si el agente no dio destino, cae al grupo por defecto. Perder el aviso es peor que mandarlo al sitio equivocado."
+    },
+    {
+      "id": "a15",
+      "name": "No hacer nada",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        280,
+        460
+      ],
+      "parameters": {},
+      "notes": "Mensaje descartado. El motivo queda en el campo `razon` del nodo Extraer: cuando alguien diga 'el bot no me contesto', la respuesta esta ahi."
+    }
+  ],
+  "connections": {
+    "Entrada WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Extraer mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer mensaje": {
+      "main": [
+        [
+          {
+            "node": "¿Vale la pena mirarlo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Vale la pena mirarlo?": {
+      "main": [
+        [
+          {
+            "node": "Contexto del inquilino",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No hacer nada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto del inquilino": {
+      "main": [
+        [
+          {
+            "node": "¿Hay agente activo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay agente activo?": {
+      "main": [
+        [
+          {
+            "node": "Armar el prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No hacer nada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar el prompt": {
+      "main": [
+        [
+          {
+            "node": "Claude responde",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude responde": {
+      "main": [
+        [
+          {
+            "node": "Leer la respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer la respuesta": {
+      "main": [
+        [
+          {
+            "node": "Guardar el turno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar el turno": {
+      "main": [
+        [
+          {
+            "node": "¿Es modo prueba?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es modo prueba?": {
+      "main": [
+        [
+          {
+            "node": "Queda en el sandbox",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar por WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "¿Escalar a un humano?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Escalar a un humano?": {
+      "main": [
+        [
+          {
+            "node": "Avisar al humano",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

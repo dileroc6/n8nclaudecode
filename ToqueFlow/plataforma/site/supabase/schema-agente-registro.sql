@@ -161,3 +161,44 @@ end $$;
 revoke all on function public.tf_agente_registrar(
   text, text, text, text, jsonb, text, text, int, int, int, int, boolean
 ) from public, anon, authenticated;
+
+
+-- ── La misma función, pero con un solo argumento ─────────────────────────────
+-- No es azúcar sintáctica: es para que n8n pueda llamarla sin romperse.
+--
+-- El nodo de Postgres de n8n recibe los parámetros como una lista separada por
+-- comas. Doce argumentos donde dos de ellos son texto libre —lo que escribió el
+-- cliente y lo que contestó el agente— significa que la primera coma que
+-- alguien escriba en un WhatsApp corre todos los parámetros un puesto. Ese es
+-- exactamente el tipo de bug que aparece en producción, un martes, con un
+-- cliente real, y no en ninguna prueba.
+--
+-- Un solo jsonb: no hay comas que contar.
+create or replace function public.tf_agente_registrar(p jsonb)
+returns json
+language sql
+as $wrap$
+  select public.tf_agente_registrar(
+    p->>'instance',
+    p->>'telefono',
+    p->>'entrante',
+    p->>'respuesta',
+    coalesce(p->'datos', '{}'::jsonb),
+    p->>'wa_id',
+    p->>'model',
+    coalesce((p->>'input')::int, 0),
+    coalesce((p->>'output')::int, 0),
+    coalesce((p->>'cache_read')::int, 0),
+    coalesce((p->>'cache_write')::int, 0),
+    coalesce((p->>'test')::boolean, false)
+  );
+$wrap$;
+
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'n8n_worker') then
+    grant execute on function public.tf_agente_registrar(jsonb) to n8n_worker;
+  end if;
+end $$;
+
+revoke all on function public.tf_agente_registrar(jsonb) from public, anon, authenticated;

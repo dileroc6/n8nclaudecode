@@ -221,6 +221,26 @@ Dos condiciones que hay que respetar en el workflow del agente:
 
 **Cómo verificar que funciona:** la respuesta trae `usage.cache_read_input_tokens`. Si sale en cero mensaje tras mensaje, algo volátil se coló en el prefijo.
 
+### El cliente pequeño no cachea, y está bien
+
+Medido contra un contexto real el 27-ago: un cliente con **12 KB de conocimiento** —planes, precios, horarios, sedes— produce un prompt de sistema de unos **3.400 tokens**.
+
+**Haiku 4.5 solo cachea prefijos de 4.096 tokens o más.** Por debajo de eso el marcador `cache_control` no da error: simplemente no cachea, y nadie se entera hasta que llega la factura.
+
+Así que el cliente típico —el de 5 a 15 KB, que según este mismo documento es la mayoría— **no va a cachear nada**. Suena mal y no lo es:
+
+| Cliente | Prefijo | ¿Cachea? | Costo IA al mes |
+|---|---|---|---|
+| Pequeño (12 KB) | ~3.400 tokens | no | **~$17 USD** |
+| Grande (40 KB) | ~11.000 tokens | sí | **~$12 USD** |
+| Grande, si se olvidara el caché | ~11.000 tokens | — | **~$50 USD** |
+
+El prefijo que no alcanza a cachearse es, por definición, pequeño: pagarlo entero cuesta casi lo mismo que pagar uno grande cacheado. **El caché no está ahí para el cliente pequeño; está para que el grande no se coma el margen.** Y en esa función sirve exactamente igual.
+
+Lo que sí hay que hacer es **no mentirse con el número**. El workflow estima el tamaño del prefijo y marca `cachea: false` cuando queda por debajo del mínimo, así el panel de consumo puede decir por qué un cliente cuesta lo que cuesta. Y cuando el prefijo sí es cacheable pero `cache_read_input_tokens` vuelve en cero, deja una alerta en el log: eso significa que algo volátil se coló en el bloque estable.
+
+> No se rellena el prompt para llegar a 4.096. Inflar el contexto con paja para conseguir un descuento por caché es pagar más para pagar menos.
+
 ### Por qué 40 KB y no más
 
 Los servicios, precios, políticas y preguntas frecuentes de un spa real ocupan entre 5 y 15 KB. El límite casi nunca se va a activar: es una barandilla, no una restricción.
