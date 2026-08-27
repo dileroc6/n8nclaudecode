@@ -140,15 +140,36 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 ⚠️ **Y varios de los de blogs SEO llaman a modelos de IA.** Si alguno corre en cron y genera contenido, está gastando dinero real cada semana sin que nadie lo mire. Eso hay que revisarlo antes que cualquier otra cosa de esta lista.
 
+### Resultado de la W1 — revisado el 27-ago
+
+**La buena noticia: no hay sangrado de dinero en IA.** El workflow de blog SEO —el candidato obvio, 38 nodos— corre a diario a las 11:00 pero **termina en 3 segundos**, demasiado rápido para haber generado contenido. Sale temprano, probablemente porque no hay nada pendiente.
+
+**Lo que sí hay es volumen desperdiciado.** Midiendo los IDs de ejecución: unas **410 ejecuciones al día**, y así se reparten:
+
+| Workflow | Frecuencia | Al día | ¿Sirve a quien paga? |
+|---|---|---|---|
+| **Zoe — WF5 OTP cron** | cada 5 min | **288 (70%)** | **No.** Corriendo desde mayo para un cliente que nunca cerró |
+| WF-05 Recordatorios (sistema viejo) | cada 30 min | 48 | No. Es el legado «pausado» |
+| Agente FerreteríaYa 3.3 | por webhook | ~50 | Tráfico real: alguien lo está usando |
+| Blog SEO (BF - WF1) | diario 11:00 | 2 | **Falla todos los días** desde al menos el 25-ago, en silencio |
+| Resto | — | ~20 | Varios |
+
+**El costo real no es dinero en IA: es carga de Postgres.** Cada ejecución escribe una fila en la base que vive **en el mismo VPS de 4 GB**. 288 ejecuciones diarias inútiles desde mayo son decenas de miles de filas, y eso conecta directo con la pregunta de la RAM.
+
+**Con desactivar un solo workflow —el OTP de Zoe— se va el 70% del volumen.** Es la acción de mejor retorno de toda esta sección y toma treinta segundos.
+
+**Y un hallazgo aparte:** FerreteríaYa tiene tráfico real y constante. Es el único de los que no pagan que se está usando de verdad — vale la pena saber quién lo usa y para qué antes de apagar nada suyo.
+
 | # | Tarea | Nota |
 |---|---|---|
-| 41 | **Revisar qué workflows con cron llaman a IA y cuánto gastan** | Es la única tarea de esta sección que puede estar costando plata hoy. Va primero |
-| 42 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
-| 43 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
-| 44 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 45 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
-| 46 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
-| 47 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
+| 41 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
+| 42 | ⚡ **Desactivar el cron OTP de Zoe** — quita el 70% del volumen en 30 segundos | Es la acción de mejor retorno de esta sección |
+| 43 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
+| 44 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
+| 45 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
+| 46 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
+| 47 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
+| 48 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
 ---
 
@@ -156,11 +177,11 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 48 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 49 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 50 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 51 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 52 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 49 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 50 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 51 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 52 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 53 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
