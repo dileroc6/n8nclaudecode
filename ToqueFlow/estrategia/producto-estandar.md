@@ -22,9 +22,19 @@ Con la meta de 10 clientes en 6 meses, esto no es opcional. A 45–90 horas cada
 Contesta desde una **fuente de conocimiento** cargada en la configuración: el sitio web del cliente, un PDF, un documento de preguntas frecuentes. Sabe qué servicios hay, qué cuestan, dónde queda, qué horario tiene, qué políticas aplica. Y **sugiere** — no solo responde lo que le preguntan, propone la opción que encaja.
 
 ### 2. Agendar
-Propone horarios contra una **disponibilidad configurada en la plataforma** y confirma la cita. Conversa para encontrar el mejor momento, no muestra una lista y ya.
+Propone horarios reales y confirma la cita, conversando para encontrar el mejor momento — no muestra una lista y ya.
 
-**Alcance exacto:** franjas horarias configurables por día, duración por tipo de servicio, cupos simultáneos, y bloqueos manuales. **No** asigna contra personas ni recursos individuales — eso es el módulo avanzado (ver abajo).
+**Por defecto trabaja contra el Google Calendar que el negocio ya usa.** Esa decisión resuelve el problema que arruina las implementaciones de agendamiento: si el bot agenda en nuestra base y la recepcionista en la suya, hay dos agendas que no se hablan y el bot ofrece las 3 PM cuando ya hay alguien a las 3. Con el calendario del negocio como fuente de verdad, eso no puede pasar y el cliente **no cambia nada de su proceso**.
+
+Tres modos, en `agent_config.agenda`:
+
+| Modo | Cuándo | Qué implica |
+|---|---|---|
+| `google` | **Por defecto.** El negocio ya usa Google Calendar | Conectar la cuenta una vez por OAuth, 2 minutos |
+| `propia` | Negocios sin calendario digital | Adoptan el portal como su agenda: cuesta más vender y más sostener |
+| `ninguna` | No se quiere agendar | El agente captura y enruta, o manda un link de reservas |
+
+**Alcance exacto:** franjas horarias por día, duración por tipo de servicio, cupos simultáneos y bloqueos. **No** asigna contra personas ni recursos individuales — eso es el módulo avanzado (ver abajo).
 
 ### 3. Capturar
 Pide **datos estructurados** cuando la conversación lo amerita: nombre, teléfono, servicio de interés, lo que se haya configurado. No los pide de entrada.
@@ -61,6 +71,9 @@ La diferencia entre un cliente y otro vive **en una fila de base de datos**, no 
     "faq_manual": [ { "p": "¿Atienden urgencias?", "r": "…" } ]
   },
   "agenda": {
+    "modo": "google",
+    "calendar_id": "clinica@gmail.com",
+    "zona_horaria": "America/Bogota",
     "franjas": [
       { "dias": ["lun","mar","mie","jue","vie"], "desde": "08:00", "hasta": "18:00" },
       { "dias": ["sab"], "desde": "09:00", "hasta": "13:00" }
@@ -109,14 +122,20 @@ La lista que te permite decir que no en una venta sin improvisar:
 
 - **No asigna citas a personas o recursos individuales.** Agenda contra cupos, no contra "la terapeuta María en la sede norte". Eso es el **módulo de agenda avanzada**, cotizado aparte. *Fue exactamente donde se dispararon las horas en Zoe.*
 - **No se integra con el software de agenda propio del sector** (Dentalink, Agenda Pro y similares). A medida, cotizado aparte.
-
-> **Sobre Calendly:** no es un calendario sino una página de reservas, y debajo siempre hay un Google o un Outlook del que lee la disponibilidad. Si es Google —lo más común— el agente trabaja **directo contra ese calendario** y Calendly deja de ofrecer el horario solo, porque mira el mismo sitio. No hay que integrar nada con Calendly. La alternativa es mandar su link, que es el modo `ninguna`: funciona, pero cada paso extra pierde gente. El valor del agente está en cerrar la cita dentro de la conversación.
 - **No cobra ni procesa pagos.**
 - **No atiende en otro idioma** en el precio base.
 - **No hace campañas de salida.** Eso es `campanas.html`, otro módulo.
 - **No reemplaza a una persona.** Atiende, agenda y entrega. Lo complejo lo resuelve un humano.
 
 Cada excepción fuera de esta lista te devuelve al modelo de proyectos a medida.
+
+### Sobre Calendly
+
+Calendly **no es un calendario, es una página de reservas**, y debajo siempre hay un Google o un Outlook del que lee la disponibilidad.
+
+Si es Google —lo más común— el agente trabaja **directo contra ese calendario**, y Calendly deja de ofrecer el horario por su cuenta porque mira el mismo sitio. **No hay que integrar nada con Calendly.**
+
+La alternativa es mandar su link, que es el modo `ninguna`. Funciona y no cuesta implementarlo, pero tiene un costo real: **cada paso extra pierde gente.** El valor del agente está en cerrar la cita dentro de la conversación, mientras la persona está interesada — no en mandarla a otra página a las once de la noche.
 
 ---
 
