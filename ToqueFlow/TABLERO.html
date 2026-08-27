@@ -105,7 +105,7 @@ td strong{color:var(--ink);font-weight:650}
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Pieza</th><th>Por qué ahí</th><th>Quién</th></tr></thead><tbody>
 <tr><td class="id">14</td><td><strong>Cargador de conocimiento</strong></td><td>Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. <strong>20–40 h de las 45–90 actuales</strong></td><td>Diego</td></tr>
-<tr class="hecha"><td class="id">15</td><td><del>Tabla <code>agent_config</code> + RLS</del></td><td>✅ <strong>Escrito:</strong> <code>schema-agente.sql</code>. Incluye <code>agent_config</code>, <code>agent_knowledge</code> (con vista lista para el prompt) y <code>appointments</code>, con RLS y permisos mínimos para <code>n8n_worker</code>. <strong>Falta correrlo en Supabase</strong></td><td>Claude</td></tr>
+<tr class="hecha"><td class="id">15</td><td><del>Tabla <code>agent_config</code> + RLS</del></td><td>✅ <strong>Aplicado en Supabase el 27-ago.</strong> <code>agent_config</code>, <code>agent_knowledge</code> + vista, y <code>appointments</code>. RLS activo con 10 políticas, y <code>n8n_worker</code> con permisos mínimos: lee configuración y conocimiento, escribe citas, nunca borra</td><td>—</td></tr>
 <tr><td class="id">16</td><td>Workflow genérico de n8n</td><td>Uno solo parametrizado por <code>company_id</code>. Se acaban los workflows por cliente</td><td>Diego</td></tr>
 <tr><td class="id">17</td><td>Agenda simple</td><td>Franjas, duración por servicio, cupos simultáneos, bloqueos. <strong>No</strong> contra personas o recursos</td><td>Diego</td></tr>
 <tr><td class="id">18</td><td>Cron de recordatorios</td><td>Barato y es el mayor argumento de venta: el no-show duele en el bolsillo</td><td>Diego</td></tr>
