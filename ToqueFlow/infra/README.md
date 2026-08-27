@@ -26,7 +26,7 @@ Además reporta **cuál contenedor está consumiendo más**, para saber a quién
 
 Avisa **al cruzar** el umbral, no cada 15 minutos mientras siga cruzado. Y avisa otra vez cuando se recupera, para saber que ya pasó. Sin eso, la alerta se vuelve ruido y se ignora — que es como mueren todas las alertas.
 
-### Instalación
+### Instalación en el VPS
 
 ```bash
 mkdir -p /opt/toque
@@ -41,18 +41,72 @@ crontab -e
 # agregar:  */15 * * * * /opt/toque/alerta-recursos.sh
 ```
 
-### A dónde avisa
+**Sin webhook configurado el script igual funciona**: mide y deja todo en `/var/log/toque-alerta.log`.
 
-Editar `WEBHOOK_URL` dentro del script, o exportar `TOQUE_ALERTA_WEBHOOK`.
+---
 
-**Sin webhook configurado el script igual funciona**: mide y deja todo en `/var/log/toque-alerta.log`. Se puede instalar hoy y decidir el canal después.
+## El canal de aviso: correo desde hola@toqueflow.com
 
-El webhook recibe un JSON así:
+El flujo que recibe la alerta y manda el correo ya está en n8n: **`Toque - Alerta de Recursos del VPS`** (id `tDd8dhEhbg36jkJV`), validado sin errores y **desactivado** hasta completar la configuración.
+
+Hace: recibe el webhook → arma el correo → lo envía por SMTP → responde `ok`.
+
+### El dominio ya está listo para enviar
+
+Verificado el 27-ago. Hostinger lo configuró automáticamente al crear la casilla:
+
+| Registro | Estado |
+|---|---|
+| MX | `mx1.hostinger.com` (5) y `mx2.hostinger.com` (10) |
+| SPF | `v=spf1 include:_spf.mail.hostinger.com ~all` |
+| DKIM | 3 registros firmando |
+| DMARC | `v=DMARC1; p=none` |
+
+Eso es lo que decide si un correo llega a la bandeja o al spam. **No hace falta Gmail ni contraseñas de aplicación.**
+
+### Pasos
+
+**1. Credencial SMTP en n8n** — Credentials → New → SMTP:
+
+| Campo | Valor |
+|---|---|
+| Host | `smtp.hostinger.com` |
+| Port | `465` |
+| SSL/TLS | activado |
+| User | `hola@toqueflow.com` |
+| Password | la contraseña de la casilla |
+
+Es la misma contraseña con la que se entra al correo. Sin verificación en dos pasos de por medio.
+
+**2. En el nodo «Envía el correo»**
+Seleccionar la credencial. Remitente `hola@toqueflow.com`; destinatario el correo **personal** de cada socio, separados por coma.
+
+Las alertas van al correo personal a propósito: así no ensucian el buzón comercial, que es el que se va a estar revisando por las propuestas.
+
+**3. Activar el flujo** y copiar la URL de producción del webhook.
+
+**4. Pegar esa URL** en `WEBHOOK_URL` dentro de `alerta-recursos.sh`, subir el script al VPS y programar el cron.
+
+### Probar sin esperar a que falle algo
+
+```bash
+# editar MIN_RAM_MB=600  →  MIN_RAM_MB=99999
+/opt/toque/alerta-recursos.sh
+# debe llegar el correo de alerta
+
+# devolver el umbral a 600 y correrlo otra vez
+/opt/toque/alerta-recursos.sh
+# debe llegar el correo de "recuperado"
+```
+
+Si llegan los dos, el anti-spam funciona y queda listo.
+
+### Qué recibe el webhook
 
 ```json
 {
   "nivel": "alerta",
-  "texto": "⚠️ VPS ToqueFlow: RAM disponible en 480 MB (umbral 600). Mayor consumo: n8n-n8n-1 731MiB",
+  "texto": "VPS ToqueFlow: RAM disponible en 480 MB (umbral 600). Mayor consumo: n8n-n8n-1 731MiB",
   "ram_disponible_mb": 480,
   "swap_pct": 12,
   "disco_pct": 23,
@@ -66,49 +120,14 @@ RAM disponible 2,3 GB · swap 0% · disco 23%. Muy lejos de los umbrales, que es
 
 ---
 
-## Canal de aviso: correo
+## Datos del correo, para configurar clientes de correo
 
-El flujo que recibe la alerta y manda el correo ya está creado en n8n:
-**`Toque - Alerta de Recursos del VPS`** (id `tDd8dhEhbg36jkJV`), validado sin errores y **desactivado** hasta que se complete la configuración.
-
-El correo llega a cualquier dirección — Gmail, Hotmail, la que sea. Lo que hay que resolver es **desde qué cuenta se envía**.
-
-### Por qué Gmail y no Hotmail para enviar
-
-Microsoft viene desactivando la autenticación básica en cuentas personales de Outlook y Hotmail, así que un cliente SMTP con usuario y contraseña puede dejar de funcionar sin aviso. Gmail con contraseña de aplicación es estable.
-
-**Recibir** en Hotmail no tiene ningún problema. Es solo el envío.
-
-### Pasos
-
-**1. Contraseña de aplicación en Gmail**
-Requiere verificación en dos pasos activada. Luego: Cuenta de Google → Seguridad → Contraseñas de aplicaciones → generar una.
-
-**2. Credencial SMTP en n8n**
-Credentials → New → SMTP:
-
-| Campo | Valor |
+| | |
 |---|---|
-| Host | `smtp.gmail.com` |
-| Port | `465` |
-| SSL/TLS | activado |
-| User | tu correo de Gmail |
-| Password | la contraseña de aplicación (no la del correo) |
+| Casilla | `hola@toqueflow.com` |
+| SMTP (salida) | `smtp.hostinger.com` · 465 SSL |
+| IMAP (entrada) | `imap.hostinger.com` · 993 SSL |
+| **Límite de envío** | **100 correos por día** |
+| Alias por casilla | 5, más catch-all |
 
-**3. En el nodo «Envía el correo»**
-Seleccionar esa credencial y reemplazar los dos `CAMBIAR@gmail.com` por el remitente y el destinatario. En destinatario se pueden poner varios separados por coma, para que le llegue también a Ferney.
-
-**4. Activar el flujo** y copiar la URL de producción del webhook.
-
-**5. Pegar esa URL** en `WEBHOOK_URL` dentro de `alerta-recursos.sh`, subirlo al VPS y programar el cron.
-
-### Probar sin esperar a que falle algo
-
-Bajar temporalmente el umbral en el script para forzar una alerta:
-
-```bash
-# editar MIN_RAM_MB=600  →  MIN_RAM_MB=99999
-/opt/toque/alerta-recursos.sh
-# debe llegar el correo. Devolver el umbral a 600 y correrlo otra vez:
-# llega el correo de "recuperado", que confirma que el anti-spam funciona.
-```
+⚠️ **El límite de 100 diarios importa para la máquina de leads.** La fase manual contempla 25 correos al día, así que sobra. Pero cuando arranque el outbound automatizado ese es el techo de este plan: habría que subir de plan, o —lo recomendado en la estrategia— usar un dominio y proveedor aparte para el envío en frío, para no arriesgar la reputación del dominio principal.

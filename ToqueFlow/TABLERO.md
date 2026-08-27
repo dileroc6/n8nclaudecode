@@ -21,7 +21,7 @@
 | 2 | **Recotizar Zoe a $1.200.000 + $600.000/mes** — le pasaste $5.5M y nunca supiste si ese fue el freno | Ferney |
 | 3 | **Propuesta con precio y fecha a Savia y LuxeSmile** | Ferney |
 | 4 | **Revisar el extracto: ¿Vassco está pagando?** Cinco minutos. No se puede planear sin saber cuánto factura el negocio | Cualquiera |
-| 5 | 🚨 **El correo de tu sitio está muerto.** toqueflow.com no tiene registros MX ni servicio de correo. La página publica hola@toqueflow.com y ahí no llega nada. Ferney manda propuestas esta semana y la gente va a responder | Diego |
+| 5 | ~~El correo de tu sitio estaba muerto~~ | ✅ **Resuelto.** Casilla hola@toqueflow.com creada. Verificado: MX, SPF, DKIM y DMARC configurados automáticamente por Hostinger. El correo del sitio ya funciona | — |
 | 6 | **Arrancar el cargador de conocimiento** — el 40% del costo de implementar está ahí | Diego |
 | 7 | **¿Pueden facturar formalmente ya?** Si SM Grand dice que sí la otra semana, tienen que poder emitir factura. Un "podríamos manejarlo" se vuelve un freno en el peor momento | Ambos |
 | 8 | **Pasar los números exactos de Claude Max y del VPS** | Diego |
