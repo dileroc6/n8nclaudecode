@@ -3,11 +3,11 @@
 > Estado al **27 de agosto de 2026**, después del diagnóstico comercial.
 > Organizado por tema. Lo que decide el negocio está arriba; lo técnico heredado, abajo.
 
-**Dónde estamos:** un cliente pagando (Bejauha, $620.000/mes, 3 meses). Cinco implementaciones entregadas sin cobrar, tres de ellas muertas porque nadie pidió una decisión. Meta a 6 meses: 10 clientes pagando.
+**Dónde estamos:** un cliente pagando (Bejauha, $620.000/mes, 3 meses). Cinco implementaciones entregadas sin cobrar, tres de ellas muertas porque nadie pidió una decisión. Meta: **4.000.000 libres al mes** (2 millones cada socio) que son unos 9 clientes. **Hoy el negocio neto es cero:** lo que paga Bejauha cubre el VPS y Claude Max.
 
 **Las dos consecuencias que ordenan todo:**
 1. El problema no es el producto ni el mercado — **es que no se corre un proceso de venta.** Se arregla con calendario, no con código.
-2. **La meta de 10 clientes exige el producto estándar.** A 45–90 h cada uno son 450–900 horas; a 11–14 h son 120.
+2. **La meta exige el producto estándar.** Nueve clientes a 45–90 h son 400–800 horas; a 11–14 h son 110. Y **subir el precio es la única palanca que no cuesta horas.**
 
 **El reparto:** Ferney es dueño del cierre. Diego estandariza la entrega. Bolsillos de tiempo distintos, en paralelo.
 
@@ -22,6 +22,8 @@
 | 3 | **Propuesta con precio y fecha a Savia y LuxeSmile** | Ferney |
 | 4 | **Revisar el extracto: ¿Vassco está pagando?** Cinco minutos. No se puede planear sin saber cuánto factura el negocio | Cualquiera |
 | 5 | **Arrancar el cargador de conocimiento** — el 40% del costo de implementar está ahí | Diego |
+| 6 | **¿Pueden facturar formalmente ya?** Si SM Grand dice que sí la otra semana, tienen que poder emitir factura. Un "podríamos manejarlo" se vuelve un freno en el peor momento | Ambos |
+| 7 | **Pasar los números exactos de Claude Max y del VPS** | Diego |
 
 Plantilla lista en [estrategia/plantilla-propuesta.md](estrategia/plantilla-propuesta.md): correo, seguimiento en 4 toques, y la pregunta que hay que hacer cuando dicen que no.
 
@@ -31,11 +33,11 @@ Plantilla lista en [estrategia/plantilla-propuesta.md](estrategia/plantilla-prop
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 6 | Pedir dos referidos a Bejauha | Incentivo: un mes de operación gratis por referido que cierre | Ferney |
-| 7 | Fijar el precio y no moverlo | $1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes | Ambos |
-| 8 | Definir el techo de una demo gratis | Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana | Ambos |
-| 9 | Armar la lista del segmento | Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte | Ferney |
-| 10 | Cronometrar el próximo cliente, hora por hora | Es la hipótesis que decide si esto es negocio o empleo | Diego |
+| 8 | Pedir dos referidos a Bejauha | Incentivo: un mes de operación gratis por referido que cierre | Ferney |
+| 9 | Fijar el precio y no moverlo | $1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes | Ambos |
+| 10 | Definir el techo de una demo gratis | Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana | Ambos |
+| 11 | Armar la lista del segmento | Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte | Ferney |
+| 12 | Cronometrar el próximo cliente, hora por hora | Es la hipótesis que decide si esto es negocio o empleo | Diego |
 
 ---
 
@@ -48,12 +50,12 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Pieza | Por qué ahí | Quién |
 |---|---|---|---|
-| 11 | **Cargador de conocimiento** | Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. **20–40 h de las 45–90 actuales** | Diego |
-| 12 | Tabla `agent_config` + RLS | Una fila por empresa: tono, fuentes, campos, reglas, límites | Diego |
-| 13 | Workflow genérico de n8n | Uno solo parametrizado por `company_id`. Se acaban los workflows por cliente | Diego |
-| 14 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
-| 15 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |
-| 16 | Pantalla de configuración | Para no editar JSON a mano. Puede esperar al tercer cliente | Diego |
+| 13 | **Cargador de conocimiento** | Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. **20–40 h de las 45–90 actuales** | Diego |
+| 14 | Tabla `agent_config` + RLS | Una fila por empresa: tono, fuentes, campos, reglas, límites | Diego |
+| 15 | Workflow genérico de n8n | Uno solo parametrizado por `company_id`. Se acaban los workflows por cliente | Diego |
+| 16 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
+| 17 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |
+| 18 | Pantalla de configuración | Para no editar JSON a mano. Puede esperar al tercer cliente | Diego |
 
 ---
 
@@ -61,11 +63,11 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 17 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
-| 18 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
-| 19 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
-| 20 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
-| 21 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
+| 19 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
+| 20 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
+| 21 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
+| 22 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
+| 23 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
 
 ---
 
@@ -73,11 +75,11 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 22 | Rotar el token de Hostinger | Opcional. Quedó impreso en terminal, no se filtró | Diego |
-| 23 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 24 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 25 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 26 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 24 | Rotar el token de Hostinger | Opcional. Quedó impreso en terminal, no se filtró | Diego |
+| 25 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 26 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 27 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 28 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
@@ -85,12 +87,11 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Pregunta | Por qué importa |
 |---|---|---|
-| 27 | **¿La auditoría pagada aplica solo a prospectos fríos?** Mi propuesta: sí. A los cuatro tibios se les vende directo, sin paso intermedio; la auditoría de $450.000 es el filtro para desconocidos | Cambia el embudo según el origen del prospecto |
-| 28 | **¿Cuánto tendría que facturar el negocio para dejar el empleo?** Dijiste que la meta es esa; necesito el número | Define si el plan es de 6 meses o de 2 años |
-| 29 | **¿Qué es el trato con FerreteríaYa?** Trabajo a cambio de que el amigo de Ferney traiga clientes. ¿Cuántos ha traído? ¿Hasta cuándo va? | Es trabajo sin cobrar con retorno incierto |
-| 30 | **¿Cuánto cuesta el VPS de Evolution y quién lo paga?** | Es tu costo fijo por cliente. Sin ese número no hay margen calculable |
-| 31 | **¿Tienen con qué facturar y contratar formalmente?** Factura electrónica, cuenta, contrato simple | Una pyme seria no paga $1.200.000 sin factura |
-| 32 | **¿Quién atiende un cliente caído un martes a las 3 PM?** Los dos tienen empleo de tiempo completo | Con diez clientes esto deja de ser hipotético |
+| A | **¿Qué pasa si el trato con FerreteríaYa no trae clientes?** Arrancó hace poco. Sin un punto de revisión, «esperamos que traiga» es la misma espera pasiva que mató a Savia, Zoe y LuxeSmile. **Propongo: si a los 3 meses no ha traído uno que cierre, se renegocia** | Es trabajo sin cobrar con retorno incierto |
+| B | **¿Se prueba $800.000/mes en el cuarto cliente?** Los primeros tres van a $600.000 para tener tres datos comparables. A $800.000 la meta baja de 9 clientes a 7: mismo dinero, menos carga operativa | Con tiempo escaso, el precio es la única palanca que no cuesta horas |
+| C | **¿Cuándo se decide el respaldo del VPS?** Propongo fijarlo ahora: **antes del cliente cinco**, no cuando duela | Una caída tumba a todos los clientes a la vez |
+
+**Ya respondidas:** la auditoría pagada aplica solo a prospectos fríos · la meta son $4.000.000 libres al mes, no dejar el empleo (eso serían $40.000.000 y no es prioridad hoy) · los costos salen de lo que paga Bejauha · la facturación «se podría manejar», pendiente confirmarlo antes de que alguien diga que sí · las caídas las atiende cualquiera de los dos según su día, lo cual aguanta hasta el cliente cinco.
 
 ---
 

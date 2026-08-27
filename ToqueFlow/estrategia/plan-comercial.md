@@ -18,7 +18,7 @@ Ya no son supuestos. Este es el punto de partida real:
 | Horas por implementación | 45–90 h, de las cuales **20–40 solo en afinar el prompt** |
 | Cómo llegaron todos | Por Ferney, socio 50/50, que es quien tiene los contactos |
 | Dedicación | **Ambos con empleo de tiempo completo.** ~6 h diarias, noches y fines de semana |
-| Meta a 6 meses | 10 clientes pagando ($6.000.000/mes) |
+| Meta real | **$4.000.000 libres al mes** ($2M cada socio) ≈ 9 clientes a $600k. Dejar el empleo exigiria $40M y no es la prioridad ahora |
 
 **Las dos consecuencias que ordenan todo el plan:**
 
@@ -28,6 +28,59 @@ Ya no son supuestos. Este es el punto de partida real:
 **El reparto que tapa el hueco de la sociedad:** Ferney es dueño del cierre — propuestas, precios, seguimiento, el «¿lo hacemos?». Diego estandariza la entrega. Bolsillos de tiempo distintos, en paralelo, sin competir.
 
 **La regla que atraviesa las fases:** no se construye tecnología de *adquisición* hasta que un número lo justifique. La de *entrega* va primero, porque es el multiplicador de cada hora escasa.
+
+---
+
+## La economía real del negocio
+
+### Hoy: el negocio no gana nada
+
+Bejauha paga $620.000/mes y con eso se paga el VPS y Claude Max. Estimando esos costos:
+
+| Concepto | Estimado mensual |
+|---|---|
+| Claude Max | $400.000 – $800.000 |
+| VPS Hostinger (n8n + Evolution + Postgres) | $60.000 – $150.000 |
+| Supabase | $0 (plan gratuito) |
+| **Costo total** | **$460.000 – $950.000** |
+| **Ingreso** | **$620.000** |
+| **Neto** | **entre −$330.000 y +$160.000** |
+
+**El único cliente paga la infraestructura y nada más.** Bajo cualquier estimación razonable, hoy el negocio está en cero o en rojo leve. No es una crisis —los costos son bajos y hay empleo de por medio— pero conviene decirlo sin adornos: *todavía no hay negocio, hay una operación que se autofinancia*.
+
+⚠️ Faltan los números exactos de Claude Max y del VPS. Con ellos esta tabla deja de ser estimación.
+
+### La meta: $4.000.000 libres al mes
+
+$2.000.000 para cada socio. Con costos que crecen a ~$1.500.000/mes al llegar a diez clientes (más instancias de Evolution, Supabase saliendo del plan gratuito, más consumo de IA):
+
+| | Cálculo |
+|---|---|
+| Neto objetivo | $4.000.000 |
+| Costos estimados a esa escala | $1.500.000 |
+| **Facturación bruta necesaria** | **$5.500.000/mes** |
+| A $600.000 por cliente | **≈ 9 clientes** |
+
+La meta de diez clientes que pusiste no era arbitraria: **es exactamente la que produce los $4.000.000 libres.** Cuadra.
+
+Aparte, la activación de $1.200.000 × 10 clientes son **$12.000.000 de caja** repartidos a lo largo de la rampa. Ese dinero no es utilidad recurrente, pero es lo que financia la transición.
+
+### El precio es la única palanca que no cuesta horas
+
+Con empleo de tiempo completo, cada cliente nuevo cuesta horas que no tienen. Pero **subir el precio no cuesta ninguna**:
+
+| Escenario | Clientes | Bruto | Horas de implementación |
+|---|---|---|---|
+| $600.000/mes | 9 | $5.400.000 | 9 × 12 h = 108 h |
+| $800.000/mes | 7 | $5.600.000 | 7 × 12 h = **84 h** |
+| $1.000.000/mes | 6 | $6.000.000 | 6 × 12 h = **72 h** |
+
+**Menos clientes al mismo dinero, con menos carga operativa.** Con diez clientes son diez WhatsApps que pueden caerse un martes a las 3 PM; con seis son seis.
+
+Ahora, con cuidado: el único precio validado es el de Bejauha, $620.000. En las negociaciones reales aterrizaron en $350.000 y $450.000. Subir a $800.000 no está probado.
+
+**Recomendación:** mantener $600.000 en los primeros tres clientes —para tener tres datos comparables— y **probar $800.000 en el cuarto**. Si cierra igual, ese es el precio nuevo y la meta baja de nueve clientes a siete.
+
 
 ---
 
