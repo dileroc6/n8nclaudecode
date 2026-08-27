@@ -108,6 +108,23 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 ✅ **Resuelto abajo con la medición dentro del VPS.**
 
+### Ejecutado el 27-ago — crons de Zoe desactivados
+
+**Sin borrar nada.** Solo desactivados, reversibles en un clic si Zoe reactiva el negocio.
+
+| Workflow | Frecuencia que tenía | Estado |
+|---|---|---|
+| Zoe — WF5 OTP cron | cada 5 min · **288 ejecuciones/día** | ⏸️ Desactivado |
+| Zoe — WF4 Recordatorio 24h | diario 9 AM | ⏸️ Desactivado |
+| Zoe — WF7 Festivos cron anual | anual | ⏸️ Desactivado |
+
+**Efecto: se va el ~70% del volumen de ejecuciones diarias.** De unas 410 al día a unas 120.
+
+**Los que atienden WhatsApp quedaron activos a propósito** — WF1 Orquestador, WF2 Agendar, WF3 Reprogramar, WF6 Admin GPT. Solo consumen si alguien escribe, y **Ferney va a recotizar a Zoe esta semana**: si apagamos su bot justo ahora y alguien escribe, no responde nada. Esa decisión es de negocio, no técnica.
+
+**Hallazgo adicional:** el servidor trae los **100+ workflows de plantilla** de la imagen de n8n de Hostinger (nombres tipo `67-Automatic_Shopify_Order_Fulfillment`, de julio 2025). Están **inactivos**, así que no ejecutan, pero n8n igual los carga. Archivarlos podría bajar parte de los 731 MB que consume el contenedor.
+
+
 ### Resultado de la C1 — medido dentro del VPS el 27-ago
 
 **El 39% de la RAM del servidor se la está comiendo un cliente que nunca cerró.**
@@ -137,7 +154,7 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 | # | Acción | Efecto | Riesgo |
 |---|---|---|---|
 | 35 | **`docker stop zoe-metabase`** | Libera 1,5 GB al instante | Reversible con `docker start`. Verificar antes que nadie lo esté usando |
-| 36 | **Desactivar el cron OTP de Zoe en n8n** | Quita el 70% de las ejecuciones | Reversible en un clic |
+| 36 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
 | 37 | **Habilitar un archivo de swap de 2 GB** | Red de seguridad contra el OOM killer | Ninguno |
 | 38 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
 
@@ -196,13 +213,14 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 | # | Tarea | Nota |
 |---|---|---|
 | 45 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
-| 46 | ⚡ **Desactivar el cron OTP de Zoe** — quita el 70% del volumen en 30 segundos | Es la acción de mejor retorno de esta sección |
+| 46 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
 | 47 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
 | 48 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
-| 49 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 50 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
-| 51 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
-| 52 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
+| 49 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
+| 50 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
+| 51 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
+| 52 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
+| 53 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
 ---
 
@@ -210,11 +228,11 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 53 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 54 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 55 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 56 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 57 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 54 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 55 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 56 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 57 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 58 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
