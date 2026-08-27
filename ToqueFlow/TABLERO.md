@@ -70,7 +70,7 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 |---|---|---|
 | 22 | **Pantalla de alta de cliente** | Crear empresa, usuario y flows desde el portal. Hoy es correr un `seed-<cliente>.cjs` |
 | 23 | **Pantalla de configuración del agente** | Formularios que llenan `agent_config`: tono, campos a capturar, reglas de enrutamiento, límites |
-| 24 | **Carga de la fuente de conocimiento desde el portal** | Pegar la URL o subir el PDF y que quede listo, sin tocar la base |
+| 24 | **Carga de conocimiento desde el portal** | Pegar la URL **o el texto** y que quede listo. **Con el medidor de uso visible:** «Usas 12 KB de 40 KB», aviso al 75%, y al pasarse un mensaje comercial — nunca un bloqueo. La vista `agent_knowledge_prompt` ya devuelve `bytes_total`, `pct_usado` y `estado` |
 | 25 | **Panel de consumo por cliente** | Tokens, costo en USD y por mes. **Los datos ya existen:** la tabla `ai_usage` registra `input_tokens`, `output_tokens`, `cost_usd` y `model` por empresa desde hace rato. Falta solo la pantalla |
 | 26 | **Plantilla del PDF que entrega el cliente** | El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding |
 
