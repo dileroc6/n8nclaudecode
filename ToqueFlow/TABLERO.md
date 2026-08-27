@@ -106,16 +106,49 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 **La conclusión operativa:** el riesgo no es que diez clientes vivan en el mismo flujo de n8n — el CPU está en 4%. El riesgo es la **memoria**, porque cada cliente suma una conexión permanente de WhatsApp en Evolution que consume RAM todo el tiempo, y ya se está usando el 81% con uno solo.
 
-⚠️ **Con una advertencia importante:** esa métrica probablemente incluye la caché de Linux y de Postgres, que es memoria reclamable, no comprometida. Puede que el uso real sea bastante menor. **Por eso la primera tarea es medir adentro, no concluir desde afuera.**
+✅ **Resuelto abajo con la medición dentro del VPS.**
+
+### Resultado de la C1 — medido dentro del VPS el 27-ago
+
+**El 39% de la RAM del servidor se la está comiendo un cliente que nunca cerró.**
+
+| Contenedor | RAM | % del VPS | ¿Sirve a quien paga? |
+|---|---|---|---|
+| **zoe-metabase** | **1,505 GiB** | **39,4%** | **No. Zoe nunca cerró** |
+| n8n | 731 MiB | 18,7% | Sí |
+| evolution_api | 142 MiB | 3,6% | Sí |
+| evolution_postgres | 92 MiB | 2,3% | Sí |
+| traefik | 32 MiB | 0,8% | Sí |
+| redis | 8 MiB | 0,2% | Sí |
+| parqueadero-portal | 2 MiB | 0,06% | Otro proyecto |
+
+**Memoria del sistema:** 3,8 GiB totales · 3,1 GiB comprometidos · **777 MiB disponibles** · **sin swap**.
+**Disco:** 11 GB de 48 GB (23%). Sobra espacio; la tabla de ejecuciones de n8n no es un problema de almacenamiento.
+
+**Lo que significa:**
+
+1. **Metabase es un tablero de inteligencia de negocio corriendo sobre Java, instalado para los seis dashboards que se le prometieron a Zoe.** Zoe no pagó. Lleva desde mayo consumiendo 1,5 GB las 24 horas, y además es el contenedor que más CPU y más disco mueve del servidor.
+2. **Detenerlo libera el 39% de la RAM al instante** y sube lo disponible de 777 MiB a ~2,3 GB.
+3. **Con eso, el techo de capacidad prácticamente desaparece.** Evolution usa apenas 142 MB para atender su carga actual, así que sumar clientes cuesta muy poco. Las tareas de cotizar un VPS más grande y de partir la infraestructura **dejan de ser urgentes**.
+4. **No hay swap configurado.** Con 777 MiB disponibles, un pico puede activar el OOM killer y tumbar contenedores sin aviso. Un archivo de swap es un seguro de dos minutos.
+
+**Sumando con la W1: Zoe —el cliente que nunca cerró— es el mayor consumidor de la infraestructura.** Se lleva el 39% de la memoria con Metabase y el 70% de las ejecuciones con su cron de OTP.
+
+| # | Acción | Efecto | Riesgo |
+|---|---|---|---|
+| 35 | **`docker stop zoe-metabase`** | Libera 1,5 GB al instante | Reversible con `docker start`. Verificar antes que nadie lo esté usando |
+| 36 | **Desactivar el cron OTP de Zoe en n8n** | Quita el 70% de las ejecuciones | Reversible en un clic |
+| 37 | **Habilitar un archivo de swap de 2 GB** | Red de seguridad contra el OOM killer | Ninguno |
+| 38 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
 
 | # | Tarea | Nota |
 |---|---|---|
-| 35 | **Medir la memoria real dentro del VPS** | `free -h` y `docker stats`. Separar memoria comprometida de caché, y ver cuánto consume cada contenedor. Sin esto, el 81% es una señal, no un veredicto |
-| 36 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
-| 37 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
-| 38 | **Alerta automática de recursos** | Que un cron avise cuando la RAM pase el umbral, en vez de enterarse porque un cliente llamó. La API de Hostinger expone las métricas |
-| 39 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
-| 40 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
+| 39 | ~~Medir la memoria real dentro del VPS~~ | ✅ **Hecho.** 3,1 GiB comprometidos de 3,8. El 39% se lo lleva `zoe-metabase`, de un cliente que no pagó |
+| 40 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
+| 41 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
+| 42 | **Alerta automática de recursos** | Que un cron avise cuando la RAM pase el umbral, en vez de enterarse porque un cliente llamó. La API de Hostinger expone las métricas |
+| 43 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
+| 44 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
 
 ---
 
@@ -162,14 +195,14 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota |
 |---|---|---|
-| 41 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
-| 42 | ⚡ **Desactivar el cron OTP de Zoe** — quita el 70% del volumen en 30 segundos | Es la acción de mejor retorno de esta sección |
-| 43 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
-| 44 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
-| 45 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 46 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
-| 47 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
-| 48 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
+| 45 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
+| 46 | ⚡ **Desactivar el cron OTP de Zoe** — quita el 70% del volumen en 30 segundos | Es la acción de mejor retorno de esta sección |
+| 47 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
+| 48 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
+| 49 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
+| 50 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
+| 51 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
+| 52 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
 ---
 
@@ -177,11 +210,11 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 49 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 50 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 51 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 52 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 53 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 53 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 54 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 55 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 56 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 57 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
