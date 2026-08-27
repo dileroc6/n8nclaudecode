@@ -172,6 +172,7 @@ Deno.serve(async (req: Request) => {
   let crudo = "";
   let base: URL | null = null;
   let paginas: string[] = [];
+  let avisoJs = "";
   const modo: "web" | "manual" = body.texto ? "manual" : "web";
 
   if (modo === "manual") {
@@ -194,11 +195,31 @@ Deno.serve(async (req: Request) => {
       if (t.length > 200) partes.push("\n\n--- " + u + " ---\n" + t);
     }
     crudo = partes.join("\n").slice(0, MAX_BYTES_DOC * 3);
+
+    // Muchos sitios modernos (Next.js, React, Vue) arman el contenido en el
+    // navegador: el HTML que llega trae el armazón, no el texto. El caso real
+    // que lo destapó fue bejauha.com — la página de precios devuelve un 307 sin
+    // destino y un payload de React, así que los precios son invisibles.
+    //
+    // Fallar en silencio ahí es lo peor que puede pasar: se cargaría un
+    // documento bonito PERO SIN PRECIOS, y el agente saldría a producción
+    // respondiendo "no tengo esa información" a la pregunta más frecuente.
+    const pareceJs = /__next_f|__NEXT_DATA__|data-reactroot|ng-version|__NUXT__/.test(portadaHtml);
+
     if (crudo.length < 300) {
       return json({
-        error: "El sitio tiene muy poco texto legible — puede estar hecho en JavaScript. " +
-               "Copia la información del negocio y pégala en el campo de texto.",
+        error: pareceJs
+          ? "El sitio arma su contenido con JavaScript, así que no se puede leer desde afuera. Copia la información del negocio y pégala en el campo de texto."
+          : "El sitio tiene muy poco texto legible. Copia la información del negocio y pégala en el campo de texto.",
+        sitio_js: pareceJs,
       }, 422);
+    }
+
+    // Aviso, no error: hay algo de texto, pero probablemente falte lo importante.
+    if (pareceJs) {
+      avisoJs = "Este sitio usa JavaScript para mostrar parte de su contenido. " +
+                "Se leyó lo que estaba disponible, pero revisa el resultado: " +
+                "si faltan precios o servicios, pégalos en el campo de texto.";
     }
   }
 
@@ -277,6 +298,9 @@ Deno.serve(async (req: Request) => {
     paginas: paginas.length,
     paginas_leidas: paginas,
     bytes: documento.length,
+    limite_bytes: MAX_BYTES_DOC,
+    pct_usado: Math.round(documento.length * 100 / MAX_BYTES_DOC),
+    aviso: avisoJs || undefined,
     vista_previa: documento.slice(0, 600),
   });
 });

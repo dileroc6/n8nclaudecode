@@ -172,6 +172,28 @@ Contra 45–90 hoy. **Ese salto es todo el modelo de negocio.**
 
 ---
 
+## Lo que el raspado NO puede leer
+
+Probado el 27-ago contra `bejauha.com`, un cliente real. El resultado importa para la venta:
+
+| Página | Texto útil | Contiene |
+|---|---|---|
+| Portada | 1.843 caracteres | Copy de marketing, sin precios |
+| `/faq` | 1.044 caracteres | Las preguntas, pero **solo una respuesta** — el resto en un acordeón cerrado |
+| `/planes` | **0** | Devuelve 307 sin destino: el contenido lo arma React en el navegador |
+
+Unos 3 KB en total, **y sin los precios** — justo lo que más necesita un bot.
+
+**Los sitios modernos hechos en Next.js, React o Vue arman su contenido en el navegador**, así que el HTML que llega trae el armazón y no el texto. Es común, y va a pasar seguido.
+
+Consecuencias para el producto:
+
+1. **Pegar texto no es el plan B: para muchos clientes será el plan A.** La lista de precios ya existe en un WhatsApp o un Word; que la peguen es más rápido que cualquier integración.
+2. **El cargador detecta el caso y avisa.** Si encuentra marcas de JavaScript devuelve una advertencia explícita en vez de guardar un documento incompleto en silencio. Fallar callado sería lo peor: se cargaría un documento bonito **sin precios**, y el agente saldría a producción respondiendo «no tengo esa información» a la pregunta más frecuente.
+3. **En la venta, no prometer «solo danos tu web».** La pregunta correcta durante el onboarding es: *¿dónde está tu lista de precios actualizada?* — y la respuesta suele ser un documento, no el sitio.
+
+---
+
 ## La economía por mensaje: el caché es obligatorio
 
 El documento de conocimiento entra **en cada llamada al modelo**, no una sola vez. Eso convierte su tamaño en un costo recurrente por conversación, y es la razón real del límite de 40 KB — no la ventana de contexto.
