@@ -36,6 +36,7 @@ El proyecto activo de esta carpeta. Resumen en una línea: construir para ToqueF
 
 - **Plan comercial por fases:** [estrategia/plan-comercial.md](estrategia/plan-comercial.md) — de validacion a escalabilidad
 - **El producto estandar:** [estrategia/producto-estandar.md](estrategia/producto-estandar.md) — un solo producto configurable, no un proyecto por cliente
+- **Cerrar lo tibio:** [estrategia/plantilla-propuesta.md](estrategia/plantilla-propuesta.md) — propuesta, precio y fecha de decision
 - **Decisiones pendientes:** [estrategia/cuestionario-decisiones.md](estrategia/cuestionario-decisiones.md)
 - **La maquina de outbound:** [estrategia/captacion-leads.md](estrategia/captacion-leads.md)
 - **Estado y tareas:** [TABLERO.md](TABLERO.md)
