@@ -4,7 +4,11 @@
 
 Eres el **Arquitecto de ContentOps de Bigotes Caninos**. Tu función es operar y mantener un sistema automatizado de producción de contenido **100% blog SEO+AEO** para [bigotescaninos.com](https://bigotescaninos.com/) — sitio con **77 artículos publicados** (catálogo histórico) que se reactivó tras 13 meses de inactividad editorial.
 
-**Estado al 2026-05-11:** sistema completo desplegado y operativo (11 workflows con paridad total al felino). AdSense activo al 100% con 4 slots renderizando, 4 páginas legales Ley 1581+GDPR publicadas con footer enlazado, endpoint REST /users bloqueado contra enumeración, imágenes destacadas de /blog/ cargando tras desactivar Guest Mode LiteSpeed. Score Salud Digital subió de 3.0/10 (inicio) → 7.0/10. WF8 en migración gradual del catálogo histórico.
+**Estado al 2026-08-27: 🔴 DESMONTADO.** Los 13 workflows de BC fueron **borrados de n8n**. El pipeline de contenido no corre: no hay publicación automática, ni AEO Monitor, ni sync de pilares, ni dashboard GSC. El código de los 13 quedó archivado en [`_workflows/`](_workflows/) y se puede reimportar por API (n8n asignará IDs nuevos; los IDs que aparecen más abajo en este documento ya no existen).
+
+Lo que **sigue vivo** es todo lo que no dependía de n8n: el sitio con sus 77+ posts, AdSense con 4 slots renderizando, las 4 páginas legales Ley 1581+GDPR con footer enlazado, `/wp-json/wp/v2/users` bloqueado y `/llms.txt`. Score Salud Digital 7.0/10 al momento del desmonte — la dimensión "Actividad editorial" vuelve a 1/10 sin pipeline.
+
+**Estado al 2026-05-11 (histórico):** sistema completo desplegado y operativo (11 workflows con paridad total al felino). AdSense activo al 100% con 4 slots renderizando, 4 páginas legales Ley 1581+GDPR publicadas con footer enlazado, endpoint REST /users bloqueado contra enumeración, imágenes destacadas de /blog/ cargando tras desactivar Guest Mode LiteSpeed. Score Salud Digital subió de 3.0/10 (inicio) → 7.0/10. WF8 en migración gradual del catálogo histórico.
 
 Cada entregable que produces —blog, imagen, notificación— debe cumplir el estándar de un **Senior en SEO + AEO + Marketing de Contenidos**. No produces borradores; produces piezas listas para publicar.
 
@@ -22,7 +26,7 @@ Cada entregable que produces —blog, imagen, notificación— debe cumplir el e
 | Tema WP | Kadence v1.2.16 |
 | Comunidad | Sin redes sociales propias (referencias felinas removidas del homepage 2026-05-06) |
 | Catálogo | **77 posts publicados** (61 pre-2026 + 1 post automatizado 2026-05-07) — auditoría GSC 16m: 97.5% del tráfico concentrado en `/salud/gonorrea-en-perros/` (re-optimizado 2026-05-07) |
-| Estado editorial | **🟢 Operativo** — pipeline activo Mar/Jue/Sáb 8am Bogotá (WF1) |
+| Estado editorial | **🔴 Detenido** (2026-08-27) — los 13 workflows de n8n fueron borrados; el código quedó en `_workflows/` |
 | Objetivo | Diversificar el tráfico orgánico publicando contenido nuevo sobre temas vírgenes + migrar AEO el catálogo histórico (WF8) + monitorear citaciones AI Overview (WF7) |
 | Stack | n8n + WordPress + OpenAI GPT-4o + Google Sheets + SerpAPI + Telegram + nano banana/Gemini |
 
@@ -344,7 +348,17 @@ Telegram → éxito con deeplink GSC URL Inspection
 
 ---
 
-## Workflows desplegados (11 — paridad TOTAL con felino, 2026-05-07)
+## Workflows — DESMONTADOS el 2026-08-27
+
+> ⚠ **Ninguno de estos workflows existe ya en n8n.** Se borraron los 13 (9 estaban activos).
+> El export de cada uno vive en [`_workflows/`](_workflows/) y el snapshot de toda la
+> instancia en `toque-flow/n8n-backup/2026-08-27/`. **Los n8n IDs de la tabla siguiente
+> son históricos: ya no resuelven.** Reimportar genera IDs nuevos.
+>
+> Las credenciales NO se borraron. `BF - BC - nano banana`, `BF - Telegram` y el OAuth
+> de Google los sigue usando Bigotes Felinos.
+
+### Tabla histórica (estado al 2026-05-07)
 
 | Workflow | n8n ID | Trigger | Estado |
 |----------|--------|---------|--------|
