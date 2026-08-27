@@ -7,119 +7,69 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Audiowide&display=swap">
-
 <style>
 :root{
-  --brand-1:#c1272d;
-  --brand-2:#f15a24;
+  --brand-1:#c1272d; --brand-2:#f15a24;
   --grad:linear-gradient(135deg,#c1272d 0%,#f15a24 100%);
-
-  --bg:#ffffff;
-  --bg-2:#f6f6f4;
-  --ink:#0a2230;
-  --mute:rgba(10,34,48,.66);
-  --faint:rgba(10,34,48,.44);
-  --line:rgba(10,34,48,.13);
-  --line-soft:rgba(10,34,48,.07);
+  --bg:#ffffff; --ink:#0a2230;
+  --mute:rgba(10,34,48,.66); --faint:rgba(10,34,48,.44);
+  --line:rgba(10,34,48,.13); --line-soft:rgba(10,34,48,.07);
   --card:rgba(10,34,48,.022);
-
-  --crit:#c1272d;      --crit-bg:rgba(193,39,45,.075);
-  --warn:#a8611a;      --warn-bg:rgba(168,97,26,.085);
-  --hold:#4a6b7c;      --hold-bg:rgba(74,107,124,.09);
-  --done:#1c6b52;      --done-bg:rgba(28,107,82,.085);
-  --drop:rgba(10,34,48,.40); --drop-bg:rgba(10,34,48,.05);
-
+  --done:#1c6b52; --done-bg:rgba(28,107,82,.06);
   --sans:"Sora",ui-sans-serif,system-ui,sans-serif;
   --body:"Manrope",ui-sans-serif,system-ui,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --brandface:"Audiowide","Sora",sans-serif;
 }
-
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0a2230;
-    --bg-2:#0f2a3a;
-    --ink:#e9ecee;
-    --mute:rgba(233,236,238,.66);
-    --faint:rgba(233,236,238,.44);
-    --line:rgba(233,236,238,.15);
-    --line-soft:rgba(233,236,238,.08);
-    --card:rgba(255,255,255,.035);
-
-    --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
-    --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
-    --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
-    --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
-    --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#0a2230;
-  --bg-2:#0f2a3a;
-  --ink:#e9ecee;
-  --mute:rgba(233,236,238,.66);
-  --faint:rgba(233,236,238,.44);
-  --line:rgba(233,236,238,.15);
-  --line-soft:rgba(233,236,238,.08);
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a2230; --ink:#e9ecee;
+  --mute:rgba(233,236,238,.66); --faint:rgba(233,236,238,.44);
+  --line:rgba(233,236,238,.15); --line-soft:rgba(233,236,238,.08);
   --card:rgba(255,255,255,.035);
-
-  --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
-  --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
-  --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
-  --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
-  --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
+  --done:#5ecfa2; --done-bg:rgba(94,207,162,.07);
+}}
+:root[data-theme="dark"]{
+  --bg:#0a2230; --ink:#e9ecee;
+  --mute:rgba(233,236,238,.66); --faint:rgba(233,236,238,.44);
+  --line:rgba(233,236,238,.15); --line-soft:rgba(233,236,238,.08);
+  --card:rgba(255,255,255,.035);
+  --done:#5ecfa2; --done-bg:rgba(94,207,162,.07);
 }
-
 *{box-sizing:border-box}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--ink);
-  font-family:var(--body);
-  font-size:16px;
-  line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-}
-</style>
-<style>
-.wrap{max-width:1120px;margin:0 auto;padding:52px 24px 110px}
-.wrap h1{font-family:var(--sans);font-weight:700;font-size:clamp(2rem,5vw,2.9rem);line-height:1.06;letter-spacing:-.028em;margin:0 0 26px}
-.wrap h2{
-  font-family:var(--sans);font-weight:650;font-size:1.34rem;letter-spacing:-.022em;
-  margin:52px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);
-}
-.wrap h3{font-family:var(--sans);font-weight:600;font-size:1.02rem;margin:28px 0 10px}
-.wrap p{margin:0 0 14px;max-width:78ch;color:var(--ink)}
-.wrap blockquote{
-  border-left:3px solid;border-image:var(--grad) 1;
-  padding:2px 0 2px 20px;margin:0 0 20px;color:var(--mute);max-width:76ch;
-}
-.wrap ul,.wrap ol{max-width:78ch;margin:0 0 16px;padding-left:1.2em;color:var(--mute)}
-.wrap li{margin-bottom:7px}
-.wrap li strong,.wrap p strong{color:var(--ink);font-weight:650}
-.wrap hr{border:0;border-top:1px solid var(--line-soft);margin:34px 0}
-.wrap code{font-family:var(--mono);font-size:.85em;background:var(--card);border:1px solid var(--line-soft);border-radius:3px;padding:.08em .32em}
-.wrap a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--brand-2);text-underline-offset:3px}
-.wrap del{color:var(--faint)}
-
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:48px 24px 110px}
+.marca{font-family:var(--brandface);font-size:.78rem;letter-spacing:.05em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin:0 0 20px}
+h1{font-family:var(--sans);font-weight:700;font-size:clamp(2rem,5vw,2.9rem);line-height:1.06;letter-spacing:-.028em;margin:0 0 24px}
+h2{font-family:var(--sans);font-weight:650;font-size:1.32rem;letter-spacing:-.022em;margin:50px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+h3{font-family:var(--sans);font-weight:600;font-size:1.02rem;margin:28px 0 10px}
+p{margin:0 0 14px;max-width:80ch}
+blockquote{border-left:3px solid;border-image:var(--grad) 1;padding:2px 0 2px 20px;margin:0 0 20px;color:var(--mute);max-width:78ch}
+ul,ol{max-width:80ch;margin:0 0 16px;padding-left:1.2em;color:var(--mute)}
+li{margin-bottom:7px} li strong,p strong{color:var(--ink);font-weight:650}
+hr{border:0;border-top:1px solid var(--line-soft);margin:32px 0}
+code{font-family:var(--mono);font-size:.85em;background:var(--card);border:1px solid var(--line-soft);border-radius:3px;padding:.08em .32em}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--brand-2);text-underline-offset:3px}
+del{color:var(--faint)}
 .tw{overflow-x:auto;margin:0 0 22px;border:1px solid var(--line);border-radius:4px}
-.wrap table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
-.wrap th,.wrap td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-.wrap thead th{
-  font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--faint);font-weight:500;background:var(--card);border-bottom:1px solid var(--line);white-space:nowrap;
-}
-.wrap tbody tr:last-child td{border-bottom:0}
-.wrap td.id{font-family:var(--mono);font-size:.78rem;color:var(--faint);width:44px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.wrap table.tareas td:nth-child(2){min-width:230px}
-.wrap tr.hecha{background:var(--done-bg)}
-.wrap tr.hecha td.id{color:var(--done)}
-.wrap tr.hecha td:nth-child(2){color:var(--mute)}
-.wrap td strong{color:var(--ink);font-weight:650}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:540px}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:500;background:var(--card);border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.id{font-family:var(--mono);font-size:.78rem;color:var(--faint);width:46px;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.tareas td:nth-child(2){min-width:240px}
+tr.hecha{background:var(--done-bg)} tr.hecha td.id{color:var(--done)} tr.hecha td:nth-child(2){color:var(--mute)}
+td strong{color:var(--ink);font-weight:650}
+.tot{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin:0 0 8px;max-width:420px}
+.tot div{background:var(--bg);padding:14px 18px}
+.tot .n{font-family:var(--mono);font-size:1.7rem;font-weight:600;line-height:1;display:block;margin-bottom:5px}
+.tot .l{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.tot .ab .n{color:var(--brand-2)} .tot .ce .n{color:var(--done)}
 </style>
-
+</head>
+<body>
 <div class="wrap">
-<h1>ToqueFlow — Tablero</h1>
+<p class="marca">TOQUEFLOW</p>
+<h1>ToqueFlow — Tablero</h1><div class="tot"><div class="ab"><span class="n">53</span><span class="l">Abiertas</span></div><div class="ce"><span class="n">14</span><span class="l">Cerradas</span></div></div>
 <blockquote>Estado al <strong>27 de agosto de 2026</strong>, después del diagnóstico comercial. Organizado por tema. Lo que decide el negocio está arriba; lo técnico heredado, abajo.</blockquote>
 <p><strong>Dónde estamos:</strong> un cliente pagando (Bejauha, $620.000/mes, 3 meses). Cinco implementaciones entregadas sin cobrar, tres de ellas muertas porque nadie pidió una decisión. Meta: <strong>4.000.000 libres al mes</strong> (2 millones cada socio) que son unos 9 clientes. <strong>Hoy el negocio neto es cero:</strong> lo que paga Bejauha cubre el VPS y Claude Max.</p>
 <p><strong>Las dos consecuencias que ordenan todo:</strong> 1. El problema no es el producto ni el mercado — <strong>es que no se corre un proceso de venta.</strong> Se arregla con calendario, no con código. 2. <strong>La meta exige el producto estándar.</strong> Nueve clientes a 45–90 h son 400–800 horas; a 11–14 h son 110. Y <strong>subir el precio es la única palanca que no cuesta horas.</strong></p>
@@ -132,20 +82,21 @@ body{
 <tr><td class="id">2</td><td><strong>Recotizar Zoe a $1.200.000 + $600.000/mes</strong> — le pasaste $5.5M y nunca supiste si ese fue el freno</td><td>Ferney</td></tr>
 <tr><td class="id">3</td><td><strong>Propuesta con precio y fecha a Savia y LuxeSmile</strong></td><td>Ferney</td></tr>
 <tr><td class="id">4</td><td><strong>Revisar el extracto: ¿Vassco está pagando?</strong> Cinco minutos. No se puede planear sin saber cuánto factura el negocio</td><td>Cualquiera</td></tr>
-<tr><td class="id">5</td><td><strong>Arrancar el cargador de conocimiento</strong> — el 40% del costo de implementar está ahí</td><td>Diego</td></tr>
-<tr><td class="id">6</td><td><strong>¿Pueden facturar formalmente ya?</strong> Si SM Grand dice que sí la otra semana, tienen que poder emitir factura. Un "podríamos manejarlo" se vuelve un freno en el peor momento</td><td>Ambos</td></tr>
-<tr><td class="id">7</td><td><strong>Pasar los números exactos de Claude Max y del VPS</strong></td><td>Diego</td></tr>
+<tr class="hecha"><td class="id">5</td><td><del>El correo de tu sitio estaba muerto</del></td><td>✅ <strong>Resuelto.</strong> Casilla hola@toqueflow.com creada. Verificado: MX, SPF, DKIM y DMARC configurados automáticamente por Hostinger. El correo del sitio ya funciona</td><td>—</td></tr>
+<tr><td class="id">6</td><td><strong>Arrancar el cargador de conocimiento</strong> — el 40% del costo de implementar está ahí</td><td>Diego</td></tr>
+<tr><td class="id">7</td><td><strong>¿Pueden facturar formalmente ya?</strong> Si SM Grand dice que sí la otra semana, tienen que poder emitir factura. Un "podríamos manejarlo" se vuelve un freno en el peor momento</td><td>Ambos</td></tr>
+<tr><td class="id">8</td><td><strong>Pasar los números exactos de Claude Max y del VPS</strong></td><td>Diego</td></tr>
 </tbody></table></div>
 <p>Plantilla lista en <a href="estrategia/plantilla-propuesta.md">estrategia/plantilla-propuesta.md</a>: correo, seguimiento en 4 toques, y la pregunta que hay que hacer cuando dicen que no.</p>
 <hr>
 <h2>💰 Ventas</h2>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th><th>Quién</th></tr></thead><tbody>
-<tr><td class="id">8</td><td>Pedir dos referidos a Bejauha</td><td>Incentivo: un mes de operación gratis por referido que cierre</td><td>Ferney</td></tr>
-<tr><td class="id">9</td><td>Fijar el precio y no moverlo</td><td>$1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes</td><td>Ambos</td></tr>
-<tr><td class="id">10</td><td>Definir el techo de una demo gratis</td><td>Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana</td><td>Ambos</td></tr>
-<tr><td class="id">11</td><td>Armar la lista del segmento</td><td>Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte</td><td>Ferney</td></tr>
-<tr><td class="id">12</td><td>Cronometrar el próximo cliente, hora por hora</td><td>Es la hipótesis que decide si esto es negocio o empleo</td><td>Diego</td></tr>
+<tr><td class="id">9</td><td>Pedir dos referidos a Bejauha</td><td>Incentivo: un mes de operación gratis por referido que cierre</td><td>Ferney</td></tr>
+<tr><td class="id">10</td><td>Fijar el precio y no moverlo</td><td>$1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes</td><td>Ambos</td></tr>
+<tr><td class="id">11</td><td>Definir el techo de una demo gratis</td><td>Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana</td><td>Ambos</td></tr>
+<tr><td class="id">12</td><td>Armar la lista del segmento</td><td>Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte</td><td>Ferney</td></tr>
+<tr><td class="id">13</td><td>Cronometrar el próximo cliente, hora por hora</td><td>Es la hipótesis que decide si esto es negocio o empleo</td><td>Diego</td></tr>
 </tbody></table></div>
 <hr>
 <h2>🏗️ Producto estándar</h2>
@@ -153,40 +104,42 @@ body{
 <p><strong>En orden de retorno sobre hora invertida:</strong></p>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Pieza</th><th>Por qué ahí</th><th>Quién</th></tr></thead><tbody>
-<tr><td class="id">13</td><td><strong>Cargador de conocimiento</strong></td><td>Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. <strong>20–40 h de las 45–90 actuales</strong></td><td>Diego</td></tr>
-<tr><td class="id">14</td><td>Tabla <code>agent_config</code> + RLS</td><td>Una fila por empresa: tono, fuentes, campos, reglas, límites</td><td>Diego</td></tr>
-<tr><td class="id">15</td><td>Workflow genérico de n8n</td><td>Uno solo parametrizado por <code>company_id</code>. Se acaban los workflows por cliente</td><td>Diego</td></tr>
-<tr><td class="id">16</td><td>Agenda simple</td><td>Franjas, duración por servicio, cupos simultáneos, bloqueos. <strong>No</strong> contra personas o recursos</td><td>Diego</td></tr>
-<tr><td class="id">17</td><td>Cron de recordatorios</td><td>Barato y es el mayor argumento de venta: el no-show duele en el bolsillo</td><td>Diego</td></tr>
-<tr><td class="id">18</td><td>Pantalla de configuración</td><td>Para no editar JSON a mano. Puede esperar al tercer cliente</td><td>Diego</td></tr>
-<tr><td class="id">19</td><td><strong>El cliente edita su propio conocimiento desde el portal</strong></td><td>Si cambia un precio, que lo cambie él sin depender de ustedes. Es lo que evita que cada ajuste menor te consuma una hora</td><td>Diego</td></tr>
+<tr><td class="id">14</td><td><strong>Cargador de conocimiento</strong></td><td>Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. <strong>20–40 h de las 45–90 actuales</strong></td><td>Diego</td></tr>
+<tr><td class="id">15</td><td>Tabla <code>agent_config</code> + RLS</td><td>Una fila por empresa: tono, fuentes, campos, reglas, límites</td><td>Diego</td></tr>
+<tr><td class="id">16</td><td>Workflow genérico de n8n</td><td>Uno solo parametrizado por <code>company_id</code>. Se acaban los workflows por cliente</td><td>Diego</td></tr>
+<tr><td class="id">17</td><td>Agenda simple</td><td>Franjas, duración por servicio, cupos simultáneos, bloqueos. <strong>No</strong> contra personas o recursos</td><td>Diego</td></tr>
+<tr><td class="id">18</td><td>Cron de recordatorios</td><td>Barato y es el mayor argumento de venta: el no-show duele en el bolsillo</td><td>Diego</td></tr>
+<tr><td class="id">19</td><td>Pantalla de configuración</td><td>Para no editar JSON a mano. Puede esperar al tercer cliente</td><td>Diego</td></tr>
+<tr><td class="id">20</td><td><strong>El cliente edita su propio conocimiento desde el portal</strong></td><td>Si cambia un precio, que lo cambie él sin depender de ustedes. Es lo que evita que cada ajuste menor te consuma una hora</td><td>Diego</td></tr>
 </tbody></table></div>
 <hr>
 <h2>🖥️ Consola de administración de ToqueFlow</h2>
 <p>Que dar de alta y configurar un cliente se haga <strong>desde el portal, sin correr código</strong>. Hoy cada alta es un script y cada configuración es editar JSON a mano.</p>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th></tr></thead><tbody>
-<tr><td class="id">20</td><td><strong>Pantalla de alta de cliente</strong></td><td>Crear empresa, usuario y flows desde el portal. Hoy es correr un <code>seed-&lt;cliente&gt;.cjs</code></td></tr>
-<tr><td class="id">21</td><td><strong>Pantalla de configuración del agente</strong></td><td>Formularios que llenan <code>agent_config</code>: tono, campos a capturar, reglas de enrutamiento, límites</td></tr>
-<tr><td class="id">22</td><td><strong>Carga de la fuente de conocimiento desde el portal</strong></td><td>Pegar la URL o subir el PDF y que quede listo, sin tocar la base</td></tr>
-<tr><td class="id">23</td><td><strong>Panel de consumo por cliente</strong></td><td>Tokens, costo en USD y por mes. <strong>Los datos ya existen:</strong> la tabla <code>ai_usage</code> registra <code>input_tokens</code>, <code>output_tokens</code>, <code>cost_usd</code> y <code>model</code> por empresa desde hace rato. Falta solo la pantalla</td></tr>
-<tr><td class="id">24</td><td><strong>Plantilla del PDF que entrega el cliente</strong></td><td>El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding</td></tr>
+<tr><td class="id">21</td><td><strong>Pantalla de alta de cliente</strong></td><td>Crear empresa, usuario y flows desde el portal. Hoy es correr un <code>seed-&lt;cliente&gt;.cjs</code></td></tr>
+<tr><td class="id">22</td><td><strong>Pantalla de configuración del agente</strong></td><td>Formularios que llenan <code>agent_config</code>: tono, campos a capturar, reglas de enrutamiento, límites</td></tr>
+<tr><td class="id">23</td><td><strong>Carga de la fuente de conocimiento desde el portal</strong></td><td>Pegar la URL o subir el PDF y que quede listo, sin tocar la base</td></tr>
+<tr><td class="id">24</td><td><strong>Panel de consumo por cliente</strong></td><td>Tokens, costo en USD y por mes. <strong>Los datos ya existen:</strong> la tabla <code>ai_usage</code> registra <code>input_tokens</code>, <code>output_tokens</code>, <code>cost_usd</code> y <code>model</code> por empresa desde hace rato. Falta solo la pantalla</td></tr>
+<tr><td class="id">25</td><td><strong>Plantilla del PDF que entrega el cliente</strong></td><td>El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding</td></tr>
 </tbody></table></div>
 <p><strong>Orden:</strong> la <strong>23 primero</strong> (es un documento, cuesta una tarde y la necesitas en la primera venta). La <strong>22 después</strong> (los datos ya están, es solo leerlos). Las 19–21 cuando duela configurar a mano — realistamente al tercer cliente.</p>
 <hr>
 <h2>🖼️ Sitio y operación</h2>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th><th>Quién</th></tr></thead><tbody>
-<tr><td class="id">25</td><td><strong>El logo y el favicon dan 404 en producción</strong></td><td>Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal</td><td>Diego</td></tr>
-<tr><td class="id">26</td><td>Resembrar <code>last-good-site.zip</code> cuando el logo vuelva</td><td>El punto de restauración actual no tiene imágenes</td><td>Claude</td></tr>
-<tr><td class="id">27</td><td><strong>Configurar <code>VASSCO_SHARED_SECRET</code></strong> y redesplegar las dos edge functions</td><td>La de Vassco deja de responder hasta que se haga</td><td>Diego</td></tr>
-<tr><td class="id">28</td><td><strong>Plan de respaldo del VPS de Evolution</strong></td><td>Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. <strong>Decidir antes del cliente cinco</strong></td><td>Diego</td></tr>
-<tr><td class="id">29</td><td>Encender WhatsApp en Bejauha</td><td>Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo</td><td>Diego</td></tr>
-<tr><td class="id">30</td><td><strong>Protocolo de cambios del flujo compartido</strong></td><td>Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo</td><td>Diego</td></tr>
-<tr><td class="id">31</td><td><strong>Manejo de errores aislado por ejecución</strong></td><td>Que la config mala de un cliente no tumbe la ejecución de otro, más un <code>Error Trigger</code> que avise</td><td>Diego</td></tr>
-<tr><td class="id">32</td><td><strong>Tomar un snapshot manual del VPS</strong></td><td>Consultado hoy: <strong>no hay ninguno</strong> (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto</td><td>Diego</td></tr>
-<tr><td class="id">33</td><td><strong>Escribir el documento de recuperación</strong></td><td>Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza</td><td>Diego</td></tr>
-<tr><td class="id">34</td><td><strong>Probar la restauración una vez</strong></td><td>Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo</td><td>Diego</td></tr>
+<tr><td class="id">26</td><td><strong>El logo y el favicon dan 404 en producción</strong></td><td>Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal</td><td>Diego</td></tr>
+<tr><td class="id">27</td><td>Resembrar <code>last-good-site.zip</code> cuando el logo vuelva</td><td>El punto de restauración actual no tiene imágenes</td><td>Claude</td></tr>
+<tr><td class="id">28</td><td><strong>Configurar <code>VASSCO_SHARED_SECRET</code></strong> y redesplegar las dos edge functions</td><td>La de Vassco deja de responder hasta que se haga</td><td>Diego</td></tr>
+<tr><td class="id">29</td><td><strong>Plan de respaldo del VPS de Evolution</strong></td><td>Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. <strong>Decidir antes del cliente cinco</strong></td><td>Diego</td></tr>
+<tr><td class="id">30</td><td>Encender WhatsApp en Bejauha</td><td>Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo</td><td>Diego</td></tr>
+<tr><td class="id">31</td><td><strong>Verificar cuántos workflows quedan tras la limpieza</strong></td><td>El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después</td><td>Claude</td></tr>
+<tr class="hecha"><td class="id">32</td><td><del>Alerta automática de recursos</del></td><td>✅ <strong>Funcionando.</strong> Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam</td><td>—</td></tr>
+<tr><td class="id">33</td><td><strong>Protocolo de cambios del flujo compartido</strong></td><td>Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo</td><td>Diego</td></tr>
+<tr><td class="id">34</td><td><strong>Manejo de errores aislado por ejecución</strong></td><td>Que la config mala de un cliente no tumbe la ejecución de otro, más un <code>Error Trigger</code> que avise</td><td>Diego</td></tr>
+<tr><td class="id">35</td><td><strong>Tomar un snapshot manual del VPS</strong></td><td>Consultado hoy: <strong>no hay ninguno</strong> (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto</td><td>Diego</td></tr>
+<tr><td class="id">36</td><td><strong>Escribir el documento de recuperación</strong></td><td>Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza</td><td>Diego</td></tr>
+<tr><td class="id">37</td><td><strong>Probar la restauración una vez</strong></td><td>Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo</td><td>Diego</td></tr>
 </tbody></table></div>
 <hr>
 <h2>📊 Capacidad: cuánto aguanta el flujo compartido</h2>
@@ -199,15 +152,71 @@ body{
 <tr><td>Uptime</td><td>144 días</td><td>Estable</td></tr>
 </tbody></table></div>
 <p><strong>La conclusión operativa:</strong> el riesgo no es que diez clientes vivan en el mismo flujo de n8n — el CPU está en 4%. El riesgo es la <strong>memoria</strong>, porque cada cliente suma una conexión permanente de WhatsApp en Evolution que consume RAM todo el tiempo, y ya se está usando el 81% con uno solo.</p>
-<p>⚠️ <strong>Con una advertencia importante:</strong> esa métrica probablemente incluye la caché de Linux y de Postgres, que es memoria reclamable, no comprometida. Puede que el uso real sea bastante menor. <strong>Por eso la primera tarea es medir adentro, no concluir desde afuera.</strong></p>
+<p>✅ <strong>Resuelto abajo con la medición dentro del VPS.</strong></p>
+<h3>Ejecutado el 27-ago — crons de Zoe desactivados</h3>
+<p><strong>Sin borrar nada.</strong> Solo desactivados, reversibles en un clic si Zoe reactiva el negocio.</p>
+<div class="tw"><table>
+<thead><tr><th>Workflow</th><th>Frecuencia que tenía</th><th>Estado</th></tr></thead><tbody>
+<tr><td>Zoe — WF5 OTP cron</td><td>cada 5 min · <strong>288 ejecuciones/día</strong></td><td>⏸️ Desactivado</td></tr>
+<tr><td>Zoe — WF4 Recordatorio 24h</td><td>diario 9 AM</td><td>⏸️ Desactivado</td></tr>
+<tr><td>Zoe — WF7 Festivos cron anual</td><td>anual</td><td>⏸️ Desactivado</td></tr>
+</tbody></table></div>
+<p><strong>Efecto: se va el ~70% del volumen de ejecuciones diarias.</strong> De unas 410 al día a unas 120.</p>
+<p><strong>Los que atienden WhatsApp quedaron activos a propósito</strong> — WF1 Orquestador, WF2 Agendar, WF3 Reprogramar, WF6 Admin GPT. Solo consumen si alguien escribe, y <strong>Ferney va a recotizar a Zoe esta semana</strong>: si apagamos su bot justo ahora y alguien escribe, no responde nada. Esa decisión es de negocio, no técnica.</p>
+<p><strong>Hallazgo adicional:</strong> el servidor trae los <strong>100+ workflows de plantilla</strong> de la imagen de n8n de Hostinger (nombres tipo <code>67-Automatic_Shopify_Order_Fulfillment</code>, de julio 2025). Están <strong>inactivos</strong>, así que no ejecutan, pero n8n igual los carga. Archivarlos podría bajar parte de los 731 MB que consume el contenedor.</p>
+<h3>Resultado de la C1 — medido dentro del VPS el 27-ago</h3>
+<p><strong>El 39% de la RAM del servidor se la está comiendo un cliente que nunca cerró.</strong></p>
+<div class="tw"><table>
+<thead><tr><th>Contenedor</th><th>RAM</th><th>% del VPS</th><th>¿Sirve a quien paga?</th></tr></thead><tbody>
+<tr><td><strong>zoe-metabase</strong></td><td><strong>1,505 GiB</strong></td><td><strong>39,4%</strong></td><td><strong>No. Zoe nunca cerró</strong></td></tr>
+<tr><td>n8n</td><td>731 MiB</td><td>18,7%</td><td>Sí</td></tr>
+<tr><td>evolution_api</td><td>142 MiB</td><td>3,6%</td><td>Sí</td></tr>
+<tr><td>evolution_postgres</td><td>92 MiB</td><td>2,3%</td><td>Sí</td></tr>
+<tr><td>traefik</td><td>32 MiB</td><td>0,8%</td><td>Sí</td></tr>
+<tr><td>redis</td><td>8 MiB</td><td>0,2%</td><td>Sí</td></tr>
+<tr><td>parqueadero-portal</td><td>2 MiB</td><td>0,06%</td><td>Otro proyecto</td></tr>
+</tbody></table></div>
+<p><strong>Memoria del sistema:</strong> 3,8 GiB totales · 3,1 GiB comprometidos · <strong>777 MiB disponibles</strong> · <strong>sin swap</strong>. <strong>Disco:</strong> 11 GB de 48 GB (23%). Sobra espacio; la tabla de ejecuciones de n8n no es un problema de almacenamiento.</p>
+<p><strong>Lo que significa:</strong></p>
+<ol><li><strong>Metabase es un tablero de inteligencia de negocio corriendo sobre Java, instalado para los seis dashboards que se le prometieron a Zoe.</strong> Zoe no pagó. Lleva desde mayo consumiendo 1,5 GB las 24 horas, y además es el contenedor que más CPU y más disco mueve del servidor.</li><li><strong>Detenerlo libera el 39% de la RAM al instante</strong> y sube lo disponible de 777 MiB a ~2,3 GB.</li><li><strong>Con eso, el techo de capacidad prácticamente desaparece.</strong> Evolution usa apenas 142 MB para atender su carga actual, así que sumar clientes cuesta muy poco. Las tareas de cotizar un VPS más grande y de partir la infraestructura <strong>dejan de ser urgentes</strong>.</li><li><strong>No hay swap configurado.</strong> Con 777 MiB disponibles, un pico puede activar el OOM killer y tumbar contenedores sin aviso. Un archivo de swap es un seguro de dos minutos.</li></ol>
+<p><strong>Sumando con la W1: Zoe —el cliente que nunca cerró— es el mayor consumidor de la infraestructura.</strong> Se lleva el 39% de la memoria con Metabase y el 70% de las ejecuciones con su cron de OTP.</p>
+<div class="tw"><table class="tareas">
+<thead><tr><th>#</th><th>Acción</th><th>Efecto</th><th>Riesgo</th></tr></thead><tbody>
+<tr class="hecha"><td class="id">38</td><td><del>docker stop zoe-metabase</del></td><td>✅ <strong>Hecho el 27-ago.</strong> Liberó 1,6 GiB. Reversible con <code>docker start zoe-metabase</code></td><td>—</td></tr>
+<tr class="hecha"><td class="id">39</td><td><del>Desactivar los crons de Zoe</del></td><td>✅ <strong>Hecho.</strong> Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones</td><td>—</td></tr>
+<tr class="hecha"><td class="id">40</td><td><del>Habilitar swap de 2 GB</del></td><td>✅ <strong>Hecho.</strong> Activo, 0 usado</td><td>—</td></tr>
+<tr><td class="id">41</td><td><strong>Decidir qué se hace con los datos de Metabase</strong></td><td>Si Zoe no vuelve, el volumen también se libera</td><td>Confirmar antes de borrar nada</td></tr>
+</tbody></table></div>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th></tr></thead><tbody>
-<tr><td class="id">35</td><td><strong>Medir la memoria real dentro del VPS</strong></td><td><code>free -h</code> y <code>docker stats</code>. Separar memoria comprometida de caché, y ver cuánto consume cada contenedor. Sin esto, el 81% es una señal, no un veredicto</td></tr>
-<tr><td class="id">36</td><td><strong>Definir el umbral de upgrade antes de que duela</strong></td><td>Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga</td></tr>
-<tr><td class="id">37</td><td><strong>Cotizar el KVM 2 y meterlo en el margen</strong></td><td>El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta</td></tr>
-<tr><td class="id">38</td><td><strong>Alerta automática de recursos</strong></td><td>Que un cron avise cuando la RAM pase el umbral, en vez de enterarse porque un cliente llamó. La API de Hostinger expone las métricas</td></tr>
-<tr><td class="id">39</td><td><strong>Revisar los límites de concurrencia antes del cliente cinco</strong></td><td>El pool de Postgres del rol <code>n8n_worker</code> está en <code>maxConnections=4</code>. Con más clientes y campañas simultáneas puede quedar corto</td></tr>
-<tr><td class="id">40</td><td><strong>Decidir el plan de partición si un VPS no alcanza</strong></td><td>Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando</td></tr>
+<tr class="hecha"><td class="id">42</td><td><del>Medir la memoria real dentro del VPS</del></td><td>✅ <strong>Hecho.</strong> 3,1 GiB comprometidos de 3,8. El 39% se lo lleva <code>zoe-metabase</code>, de un cliente que no pagó</td></tr>
+<tr><td class="id">43</td><td><strong>Definir el umbral de upgrade antes de que duela</strong></td><td>Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga</td></tr>
+<tr><td class="id">44</td><td><strong>Cotizar el KVM 2 y meterlo en el margen</strong></td><td>El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta</td></tr>
+<tr class="hecha"><td class="id">45</td><td><del>Alerta automática de recursos</del></td><td>✅ <strong>Escrita.</strong> Ver la sección de infraestructura. Pendiente instalarla en el VPS</td></tr>
+<tr><td class="id">46</td><td><strong>Revisar los límites de concurrencia antes del cliente cinco</strong></td><td>El pool de Postgres del rol <code>n8n_worker</code> está en <code>maxConnections=4</code>. Con más clientes y campañas simultáneas puede quedar corto</td></tr>
+<tr><td class="id">47</td><td><strong>Decidir el plan de partición si un VPS no alcanza</strong></td><td>Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando</td></tr>
+</tbody></table></div>
+<hr>
+<h3>✅ Cerrado el 27-ago — la capacidad dejó de ser un problema</h3>
+<p><strong>Ejecutado:</strong> <code>docker stop zoe-metabase</code> + swap de 2 GB.</p>
+<div class="tw"><table>
+<thead><tr><th></th><th>Antes</th><th>Después</th></tr></thead><tbody>
+<tr><td>Memoria usada</td><td>3,1 GiB</td><td><strong>1,5 GiB</strong></td></tr>
+<tr><td><strong>Disponible</strong></td><td><strong>777 MiB</strong></td><td><strong>2,3 GiB</strong></td></tr>
+<tr><td>Swap</td><td>ninguno</td><td><strong>2,0 GiB activo, 0 usado</strong></td></tr>
+<tr><td>Ejecuciones diarias</td><td>~410</td><td><strong>~120</strong></td></tr>
+</tbody></table></div>
+<p>Se liberaron <strong>1,6 GiB</strong> — algo más que Metabase, porque también soltó caché.</p>
+<p><strong>Qué significa para el plan:</strong> Evolution atiende su carga actual con 142 MB. Con 2,3 GB disponibles más 2 GB de swap, <strong>el VPS aguanta los 9 clientes de la meta sin upgrade.</strong> El techo que preocupaba no era el diseño del flujo compartido ni la base de datos: era un tablero de Java corriendo para un cliente que nunca pagó.</p>
+<p><strong>Tareas de capacidad que se cierran o bajan de prioridad:</strong></p>
+<div class="tw"><table>
+<thead><tr><th>Tarea</th><th>Nuevo estado</th></tr></thead><tbody>
+<tr class="hecha"><td>Medir la memoria real dentro del VPS</td><td>✅ Hecho</td></tr>
+<tr><td>Definir el umbral de upgrade</td><td>🟡 Baja a: revisar al cliente 8, no antes</td></tr>
+<tr><td>Cotizar el KVM 2</td><td>🟡 <strong>Ya no urgente.</strong> No hace falta para llegar a la meta</td></tr>
+<tr><td>Decidir cómo partir la infraestructura</td><td>🟡 <strong>Ya no urgente</strong></td></tr>
+<tr><td>Alerta automática de recursos</td><td>🟠 Sigue valiendo: avisa antes de que duela</td></tr>
+<tr><td>Revisar el pool de Postgres (<code>maxConnections=4</code>)</td><td>🟠 Sigue en pie, es otro límite distinto</td></tr>
 </tbody></table></div>
 <hr>
 <h2>🧹 Los 85 workflows activos en n8n</h2>
@@ -227,25 +236,63 @@ body{
 </tbody></table></div>
 <p><strong>Por qué importa más que la base de datos:</strong> un workflow activo con cron <strong>se despierta y se ejecuta solo</strong>. Ahí hay crons de Zoe (festivos, OTP), de los blogs (sincronización diaria de pilares, dashboard semanal de GSC), recordatorios y reportes del sistema viejo. <strong>Están corriendo para clientes que no pagan.</strong></p>
 <p>⚠️ <strong>Y varios de los de blogs SEO llaman a modelos de IA.</strong> Si alguno corre en cron y genera contenido, está gastando dinero real cada semana sin que nadie lo mire. Eso hay que revisarlo antes que cualquier otra cosa de esta lista.</p>
+<h3>Resultado de la W1 — revisado el 27-ago</h3>
+<p><strong>La buena noticia: no hay sangrado de dinero en IA.</strong> El workflow de blog SEO —el candidato obvio, 38 nodos— corre a diario a las 11:00 pero <strong>termina en 3 segundos</strong>, demasiado rápido para haber generado contenido. Sale temprano, probablemente porque no hay nada pendiente.</p>
+<p><strong>Lo que sí hay es volumen desperdiciado.</strong> Midiendo los IDs de ejecución: unas <strong>410 ejecuciones al día</strong>, y así se reparten:</p>
+<div class="tw"><table>
+<thead><tr><th>Workflow</th><th>Frecuencia</th><th>Al día</th><th>¿Sirve a quien paga?</th></tr></thead><tbody>
+<tr><td><strong>Zoe — WF5 OTP cron</strong></td><td>cada 5 min</td><td><strong>288 (70%)</strong></td><td><strong>No.</strong> Corriendo desde mayo para un cliente que nunca cerró</td></tr>
+<tr><td>WF-05 Recordatorios (sistema viejo)</td><td>cada 30 min</td><td>48</td><td>No. Es el legado «pausado»</td></tr>
+<tr><td>Agente FerreteríaYa 3.3</td><td>por webhook</td><td>~50</td><td>Tráfico real: alguien lo está usando</td></tr>
+<tr><td>Blog SEO (BF - WF1)</td><td>diario 11:00</td><td>2</td><td><strong>Falla todos los días</strong> desde al menos el 25-ago, en silencio</td></tr>
+<tr><td>Resto</td><td>—</td><td>~20</td><td>Varios</td></tr>
+</tbody></table></div>
+<p><strong>El costo real no es dinero en IA: es carga de Postgres.</strong> Cada ejecución escribe una fila en la base que vive <strong>en el mismo VPS de 4 GB</strong>. 288 ejecuciones diarias inútiles desde mayo son decenas de miles de filas, y eso conecta directo con la pregunta de la RAM.</p>
+<p><strong>Con desactivar un solo workflow —el OTP de Zoe— se va el 70% del volumen.</strong> Es la acción de mejor retorno de toda esta sección y toma treinta segundos.</p>
+<p><strong>Y un hallazgo aparte:</strong> FerreteríaYa tiene tráfico real y constante. Es el único de los que no pagan que se está usando de verdad — vale la pena saber quién lo usa y para qué antes de apagar nada suyo.</p>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th></tr></thead><tbody>
-<tr><td class="id">41</td><td><strong>Revisar qué workflows con cron llaman a IA y cuánto gastan</strong></td><td>Es la única tarea de esta sección que puede estar costando plata hoy. Va primero</td></tr>
-<tr><td class="id">42</td><td><strong>Inventariar los 85 y marcar cuáles se apagan</strong></td><td>Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros</td></tr>
-<tr><td class="id">43</td><td><strong>Desactivar, no borrar</strong></td><td>Reversible. Si Savia o Zoe cierran, se reactivan en un clic</td></tr>
-<tr><td class="id">44</td><td><strong>Borrar las 5 copias de <code>_test_exceljs_tmp</code></strong></td><td>Basura de una prueba de mayo. Esas sí se borran</td></tr>
-<tr><td class="id">45</td><td><strong>Medir la RAM antes y después de desactivar</strong></td><td>Es la forma de saber cuánto libera de verdad, en vez de suponer</td></tr>
-<tr><td class="id">46</td><td><strong>Revisar si el Postgres del VPS sigue haciendo falta</strong></td><td>Evolution <strong>sí</strong> lo necesita para sus sesiones. Los esquemas viejos (<code>bejauha*</code>, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan <strong>disco</strong>; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde</td></tr>
-<tr><td class="id">47</td><td><strong>Ajustar la configuración de Postgres para un VPS de 4 GB</strong></td><td>Si <code>shared_buffers</code> quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos</td></tr>
+<tr class="hecha"><td class="id">48</td><td><del>Revisar qué workflows con cron llaman a IA</del></td><td>✅ <strong>Hecho.</strong> Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró</td></tr>
+<tr class="hecha"><td class="id">49</td><td><del>Desactivar el cron OTP de Zoe</del></td><td>✅ <strong>Hecho el 27-ago</strong></td></tr>
+<tr><td class="id">50</td><td><strong>Inventariar los 85 y marcar cuáles se apagan</strong></td><td>Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros</td></tr>
+<tr class="hecha"><td class="id">51</td><td><del>Desactivar, no borrar</del></td><td>✅ <strong>Criterio aplicado.</strong> Todo lo de Zoe quedó pausado sin borrar nada</td></tr>
+<tr><td class="id">52</td><td><strong>Archivar los 100+ workflows de plantilla de Hostinger</strong></td><td>Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB</td></tr>
+<tr><td class="id">53</td><td><strong>Borrar las 5 copias de <code>_test_exceljs_tmp</code></strong></td><td>Basura de una prueba de mayo. Esas sí se borran</td></tr>
+<tr class="hecha"><td class="id">54</td><td><del>Medir la RAM antes y después</del></td><td>✅ <strong>Hecho.</strong> De 777 MB disponibles a 2,3 GB</td></tr>
+<tr><td class="id">55</td><td><strong>Revisar si el Postgres del VPS sigue haciendo falta</strong></td><td>Evolution <strong>sí</strong> lo necesita para sus sesiones. Los esquemas viejos (<code>bejauha*</code>, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan <strong>disco</strong>; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde</td></tr>
+<tr><td class="id">56</td><td><strong>Ajustar la configuración de Postgres para un VPS de 4 GB</strong></td><td>Si <code>shared_buffers</code> quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos</td></tr>
 </tbody></table></div>
 <hr>
 <h2>🔐 Seguridad e higiene</h2>
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Tarea</th><th>Nota</th><th>Quién</th></tr></thead><tbody>
-<tr class="hecha"><td class="id">48</td><td><del>Regenerar el token de Hostinger</del></td><td>✅ <strong>Hecho y verificado:</strong> HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — <strong>hay que reiniciar Claude Code</strong> para que lo tome</td><td>—</td></tr>
-<tr><td class="id">49</td><td>Limpiar el historial de git</td><td>Opcional. Exige <code>push --force</code></td><td>Diego</td></tr>
-<tr><td class="id">50</td><td>Skill <code>/nuevo-flow</code></td><td>Encoda el contrato y el modo prueba obligatorio</td><td>Claude</td></tr>
-<tr><td class="id">51</td><td>Skill <code>/migracion</code></td><td>SQL numerado e idempotente</td><td>Claude</td></tr>
-<tr><td class="id">52</td><td>Instalar Python</td><td>Opcional, un solo script de Bejauha</td><td>Diego</td></tr>
+<tr class="hecha"><td class="id">57</td><td><del>Regenerar el token de Hostinger</del></td><td>✅ <strong>Hecho y verificado:</strong> HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — <strong>hay que reiniciar Claude Code</strong> para que lo tome</td><td>—</td></tr>
+<tr><td class="id">58</td><td>Limpiar el historial de git</td><td>Opcional. Exige <code>push --force</code></td><td>Diego</td></tr>
+<tr><td class="id">59</td><td>Skill <code>/nuevo-flow</code></td><td>Encoda el contrato y el modo prueba obligatorio</td><td>Claude</td></tr>
+<tr><td class="id">60</td><td>Skill <code>/migracion</code></td><td>SQL numerado e idempotente</td><td>Claude</td></tr>
+<tr><td class="id">61</td><td>Instalar Python</td><td>Opcional, un solo script de Bejauha</td><td>Diego</td></tr>
+</tbody></table></div>
+<hr>
+<h2>🟡 Todo lo de Zoe, pausado sin borrar</h2>
+<p>Zoe nunca cerró, pero seguía consumiendo infraestructura por tres vías distintas. Todo quedó <strong>pausado y reversible</strong> el 27-ago, por si el negocio se reactiva — Ferney lo va a recotizar esta semana.</p>
+<div class="tw"><table>
+<thead><tr><th>Qué</th><th>Consumía</th><th>Estado</th><th>Cómo se revierte</th></tr></thead><tbody>
+<tr><td><code>zoe-metabase</code></td><td><strong>1,5 GB de RAM (39% del VPS)</strong>, 24 h al día desde mayo</td><td>⏸️ Detenido</td><td><code>docker start zoe-metabase</code></td></tr>
+<tr><td>Cron OTP (cada 5 min)</td><td><strong>288 ejecuciones diarias</strong>, 70% del total</td><td>⏸️ Desactivado</td><td>Activar el workflow en n8n</td></tr>
+<tr><td>Cron Recordatorio 24 h</td><td>diario</td><td>⏸️ Desactivado</td><td>Ídem</td></tr>
+<tr><td>Cron Festivos</td><td>anual</td><td>⏸️ Desactivado</td><td>Ídem</td></tr>
+<tr><td>Respaldo diario del esquema</td><td>112 archivos, 30 MB acumulados</td><td>⏸️ Comentado en el crontab</td><td>Quitar el <code>#</code> de la línea</td></tr>
+</tbody></table></div>
+<p><strong>Lo que sigue vivo a propósito:</strong> los cuatro workflows de Zoe que atienden WhatsApp (WF1 Orquestador, WF2 Agendar, WF3 Reprogramar, WF6 Admin GPT). Solo consumen si alguien escribe, y apagarlos justo antes de recotizar sería una decisión de negocio, no técnica.</p>
+<p><strong>Los 112 respaldos siguen intactos</strong> en <code>/backups</code>. No se borró nada.</p>
+<p><strong>Efecto total:</strong> de 777 MB de RAM disponible a 2,3 GB, y de ~410 ejecuciones diarias a ~120.</p>
+<hr>
+<h2>🤝 Sociedad y exposición</h2>
+<div class="tw"><table class="tareas">
+<thead><tr><th>#</th><th>Tarea</th><th>Nota</th><th>Quién</th></tr></thead><tbody>
+<tr><td class="id">62</td><td><strong>Pasar el repositorio de GitHub a privado</strong></td><td>Hoy <code>dileroc6/n8nclaudecode</code> es <strong>público</strong>. Ahí está: que solo Bejauha paga y cuánto, que Zoe rechazó los $5.500.000 y que se le va a recotizar $1.200.000, que SM Grand está en negociación, la estructura de precios y el piso, el reparto 50/50 y los datos tributarios de Vassco. <strong>Ventana de riesgo:</strong> Ferney manda propuestas esta semana; si un prospecto busca «ToqueFlow» encuentra el precio de respaldo y que es el único caliente. Settings → General → Danger Zone → Change visibility. 30 segundos, no rompe nada. *Aplazado por decisión del 27-ago*</td><td>Diego</td></tr>
+<tr><td class="id">63</td><td><strong>Dar acceso del repo a Ferney</strong></td><td>Es socio al 50% y el repo es el negocio: la plataforma, la estrategia y el tablero que le asigna tareas. Settings → Collaborators. Ojo: va a leer el diagnóstico de ventas, que lo toca directamente — mejor contárselo antes</td><td>Diego</td></tr>
+<tr><td class="id">64</td><td><strong>Gestor de contraseñas compartido</strong></td><td>Más importante que el acceso al repo. <code>credentials.env</code>, el token de Hostinger, la llave de n8n y la contraseña del correo <strong>viven solo en la máquina de Diego</strong>. Si le pasa algo, Ferney no puede desplegar el sitio, ni dar de alta un cliente, ni entrar a Supabase: el negocio se detiene. Bitwarden gratis resuelve. 15 minutos</td><td>Ambos</td></tr>
 </tbody></table></div>
 <hr>
 <h2>❓ Preguntas abiertas</h2>
@@ -265,3 +312,5 @@ body{
 <h2>Referencias</h2>
 <ul><li><a href="estrategia/plan-comercial.md">estrategia/plan-comercial.md</a> — las cinco fases con puerta de salida</li><li><a href="estrategia/producto-estandar.md">estrategia/producto-estandar.md</a> — el Agente de Atención</li><li><a href="estrategia/plantilla-propuesta.md">estrategia/plantilla-propuesta.md</a> — cómo se cierra</li><li><a href="estrategia/captacion-leads.md">estrategia/captacion-leads.md</a> — la máquina de outbound, para cuando toque</li><li><a href="estrategia/cuestionario-decisiones.md">estrategia/cuestionario-decisiones.md</a> — las decisiones ya tomadas</li></ul>
 </div>
+</body>
+</html>
