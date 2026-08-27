@@ -32,10 +32,30 @@ create table if not exists public.agent_config (
   -- { nunca: [...], escalar_si: [...] }  — los límites duros del agente
   limites      jsonb not null default '{}',
 
-  -- null o {} = el cliente NO usa agenda; el agente solo captura y enruta.
-  -- { franjas: [{dias,desde,hasta}], servicios: [{nombre,duracion_min,cupos_simultaneos}],
+  -- LA AGENDA TIENE TRES MODOS. Elegir mal es la fuente #1 de dolor:
+  --
+  --   "google"  (por defecto) — la verdad vive en el Google Calendar QUE EL
+  --             NEGOCIO YA USA. El agente lee disponibilidad de ahí y escribe
+  --             ahí. Evita el problema de las dos agendas: que el bot ofrezca
+  --             las 3 PM mientras la recepcionista ya puso a alguien a las 3.
+  --             Requiere conectar la cuenta una vez (OAuth, 2 minutos).
+  --
+  --   "propia"  — solo para negocios SIN calendario digital. La verdad vive en
+  --             `appointments` y el negocio adopta el portal como su agenda.
+  --             Ojo: implica cambiarle el proceso al cliente. Cuesta más
+  --             vender y más sostener.
+  --
+  --   "ninguna" — el agente NO agenda: captura la solicitud y la enruta a un
+  --             humano. Es una opción legítima y la más barata de operar.
+  --
+  -- { modo, calendar_id, zona_horaria,
+  --   franjas: [{dias,desde,hasta}],
+  --   servicios: [{nombre,duracion_min,cupos_simultaneos}],
   --   anticipacion_min_horas, bloqueos: [{desde,hasta,motivo}] }
-  agenda       jsonb not null default '{}',
+  --
+  -- Con modo "google", `franjas` sigue valiendo: acota EN QUÉ HORARIO puede
+  -- ofrecer el agente, aunque el calendario esté libre a las 11 de la noche.
+  agenda       jsonb not null default '{"modo":"ninguna"}',
 
   -- { confirmacion_al_agendar, recordatorio_horas_antes, pedir_confirmacion,
   --   avisar_negocio_si_no_confirma }
@@ -121,6 +141,11 @@ create table if not exists public.appointments (
 
   origen      text default 'agente',          -- agente | manual | importado
   notas       text,
+
+  -- Con agenda en modo "google", la VERDAD vive en Google Calendar y esta fila
+  -- es un espejo: sirve para el panel del cliente, las métricas y el cron de
+  -- recordatorios, pero no manda. Si hay conflicto, gana el calendario.
+  gcal_event_id text,
   metadata    jsonb not null default '{}',
 
   created_at  timestamptz not null default now(),
@@ -208,20 +233,24 @@ begin
 end $$;
 
 
--- ── 6. Disponibilidad: por qué no hay tabla ──────────────────────────────────
--- Las franjas horarias, la duración por servicio y los cupos viven en
--- agent_config.agenda, no en una tabla aparte. Razón: son configuración, no
--- datos — cambian cuando el negocio cambia sus horarios, no con cada cita.
--- Una tabla de slots pregenerados habría que mantenerla y limpiarla.
+-- ── 6. Disponibilidad: por qué no hay tabla de horarios ──────────────────────
+-- Las franjas, la duración por servicio y los cupos viven en agent_config.agenda,
+-- no en una tabla aparte. Son CONFIGURACIÓN, no datos: cambian cuando el negocio
+-- cambia su horario, no con cada cita. Una tabla de slots pregenerados habría
+-- que mantenerla y limpiarla.
 --
--- Para saber si un horario está libre se cuentan las citas que se cruzan:
+-- CON MODO "google" (el recomendado): la disponibilidad se consulta contra el
+-- Google Calendar del negocio. `appointments` es un espejo para el panel, las
+-- métricas y los recordatorios; si hay conflicto, gana el calendario.
+--
+-- CON MODO "propia": se cuentan las citas que se cruzan con el rango:
 --
 --   select count(*) from appointments
---   where company_id = $1 and estado in ('propuesta','confirmada')
+--   where company_id = $1 and estado in (propuesta,confirmada)
 --     and tstzrange(inicio, fin) && tstzrange($2, $3);
 --
 -- Si ese número es menor que cupos_simultaneos del servicio, hay lugar.
 --
--- LÍMITE DEL PRODUCTO ESTÁNDAR: cupos, no personas. Asignar «la terapeuta
--- María en la sede norte» es el módulo de agenda avanzada, cotizado aparte.
--- Fue exactamente donde se dispararon las horas en Zoe.
+-- LÍMITE DEL PRODUCTO ESTÁNDAR, en los dos modos: cupos, no personas. Asignar
+-- «la terapeuta María en la sede norte» es el módulo de agenda avanzada,
+-- cotizado aparte. Fue exactamente donde se dispararon las horas en Zoe.
