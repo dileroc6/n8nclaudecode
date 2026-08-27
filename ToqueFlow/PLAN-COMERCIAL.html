@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plan Comercial ToqueFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Audiowide&display=swap">
+
+<style>
+:root{
+  --brand-1:#c1272d;
+  --brand-2:#f15a24;
+  --grad:linear-gradient(135deg,#c1272d 0%,#f15a24 100%);
+
+  --bg:#ffffff;
+  --bg-2:#f6f6f4;
+  --ink:#0a2230;
+  --mute:rgba(10,34,48,.66);
+  --faint:rgba(10,34,48,.44);
+  --line:rgba(10,34,48,.13);
+  --line-soft:rgba(10,34,48,.07);
+  --card:rgba(10,34,48,.022);
+
+  --crit:#c1272d;      --crit-bg:rgba(193,39,45,.075);
+  --warn:#a8611a;      --warn-bg:rgba(168,97,26,.085);
+  --hold:#4a6b7c;      --hold-bg:rgba(74,107,124,.09);
+  --done:#1c6b52;      --done-bg:rgba(28,107,82,.085);
+  --drop:rgba(10,34,48,.40); --drop-bg:rgba(10,34,48,.05);
+
+  --sans:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --body:"Manrope",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --brandface:"Audiowide","Sora",sans-serif;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a2230;
+    --bg-2:#0f2a3a;
+    --ink:#e9ecee;
+    --mute:rgba(233,236,238,.66);
+    --faint:rgba(233,236,238,.44);
+    --line:rgba(233,236,238,.15);
+    --line-soft:rgba(233,236,238,.08);
+    --card:rgba(255,255,255,.035);
+
+    --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
+    --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
+    --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
+    --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
+    --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a2230;
+  --bg-2:#0f2a3a;
+  --ink:#e9ecee;
+  --mute:rgba(233,236,238,.66);
+  --faint:rgba(233,236,238,.44);
+  --line:rgba(233,236,238,.15);
+  --line-soft:rgba(233,236,238,.08);
+  --card:rgba(255,255,255,.035);
+
+  --crit:#ff7a6e;      --crit-bg:rgba(255,122,110,.11);
+  --warn:#e6a75c;      --warn-bg:rgba(230,167,92,.11);
+  --hold:#8fb3c4;      --hold-bg:rgba(143,179,196,.11);
+  --done:#5ecfa2;      --done-bg:rgba(94,207,162,.11);
+  --drop:rgba(233,236,238,.40); --drop-bg:rgba(255,255,255,.05);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px 110px}
+
+/* masthead */
+.top{padding:56px 0 30px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.mark{
+  font-family:var(--brandface);
+  font-size:.78rem;letter-spacing:.05em;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  margin:0 0 22px;
+}
+.top h1{
+  font-family:var(--sans);font-weight:700;
+  font-size:clamp(1.95rem,5vw,3rem);
+  line-height:1.06;letter-spacing:-.028em;margin:0 0 14px;
+}
+.top .sub{color:var(--mute);margin:0 0 28px;max-width:62ch;font-size:1.03rem}
+.top .sub code{font-family:var(--mono);font-size:.86em}
+
+/* counters */
+.counts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+@media (min-width:640px){.counts{grid-template-columns:repeat(4,1fr)}}
+.ct{background:var(--bg);padding:15px 17px}
+.ct .n{font-family:var(--mono);font-size:1.72rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;display:block;margin-bottom:6px}
+.ct .l{font-family:var(--mono);font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+.ct.c-crit .n{color:var(--crit)} .ct.c-warn .n{color:var(--warn)}
+.ct.c-hold .n{color:var(--hold)} .ct.c-done .n{color:var(--done)}
+
+/* groups */
+.group{margin-top:46px}
+.ghead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.ghead h2{font-family:var(--sans);font-weight:650;font-size:1.24rem;letter-spacing:-.02em;margin:0}
+.ghead .gc{font-family:var(--mono);font-size:.72rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.gnote{color:var(--mute);font-size:.93rem;margin:0 0 16px;max-width:70ch}
+
+.list{border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.row{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  gap:0 12px;
+  padding:15px 17px 15px 14px;
+  border-bottom:1px solid var(--line-soft);
+  border-left:3px solid transparent;
+  background:var(--bg);
+}
+.row:last-child{border-bottom:0}
+@media (min-width:760px){
+  .row{grid-template-columns:36px minmax(0,1fr) 140px}
+}
+.row .id{font-family:var(--mono);font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:3px}
+.row .ttl{font-family:var(--sans);font-weight:600;font-size:.985rem;letter-spacing:-.012em;margin:0 0 4px;text-wrap:balance}
+.row .det{font-size:.895rem;color:var(--mute);margin:0}
+.row .det code{font-family:var(--mono);font-size:.85em;background:var(--card);border:1px solid var(--line-soft);border-radius:3px;padding:.08em .3em}
+.row .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;padding-top:2px;margin-top:9px}
+@media (min-width:760px){.row .meta{margin-top:2px;justify-content:flex-end}}
+
+.chip{
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;white-space:nowrap;font-weight:500;
+}
+.chip.who{background:var(--card);color:var(--mute);border:1px solid var(--line)}
+.chip.st-crit{background:var(--crit-bg);color:var(--crit)}
+.chip.st-warn{background:var(--warn-bg);color:var(--warn)}
+.chip.st-hold{background:var(--hold-bg);color:var(--hold)}
+.chip.st-done{background:var(--done-bg);color:var(--done)}
+.chip.st-drop{background:var(--drop-bg);color:var(--drop)}
+
+.row.r-crit{border-left-color:var(--crit)}
+.row.r-warn{border-left-color:var(--warn)}
+.row.r-hold{border-left-color:var(--hold)}
+.row.r-done{border-left-color:var(--done)}
+.row.r-drop{border-left-color:transparent}
+.row.r-done .ttl,.row.r-drop .ttl{font-weight:550}
+
+/* callout */
+.note{
+  border-left:3px solid var(--crit);
+  background:var(--crit-bg);
+  padding:14px 17px;border-radius:0 4px 4px 0;
+  margin:16px 0 0;max-width:74ch;
+}
+.note p{margin:0;font-size:.91rem}
+.note .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--crit);font-weight:600;display:block;margin-bottom:5px}
+
+/* order */
+.order{margin-top:52px;border-top:1px solid var(--line);padding-top:30px}
+.order h2{font-family:var(--sans);font-weight:650;font-size:1.24rem;letter-spacing:-.02em;margin:0 0 16px}
+.steps{list-style:none;padding:0;margin:0;counter-reset:s;display:flex;flex-direction:column;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:26px 1fr;gap:13px;max-width:74ch}
+.steps li::before{
+  content:counter(s);
+  font-family:var(--mono);font-size:.78rem;font-weight:600;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--grad);color:#fff;
+  display:grid;place-items:center;margin-top:1px;
+}
+.steps b{font-family:var(--sans);font-weight:600;font-size:.99rem;letter-spacing:-.01em;display:block;margin-bottom:1px}
+.steps span{font-size:.9rem;color:var(--mute)}
+
+footer{margin-top:46px;border-top:1px solid var(--line);padding-top:20px;font-size:.83rem;color:var(--faint);max-width:74ch}
+footer p{margin:0 0 6px}
+footer code{font-family:var(--mono);font-size:.9em}
+</style>
+
+<style>
+.phase{margin-top:52px;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.phase>header{padding:20px 24px 18px;border-bottom:1px solid var(--line);background:var(--card)}
+.phase .pn{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brand-2);font-weight:600;margin:0 0 6px}
+.phase h2{font-family:var(--sans);font-weight:650;font-size:1.42rem;letter-spacing:-.022em;margin:0 0 8px}
+.phase .when{font-family:var(--mono);font-size:.74rem;color:var(--faint);margin:0}
+.phase .obj{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
+.phase .obj p{margin:0 0 10px;font-size:1.02rem;max-width:66ch}
+.phase .obj p:last-child{margin:0}
+.phase .obj b{font-family:var(--sans);font-weight:650}
+.cols{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:800px){.cols{grid-template-columns:1fr 1fr}}
+.col{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
+@media(min-width:800px){.col.left{border-right:1px solid var(--line-soft)}}
+.col h3{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px;font-weight:600}
+.col.do h3{color:var(--done)} .col.dont h3{color:var(--crit)}
+.col ul{list-style:none;padding:0;margin:0}
+.col li{display:grid;grid-template-columns:14px 1fr;gap:9px;font-size:.9rem;color:var(--mute);margin-bottom:9px;line-height:1.5}
+.col li:last-child{margin-bottom:0}
+.col.do li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--done);margin-top:8px}
+.col.dont li::before{content:'';width:7px;height:1.5px;background:var(--crit);margin-top:10px}
+.col li b{color:var(--ink);font-weight:600}
+.strip{padding:16px 24px;border-bottom:1px solid var(--line-soft);display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+.strip .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.strip .v{font-size:.89rem;color:var(--mute)}
+.mtx{padding:18px 24px;border-bottom:1px solid var(--line-soft)}
+.mtx h3{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 11px;font-weight:600}
+.mtx .row2{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:.9rem}
+.mtx .row2:last-child{border-bottom:0}
+.mtx .row2 span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500;white-space:nowrap}
+.gate{padding:18px 24px;background:var(--warn-bg);border-left:3px solid var(--warn)}
+.gate .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600;display:block;margin-bottom:6px}
+.gate p{margin:0 0 8px;font-size:.93rem;max-width:70ch}
+.gate p:last-child{margin:0}
+.gate b{font-family:var(--sans);font-weight:650}
+.assume{border:1px solid var(--line);border-radius:4px;padding:18px 22px;margin:26px 0 0;background:var(--card)}
+.assume h3{font-family:var(--sans);font-weight:600;font-size:1rem;margin:0 0 8px}
+.assume p{font-size:.92rem;color:var(--mute);margin:0 0 10px;max-width:72ch}
+.assume p:last-child{margin:0}
+.hard{margin-top:56px;border-top:1px solid var(--line);padding-top:30px}
+.hard h2{font-family:var(--sans);font-weight:650;font-size:1.3rem;letter-spacing:-.02em;margin:0 0 6px}
+.hard>p{color:var(--mute);font-size:.95rem;margin:0 0 20px;max-width:70ch}
+.hard ol{list-style:none;padding:0;margin:0;counter-reset:h;display:flex;flex-direction:column;gap:15px}
+.hard li{counter-increment:h;display:grid;grid-template-columns:26px 1fr;gap:13px;max-width:74ch}
+.hard li::before{content:counter(h);font-family:var(--mono);font-size:.78rem;font-weight:600;width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;margin-top:1px}
+.hard b{font-family:var(--sans);font-weight:650;display:block;margin-bottom:1px}
+.hard span{font-size:.91rem;color:var(--mute)}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="mark">TOQUEFLOW</p>
+  <h1>Plan comercial</h1>
+  <p class="sub">De idea a escalabilidad, en cinco fases con puerta de salida en cada una. La regla que las atraviesa: <strong>no se construye tecnologia nueva hasta que un numero lo justifique</strong>.</p>
+  <div class="counts">
+    <div class="ct c-crit"><span class="n">30</span><span class="l">Dias sin construir</span></div>
+    <div class="ct c-warn"><span class="n">1</span><span class="l">Vertical</span></div>
+    <div class="ct c-hold"><span class="n">100</span><span class="l">Correos a mano</span></div>
+    <div class="ct c-done"><span class="n">450k</span><span class="l">La prueba real</span></div>
+  </div>
+  <div class="assume">
+    <h3>Sobre que esta construido</h3>
+    <p>Faltan cinco datos que cambian el plan: <b>cuanto pago cada cliente actual, cuantos siguen pagando, si la propuesta de Zoe se cerro, cuantas horas costo cada implementacion y como llego cada cliente.</b> Hasta tenerlos, se asume lo conservador: pagos irregulares, ninguna mensualidad viva, Zoe sin cerrar, 80–120 h por implementacion y todos los clientes por referido.</p>
+    <p>Si hay tres mensualidades vivas, este plan sobra: ya tienes negocio y lo que toca es escalarlo.</p>
+  </div>
+</header>
+
+<section class="phase">
+  <header>
+    <p class="pn">Fase 0</p>
+    <h2>Casa en orden</h2>
+    <p class="when">Semana 1 · en paralelo con la Fase 1</p>
+  </header>
+  <div class="obj"><p><b>Objetivo:</b> que el negocio aguante que alguien te mire.</p></div>
+  <div class="cols">
+    <div class="col left do"><h3>Que hacer</h3><ul>
+      <li><b>Sacar los cinco datos.</b> Media jornada. Es lo primero de todo</li>
+      <li><b>Encender WhatsApp en Bejauha</b> con warm-up. Tu caso de referencia tiene que estar vivo antes de venderlo</li>
+      <li><b>Arreglar el logo.</b> Vas a mandar prospectos a un sitio con la marca rota</li>
+      <li><b>Comprar el dominio de outbound.</b> Tarda 3–4 semanas: va hoy aunque el resto no este listo</li>
+      <li><b>Pedir dos referidos</b> a cada cliente actual, con un mes de operacion gratis por cada uno que cierre</li>
+    </ul></div>
+    <div class="col dont"><h3>Que NO hacer</h3><ul>
+      <li>Tocar la plataforma para "mejorarla" antes de vender</li>
+      <li>Redisenar el sitio</li>
+    </ul></div>
+  </div>
+  <div class="strip"><span class="lb">Herramientas</span><span class="v">Las que ya tienes · dominio en Google Workspace o Zoho (~$30.000/mes por buzon)</span></div>
+  <div class="strip"><span class="lb">Automatizaciones</span><span class="v">Ninguna</span></div>
+  <div class="gate"><span class="lb">Puerta de salida</span><p>Los cuatro puntos hechos. <b>No bloquea la Fase 1</b>: corren en paralelo.</p></div>
+</section>
+
+<section class="phase">
+  <header>
+    <p class="pn">Fase 1 · hipotesis H1</p>
+    <h2>Validacion: ¿alguien paga?</h2>
+    <p class="when">Semanas 1–4</p>
+  </header>
+  <div class="obj">
+    <p><b>Objetivo:</b> que un desconocido te transfiera <b>$450.000 por una auditoria</b> de atencion. Nada mas. No implementacion, no contrato anual: una transferencia de un extrano.</p>
+    <p>Esa transferencia es la unica prueba real de disposicion a pagar. Todo lo demas es opinion.</p>
+  </div>
+  <div class="cols">
+    <div class="col left do"><h3>Que hacer</h3><ul>
+      <li><b>Un solo segmento.</b> Recomendado: clinicas esteticas y odontologicas de Bogota</li>
+      <li><b>100 fichas a mano</b>, filtradas por ti mirando resenas: 30–800 resenas, 3.8–4.8 estrellas, cierra antes de 9 PM, agenda por WhatsApp, 1–3 sedes</li>
+      <li><b>Definir el entregable.</b> Sin algo tangible no se puede cobrar: informe de 4–6 paginas con horas sin cobertura, consultas perdidas al mes, senales de sus resenas y un plan de 3 pasos</li>
+      <li><b>Escribir la pagina de la auditoria:</b> que incluye, que recibes, cuanto cuesta, que se abona a la implementacion</li>
+      <li><b>100 correos escritos a mano.</b> 25 al dia, cuatro dias. Cada uno con algo cierto de ESE negocio</li>
+      <li><b>Leer todas las respuestas</b>, sobre todo las negativas</li>
+    </ul></div>
+    <div class="col dont"><h3>Que NO hacer</h3><ul>
+      <li><b>No automatizar nada.</b> Ni un workflow. El punto mas incomodo del plan y el mas importante</li>
+      <li>Ofrecer la auditoria gratis "solo por esta vez". <b>El precio es el experimento</b></li>
+      <li>Bajar el precio para cerrar. Si nadie paga, el dato es que nadie paga — no que este alto</li>
+      <li>Abrir un segundo segmento porque el primero va lento</li>
+      <li>Contenido, redes o pauta</li>
+    </ul></div>
+  </div>
+  <div class="strip"><span class="lb">Herramientas</span><span class="v">Gmail y una hoja de calculo. Cal.com para agendar. Nada mas</span></div>
+  <div class="strip"><span class="lb">Automatizaciones</span><span class="v">Ninguna, a proposito</span></div>
+  <div class="mtx"><h3>Metricas</h3>
+    <div class="row2"><span>Correos enviados a mano</span><span>100</span></div>
+    <div class="row2"><span>Respuestas de cualquier tipo</span><span>&ge;10</span></div>
+    <div class="row2"><span>Conversaciones reales</span><span>&ge;3</span></div>
+    <div class="row2"><span><strong>Auditorias pagadas</strong></span><span>&ge;1</span></div>
+  </div>
+  <div class="gate"><span class="lb">Puerta de salida</span>
+    <p><b>Una auditoria pagada por un desconocido.</b></p>
+    <p>Si hubo conversaciones pero nadie pago, el problema es la oferta: ajusta entregable o precio y repite con 100 fichas nuevas. Si no hubo ni conversaciones, el problema es el mensaje o el segmento: cambia <b>uno solo de los dos</b> y repite. <b>Tres rondas sin una auditoria pagada = el segmento no es este.</b></p>
+  </div>
+</section>
+
+<section class="phase">
+  <header>
+    <p class="pn">Fase 2 · hipotesis H2 y H3</p>
+    <h2>Primer cliente y entrega medida</h2>
+    <p class="when">Semanas 5–10</p>
+  </header>
+  <div class="obj"><p><b>Objetivo:</b> cerrar la primera implementacion del segmento <b>y cronometrar cuanto te cuesta entregarla</b>. El segundo dato importa tanto como el primero.</p></div>
+  <div class="cols">
+    <div class="col left do"><h3>Que hacer</h3><ul>
+      <li><b>Convertir la auditoria en propuesta en la misma reunion.</b> No "te la envio manana"</li>
+      <li>Vender <b>implementacion $4.500.000 + operacion $600.000/mes obligatoria, minimo 6 meses</b></li>
+      <li><b>Cronometrar cada hora</b> por etapa: descubrimiento, carga de conocimiento, construccion, pruebas, go-live, ajustes</li>
+      <li>Documentar cada decision a medida. Eso es lo que despues se estandariza</li>
+      <li>Anotar cada pregunta que hizo el cliente en la venta: es tu futuro contenido y tu FAQ</li>
+    </ul></div>
+    <div class="col dont"><h3>Que NO hacer</h3><ul>
+      <li><b>Prometer fuera de alcance para cerrar.</b> Cada excepcion es trabajo no cobrado y rompe la repetibilidad que estas midiendo</li>
+      <li>Arrancar un segundo cliente en paralelo: necesitas la medicion limpia</li>
+      <li>Empezar a construir la maquina de outbound</li>
+      <li>Descuento por pagar adelantado si eso mata la mensualidad</li>
+    </ul></div>
+  </div>
+  <div class="strip"><span class="lb">Herramientas</span><span class="v">Tu plataforma · Wompi para el cobro · propuesta en PDF · un cronometro</span></div>
+  <div class="strip"><span class="lb">Automatizaciones</span><span class="v">Solo lo que necesites para entregar a ese cliente. Nada especulativo</span></div>
+  <div class="mtx"><h3>Metricas</h3>
+    <div class="row2"><span>Auditorias que se convierten en propuesta</span><span>100%</span></div>
+    <div class="row2"><span>Propuestas que cierran</span><span>&ge;33%</span></div>
+    <div class="row2"><span><strong>Horas totales de implementacion</strong></span><span>&lt;40 h</span></div>
+    <div class="row2"><span>Dias desde cierre hasta go-live</span><span>&lt;21</span></div>
+  </div>
+  <div class="gate"><span class="lb">Puerta de salida</span>
+    <p><b>Un cliente en produccion, cobrado, con la primera mensualidad facturada</b> — y el numero de horas escrito.</p>
+    <p>Si te tomo mas de 80 horas, <b>no pases a Fase 3</b>: estandariza la entrega primero. Un negocio que necesita 80 horas por cliente no escala con mas leads, se ahoga.</p>
+  </div>
+</section>
+
+<section class="phase">
+  <header>
+    <p class="pn">Fase 3 · hipotesis H4</p>
+    <h2>Repetibilidad</h2>
+    <p class="when">Meses 3–5</p>
+  </header>
+  <div class="obj"><p><b>Objetivo:</b> demostrar que el cliente 2 y el 3 del mismo vertical cuestan <b>la mitad</b> que el primero. Ahi nace el negocio; hasta aqui solo tenias proyectos.</p></div>
+  <div class="cols">
+    <div class="col left do"><h3>Que hacer</h3><ul>
+      <li>Cerrar <b>dos clientes mas del mismo segmento</b>, misma oferta, mismo precio</li>
+      <li><b>Estandarizar la entrega:</b> plantilla de configuracion, base de conocimiento reutilizable, checklist de go-live, seed del cliente</li>
+      <li><b>Ahora si, construir la maquina</b> — y solo tres piezas: captura y calificacion, <b>el bot demo automatico</b>, y la secuencia con el mensaje ya validado</li>
+      <li>Dar de alta ToqueFlow en su propia plataforma y usar la vista Prospectos como CRM</li>
+      <li>Empezar LinkedIn: dos publicaciones por semana, formato unico — problema real, que costaba, como se resolvio</li>
+    </ul></div>
+    <div class="col dont"><h3>Que NO hacer</h3><ul>
+      <li><b>Construir el CRM de prospeccion.</b> Ya lo tienes</li>
+      <li>Automatizar la clasificacion de respuestas: con 15 al mes las lees en cinco minutos</li>
+      <li>Abrir segunda ciudad ni segundo vertical</li>
+      <li>Contratar</li>
+      <li>Pauta</li>
+    </ul></div>
+  </div>
+  <div class="strip"><span class="lb">Herramientas</span><span class="v">Places API o Apify/Outscraper · Instantly o Smartlead (~$40–100 USD/mes) · verificador de correos · tu plataforma como CRM</span></div>
+  <div class="strip"><span class="lb">Automatizaciones</span><span class="v">Captura Google Maps · Enriquecimiento · Scoring · Generar demo · Secuencia outbound</span></div>
+  <div class="mtx"><h3>Metricas</h3>
+    <div class="row2"><span>Horas del cliente 3 vs el cliente 1</span><span>&le;50%</span></div>
+    <div class="row2"><span>Clientes pagando mensualidad a 3 meses</span><span>3 de 3</span></div>
+    <div class="row2"><span>Tasa de respuesta positiva en frio</span><span>&ge;2%</span></div>
+    <div class="row2"><span>Prospectos que prueban el bot demo</span><span>&ge;30%</span></div>
+    <div class="row2"><span><strong>Ingreso recurrente mensual</strong></span><span>&ge;$1.800.000</span></div>
+  </div>
+  <div class="gate"><span class="lb">Puerta de salida</span>
+    <p><b>Tres clientes del mismo vertical, los tres pagando mensualidad, y el tercero implementado en menos de la mitad de horas que el primero.</b></p>
+    <p>Si alguno cancelo a los 3 meses, <b>para y averigua por que</b>. Escalar un producto que no retiene es multiplicar el problema.</p>
+  </div>
+</section>
+
+<section class="phase">
+  <header>
+    <p class="pn">Fase 4</p>
+    <h2>Escalabilidad</h2>
+    <p class="when">Meses 6–12</p>
+  </header>
+  <div class="obj"><p><b>Objetivo:</b> que el negocio crezca sin que tu seas el cuello. Eso son dos cosas a la vez: mas demanda <b>y</b> mas capacidad de entrega.</p></div>
+  <div class="cols">
+    <div class="col left do"><h3>Que hacer</h3><ul>
+      <li><b>Definir el cupo mensual de implementacion</b> y respetarlo. Frenar el outbound antes de saturarlo</li>
+      <li><b>Contratar a la primera persona — de implementacion, no de ventas.</b> Tu cuello es entregar, no conseguir</li>
+      <li>Abrir <b>segunda ciudad</b> con el mismo mensaje, antes que segundo vertical</li>
+      <li>Despues, segundo vertical reusando el motor completo</li>
+      <li>Evaluar convertir el modulo de prospeccion en <b>producto vendible</b> a los mismos clientes</li>
+    </ul></div>
+    <div class="col dont"><h3>Que NO hacer</h3><ul>
+      <li>Contratar vendedor antes que implementador</li>
+      <li>Abrir vertical nuevo si el primero no esta saturado</li>
+      <li>Pautar sin las tres senales</li>
+      <li><b>Aceptar clientes fuera del segmento porque "es plata".</b> Cada excepcion te devuelve al problema de las siete verticales</li>
+    </ul></div>
+  </div>
+  <div class="strip"><span class="lb">Las 3 senales antes de pautar</span><span class="v">1) Un mensaje en frio que convierte de forma repetible, no una vez · 2) Un cliente que <strong>renovo</strong> a los 6 meses · 3) Capacidad de implementacion libre el mes que viene</span></div>
+  <div class="strip"><span class="lb">Si se cumplen</span><span class="v">Google Ads sobre intencion de busqueda ("bot whatsapp para clinica", "agendamiento automatico"), no Meta sobre interrupcion</span></div>
+  <div class="mtx"><h3>Metricas</h3>
+    <div class="row2"><span>Clientes nuevos por mes</span><span>2–4</span></div>
+    <div class="row2"><span><strong>Ingreso recurrente mensual</strong></span><span>&ge;$6.000.000</span></div>
+    <div class="row2"><span>Horas tuyas por cliente nuevo</span><span>&lt;15</span></div>
+    <div class="row2"><span>Retencion a 6 meses</span><span>&ge;80%</span></div>
+    <div class="row2"><span>Costo de adquisicion</span><span>&lt;25% del ano 1</span></div>
+  </div>
+  <div class="gate"><span class="lb">Puerta de salida</span><p>Ya no hay salida: hay operacion. La pregunta pasa a ser si abres un tercer vertical, subes precios o construyes producto.</p></div>
+</section>
+
+<section class="hard">
+  <h2>Las cuatro cosas que mas te van a incomodar</h2>
+  <p>Si alguna te parece negociable, ahi es donde el plan se va a romper.</p>
+  <ol>
+    <li><div><b>30 dias sin construir nada</b><span>Es el punto mas duro y el mas importante. Tu instinto es construir; el negocio necesita que vendas.</span></div></li>
+    <li><div><b>Cobrar la auditoria</b><span>Da miedo, y por eso funciona: es el filtro mas barato que existe.</span></div></li>
+    <li><div><b>Mensualidad obligatoria, no opcional</b><span>Vas a perder algun cierre. Los que pierdas por eso no eran clientes, eran proyectos.</span></div></li>
+    <li><div><b>Un solo vertical</b><span>Vas a ver oportunidades en otros lados y vas a querer tomarlas. Cada una te devuelve al punto de partida.</span></div></li>
+  </ol>
+</section>
+
+<footer>
+  <p>Versionado en <code>ToqueFlow/estrategia/plan-comercial.md</code>. La maquina de outbound en detalle: <code>ToqueFlow/estrategia/captacion-leads.md</code>.</p>
+  <p>27 de agosto de 2026.</p>
+</footer>
+
+</div>
