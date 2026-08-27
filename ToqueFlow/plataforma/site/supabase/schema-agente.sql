@@ -46,7 +46,15 @@ create table if not exists public.agent_config (
   --             vender y más sostener.
   --
   --   "ninguna" — el agente NO agenda: captura la solicitud y la enruta a un
-  --             humano. Es una opción legítima y la más barata de operar.
+  --             humano, o manda un link de reservas. Legítima y la más barata
+  --             de operar, pero cada paso extra pierde gente: el valor del
+  --             agente está en cerrar la cita DENTRO de la conversación.
+  --
+  -- ¿Y SI EL CLIENTE USA CALENDLY? Calendly no es un calendario, es una página
+  -- de reservas: debajo siempre hay un Google o un Outlook del que lee. Si es
+  -- Google —lo más común— se usa modo "google" contra ESE calendario y listo:
+  -- Calendly deja de ofrecer el horario solo, porque mira el mismo calendario.
+  -- No hay que integrar nada con Calendly. Mandar su link es modo "ninguna".
   --
   -- { modo, calendar_id, zona_horaria,
   --   franjas: [{dias,desde,hasta}],

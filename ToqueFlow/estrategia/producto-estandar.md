@@ -108,7 +108,9 @@ Vive en una tabla `agent_config`, una fila por empresa, con RLS igual que el res
 La lista que te permite decir que no en una venta sin improvisar:
 
 - **No asigna citas a personas o recursos individuales.** Agenda contra cupos, no contra "la terapeuta María en la sede norte". Eso es el **módulo de agenda avanzada**, cotizado aparte. *Fue exactamente donde se dispararon las horas en Zoe.*
-- **No se integra con el software de agenda o el CRM del cliente.** A medida, aparte.
+- **No se integra con el software de agenda propio del sector** (Dentalink, Agenda Pro y similares). A medida, cotizado aparte.
+
+> **Sobre Calendly:** no es un calendario sino una página de reservas, y debajo siempre hay un Google o un Outlook del que lee la disponibilidad. Si es Google —lo más común— el agente trabaja **directo contra ese calendario** y Calendly deja de ofrecer el horario solo, porque mira el mismo sitio. No hay que integrar nada con Calendly. La alternativa es mandar su link, que es el modo `ninguna`: funciona, pero cada paso extra pierde gente. El valor del agente está en cerrar la cita dentro de la conversación.
 - **No cobra ni procesa pagos.**
 - **No atiende en otro idioma** en el precio base.
 - **No hace campañas de salida.** Eso es `campanas.html`, otro módulo.
