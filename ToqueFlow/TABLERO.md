@@ -52,7 +52,7 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 | # | Pieza | Por qué ahí | Quién |
 |---|---|---|---|
 | 14 | **Cargador de conocimiento** | Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. **20–40 h de las 45–90 actuales** | Diego |
-| 15 | Tabla `agent_config` + RLS | Una fila por empresa: tono, fuentes, campos, reglas, límites | Diego |
+| 15 | ~~Tabla `agent_config` + RLS~~ | ✅ **Escrito:** `schema-agente.sql`. Incluye `agent_config`, `agent_knowledge` (con vista lista para el prompt) y `appointments`, con RLS y permisos mínimos para `n8n_worker`. **Falta correrlo en Supabase** | Claude |
 | 16 | Workflow genérico de n8n | Uno solo parametrizado por `company_id`. Se acaban los workflows por cliente | Diego |
 | 17 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
 | 18 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |

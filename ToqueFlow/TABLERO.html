@@ -69,7 +69,7 @@ td strong{color:var(--ink);font-weight:650}
 <body>
 <div class="wrap">
 <p class="marca">TOQUEFLOW</p>
-<h1>ToqueFlow — Tablero</h1><div class="tot"><div class="ab"><span class="n">53</span><span class="l">Abiertas</span></div><div class="ce"><span class="n">14</span><span class="l">Cerradas</span></div></div>
+<h1>ToqueFlow — Tablero</h1><div class="tot"><div class="ab"><span class="n">52</span><span class="l">Abiertas</span></div><div class="ce"><span class="n">15</span><span class="l">Cerradas</span></div></div>
 <blockquote>Estado al <strong>27 de agosto de 2026</strong>, después del diagnóstico comercial. Organizado por tema. Lo que decide el negocio está arriba; lo técnico heredado, abajo.</blockquote>
 <p><strong>Dónde estamos:</strong> un cliente pagando (Bejauha, $620.000/mes, 3 meses). Cinco implementaciones entregadas sin cobrar, tres de ellas muertas porque nadie pidió una decisión. Meta: <strong>4.000.000 libres al mes</strong> (2 millones cada socio) que son unos 9 clientes. <strong>Hoy el negocio neto es cero:</strong> lo que paga Bejauha cubre el VPS y Claude Max.</p>
 <p><strong>Las dos consecuencias que ordenan todo:</strong> 1. El problema no es el producto ni el mercado — <strong>es que no se corre un proceso de venta.</strong> Se arregla con calendario, no con código. 2. <strong>La meta exige el producto estándar.</strong> Nueve clientes a 45–90 h son 400–800 horas; a 11–14 h son 110. Y <strong>subir el precio es la única palanca que no cuesta horas.</strong></p>
@@ -105,7 +105,7 @@ td strong{color:var(--ink);font-weight:650}
 <div class="tw"><table class="tareas">
 <thead><tr><th>#</th><th>Pieza</th><th>Por qué ahí</th><th>Quién</th></tr></thead><tbody>
 <tr><td class="id">14</td><td><strong>Cargador de conocimiento</strong></td><td>Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. <strong>20–40 h de las 45–90 actuales</strong></td><td>Diego</td></tr>
-<tr><td class="id">15</td><td>Tabla <code>agent_config</code> + RLS</td><td>Una fila por empresa: tono, fuentes, campos, reglas, límites</td><td>Diego</td></tr>
+<tr class="hecha"><td class="id">15</td><td><del>Tabla <code>agent_config</code> + RLS</del></td><td>✅ <strong>Escrito:</strong> <code>schema-agente.sql</code>. Incluye <code>agent_config</code>, <code>agent_knowledge</code> (con vista lista para el prompt) y <code>appointments</code>, con RLS y permisos mínimos para <code>n8n_worker</code>. <strong>Falta correrlo en Supabase</strong></td><td>Claude</td></tr>
 <tr><td class="id">16</td><td>Workflow genérico de n8n</td><td>Uno solo parametrizado por <code>company_id</code>. Se acaban los workflows por cliente</td><td>Diego</td></tr>
 <tr><td class="id">17</td><td>Agenda simple</td><td>Franjas, duración por servicio, cupos simultáneos, bloqueos. <strong>No</strong> contra personas o recursos</td><td>Diego</td></tr>
 <tr><td class="id">18</td><td>Cron de recordatorios</td><td>Barato y es el mayor argumento de venta: el no-show duele en el bolsillo</td><td>Diego</td></tr>
