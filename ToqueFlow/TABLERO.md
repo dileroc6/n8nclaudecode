@@ -87,7 +87,7 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 | 29 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
 | 30 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
 | 31 | **Verificar cuántos workflows quedan tras la limpieza** | El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después | Claude |
-| 32 | ~~Alerta automática de recursos~~ | ✅ **Escrita:** `infra/alerta-recursos.sh`. Cron del host, no n8n — si n8n se cae por memoria, una alerta que viviera ahí se caería con él. Falta instalarla y decidir el canal de aviso | Diego |
+| 32 | ~~Alerta automática de recursos~~ | ✅ **Funcionando.** Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam | — |
 | 33 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
 | 34 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
 | 35 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
@@ -265,6 +265,27 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 | 59 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
 | 60 | Skill `/migracion` | SQL numerado e idempotente | Claude |
 | 61 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+
+---
+
+## 🟡 Todo lo de Zoe, pausado sin borrar
+
+Zoe nunca cerró, pero seguía consumiendo infraestructura por tres vías distintas. Todo quedó **pausado y reversible** el 27-ago, por si el negocio se reactiva — Ferney lo va a recotizar esta semana.
+
+| Qué | Consumía | Estado | Cómo se revierte |
+|---|---|---|---|
+| `zoe-metabase` | **1,5 GB de RAM (39% del VPS)**, 24 h al día desde mayo | ⏸️ Detenido | `docker start zoe-metabase` |
+| Cron OTP (cada 5 min) | **288 ejecuciones diarias**, 70% del total | ⏸️ Desactivado | Activar el workflow en n8n |
+| Cron Recordatorio 24 h | diario | ⏸️ Desactivado | Ídem |
+| Cron Festivos | anual | ⏸️ Desactivado | Ídem |
+| Respaldo diario del esquema | 112 archivos, 30 MB acumulados | ⏸️ Comentado en el crontab | Quitar el `#` de la línea |
+
+**Lo que sigue vivo a propósito:** los cuatro workflows de Zoe que atienden WhatsApp (WF1 Orquestador, WF2 Agendar, WF3 Reprogramar, WF6 Admin GPT). Solo consumen si alguien escribe, y apagarlos justo antes de recotizar sería una decisión de negocio, no técnica.
+
+**Los 112 respaldos siguen intactos** en `/backups`. No se borró nada.
+
+**Efecto total:** de 777 MB de RAM disponible a 2,3 GB, y de ~410 ejecuciones diarias a ~120.
+
 
 ---
 

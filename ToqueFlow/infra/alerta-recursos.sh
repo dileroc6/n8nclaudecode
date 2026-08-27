@@ -18,7 +18,7 @@ set -uo pipefail
 
 # ── Configuración ────────────────────────────────────────────────────────────
 # A dónde avisar. Un webhook de n8n que enrute a WhatsApp, Telegram o correo.
-WEBHOOK_URL="${TOQUE_ALERTA_WEBHOOK:-}"
+WEBHOOK_URL="${TOQUE_ALERTA_WEBHOOK:-https://n8n.srv1398596.hstgr.cloud/webhook/alerta-recursos}"
 
 # Umbrales. Se avisa cuando se cruzan.
 MIN_RAM_MB=600          # memoria disponible mínima antes de avisar
@@ -78,8 +78,9 @@ echo "$ts AVISO ($nivel): $texto" >> "$LOG"
 if [ -n "$WEBHOOK_URL" ]; then
   curl -s -m 15 -X POST "$WEBHOOK_URL" \
     -H 'Content-Type: application/json' \
-    -d "$(printf '{"nivel":"%s","texto":"%s","ram_disponible_mb":%s,"swap_pct":%s,"disco_pct":%s,"top_contenedor":"%s"}' \
-          "$nivel" "$texto" "${ram_disp_mb:-0}" "$swap_pct" "${disco_pct:-0}" "${top_contenedor:-}")" \
+    -d "$(printf '{"nivel":"%s","texto":"%s","motivos":"%s","ram_disponible_mb":%s,"swap_pct":%s,"disco_pct":%s,"top_contenedor":"%s"}' \
+          "$nivel" "$texto" "$(IFS=' · '; echo "${motivos[*]:-}")" \
+          "${ram_disp_mb:-0}" "$swap_pct" "${disco_pct:-0}" "${top_contenedor:-}")" \
     >> "$LOG" 2>&1
 else
   echo "$ts (sin WEBHOOK_URL configurado: el aviso solo quedó en este log)" >> "$LOG"
