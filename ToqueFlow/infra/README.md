@@ -63,3 +63,52 @@ El webhook recibe un JSON así:
 ### Línea base al instalarlo (27-ago-2026)
 
 RAM disponible 2,3 GB · swap 0% · disco 23%. Muy lejos de los umbrales, que es como debe estar.
+
+---
+
+## Canal de aviso: correo
+
+El flujo que recibe la alerta y manda el correo ya está creado en n8n:
+**`Toque - Alerta de Recursos del VPS`** (id `tDd8dhEhbg36jkJV`), validado sin errores y **desactivado** hasta que se complete la configuración.
+
+El correo llega a cualquier dirección — Gmail, Hotmail, la que sea. Lo que hay que resolver es **desde qué cuenta se envía**.
+
+### Por qué Gmail y no Hotmail para enviar
+
+Microsoft viene desactivando la autenticación básica en cuentas personales de Outlook y Hotmail, así que un cliente SMTP con usuario y contraseña puede dejar de funcionar sin aviso. Gmail con contraseña de aplicación es estable.
+
+**Recibir** en Hotmail no tiene ningún problema. Es solo el envío.
+
+### Pasos
+
+**1. Contraseña de aplicación en Gmail**
+Requiere verificación en dos pasos activada. Luego: Cuenta de Google → Seguridad → Contraseñas de aplicaciones → generar una.
+
+**2. Credencial SMTP en n8n**
+Credentials → New → SMTP:
+
+| Campo | Valor |
+|---|---|
+| Host | `smtp.gmail.com` |
+| Port | `465` |
+| SSL/TLS | activado |
+| User | tu correo de Gmail |
+| Password | la contraseña de aplicación (no la del correo) |
+
+**3. En el nodo «Envía el correo»**
+Seleccionar esa credencial y reemplazar los dos `CAMBIAR@gmail.com` por el remitente y el destinatario. En destinatario se pueden poner varios separados por coma, para que le llegue también a Ferney.
+
+**4. Activar el flujo** y copiar la URL de producción del webhook.
+
+**5. Pegar esa URL** en `WEBHOOK_URL` dentro de `alerta-recursos.sh`, subirlo al VPS y programar el cron.
+
+### Probar sin esperar a que falle algo
+
+Bajar temporalmente el umbral en el script para forzar una alerta:
+
+```bash
+# editar MIN_RAM_MB=600  →  MIN_RAM_MB=99999
+/opt/toque/alerta-recursos.sh
+# debe llegar el correo. Devolver el umbral a 600 y correrlo otra vez:
+# llega el correo de "recuperado", que confirma que el anti-spam funciona.
+```
