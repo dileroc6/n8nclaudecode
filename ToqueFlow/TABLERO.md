@@ -54,10 +54,11 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 | 14 | ~~Cargador de conocimiento (web)~~ | ✅ **Escrito:** edge function `cargar-conocimiento`. Recorre hasta 6 páginas del sitio, limpia el HTML y le pide a Haiku que lo ordene en servicios, precios, horarios y políticas. Guarda en `agent_knowledge`. **Falta desplegarla y probarla.** PDF queda pendiente | Claude |
 | 15 | ~~Tabla `agent_config` + RLS~~ | ✅ **Aplicado en Supabase el 27-ago.** `agent_config`, `agent_knowledge` + vista, y `appointments`. RLS activo con 10 políticas, y `n8n_worker` con permisos mínimos: lee configuración y conocimiento, escribe citas, nunca borra | — |
 | 16 | Workflow genérico de n8n | Uno solo parametrizado por `company_id`. Se acaban los workflows por cliente | Diego |
-| 17 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
-| 18 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |
-| 19 | Pantalla de configuración | Para no editar JSON a mano. Puede esperar al tercer cliente | Diego |
-| 20 | **El cliente edita su propio conocimiento desde el portal** | Si cambia un precio, que lo cambie él sin depender de ustedes. Es lo que evita que cada ajuste menor te consuma una hora | Diego |
+| 17 | ⚠️ **Caché de prompt con TTL de 1 hora en el workflow del agente** | **No es opcional:** sin caché, un cliente activo cuesta ~$50 USD/mes en IA — el 34% de lo que paga. Con caché, ~$12. El TTL de 5 min por defecto no sirve: los mensajes de WhatsApp llegan espaciados | Diego |
+| 18 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
+| 19 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |
+| 20 | Pantalla de configuración | Para no editar JSON a mano. Puede esperar al tercer cliente | Diego |
+| 21 | **El cliente edita su propio conocimiento desde el portal** | Si cambia un precio, que lo cambie él sin depender de ustedes. Es lo que evita que cada ajuste menor te consuma una hora | Diego |
 
 ---
 
@@ -67,11 +68,11 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota |
 |---|---|---|
-| 21 | **Pantalla de alta de cliente** | Crear empresa, usuario y flows desde el portal. Hoy es correr un `seed-<cliente>.cjs` |
-| 22 | **Pantalla de configuración del agente** | Formularios que llenan `agent_config`: tono, campos a capturar, reglas de enrutamiento, límites |
-| 23 | **Carga de la fuente de conocimiento desde el portal** | Pegar la URL o subir el PDF y que quede listo, sin tocar la base |
-| 24 | **Panel de consumo por cliente** | Tokens, costo en USD y por mes. **Los datos ya existen:** la tabla `ai_usage` registra `input_tokens`, `output_tokens`, `cost_usd` y `model` por empresa desde hace rato. Falta solo la pantalla |
-| 25 | **Plantilla del PDF que entrega el cliente** | El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding |
+| 22 | **Pantalla de alta de cliente** | Crear empresa, usuario y flows desde el portal. Hoy es correr un `seed-<cliente>.cjs` |
+| 23 | **Pantalla de configuración del agente** | Formularios que llenan `agent_config`: tono, campos a capturar, reglas de enrutamiento, límites |
+| 24 | **Carga de la fuente de conocimiento desde el portal** | Pegar la URL o subir el PDF y que quede listo, sin tocar la base |
+| 25 | **Panel de consumo por cliente** | Tokens, costo en USD y por mes. **Los datos ya existen:** la tabla `ai_usage` registra `input_tokens`, `output_tokens`, `cost_usd` y `model` por empresa desde hace rato. Falta solo la pantalla |
+| 26 | **Plantilla del PDF que entrega el cliente** | El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding |
 
 **Orden:** la **23 primero** (es un documento, cuesta una tarde y la necesitas en la primera venta). La **22 después** (los datos ya están, es solo leerlos). Las 19–21 cuando duela configurar a mano — realistamente al tercer cliente.
 
@@ -81,18 +82,18 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 26 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
-| 27 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
-| 28 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
-| 29 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
-| 30 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
-| 31 | **Verificar cuántos workflows quedan tras la limpieza** | El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después | Claude |
-| 32 | ~~Alerta automática de recursos~~ | ✅ **Funcionando.** Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam | — |
-| 33 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
-| 34 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
-| 35 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
-| 36 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
-| 37 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
+| 27 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
+| 28 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
+| 29 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
+| 30 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
+| 31 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
+| 32 | **Verificar cuántos workflows quedan tras la limpieza** | El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después | Claude |
+| 33 | ~~Alerta automática de recursos~~ | ✅ **Funcionando.** Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam | — |
+| 34 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
+| 35 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
+| 36 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
+| 37 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
+| 38 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
 
 ---
 
@@ -156,19 +157,19 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Acción | Efecto | Riesgo |
 |---|---|---|---|
-| 38 | ~~docker stop zoe-metabase~~ | ✅ **Hecho el 27-ago.** Liberó 1,6 GiB. Reversible con `docker start zoe-metabase` | — |
-| 39 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
-| 40 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
-| 41 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
+| 39 | ~~docker stop zoe-metabase~~ | ✅ **Hecho el 27-ago.** Liberó 1,6 GiB. Reversible con `docker start zoe-metabase` | — |
+| 40 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
+| 41 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
+| 42 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
 
 | # | Tarea | Nota |
 |---|---|---|
-| 42 | ~~Medir la memoria real dentro del VPS~~ | ✅ **Hecho.** 3,1 GiB comprometidos de 3,8. El 39% se lo lleva `zoe-metabase`, de un cliente que no pagó |
-| 43 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
-| 44 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
-| 45 | ~~Alerta automática de recursos~~ | ✅ **Escrita.** Ver la sección de infraestructura. Pendiente instalarla en el VPS |
-| 46 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
-| 47 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
+| 43 | ~~Medir la memoria real dentro del VPS~~ | ✅ **Hecho.** 3,1 GiB comprometidos de 3,8. El 39% se lo lleva `zoe-metabase`, de un cliente que no pagó |
+| 44 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
+| 45 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
+| 46 | ~~Alerta automática de recursos~~ | ✅ **Escrita.** Ver la sección de infraestructura. Pendiente instalarla en el VPS |
+| 47 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
+| 48 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
 
 ---
 
@@ -244,15 +245,15 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 
 | # | Tarea | Nota |
 |---|---|---|
-| 48 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
-| 49 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
-| 50 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
-| 51 | ~~Desactivar, no borrar~~ | ✅ **Criterio aplicado.** Todo lo de Zoe quedó pausado sin borrar nada |
-| 52 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
-| 53 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 54 | ~~Medir la RAM antes y después~~ | ✅ **Hecho.** De 777 MB disponibles a 2,3 GB |
-| 55 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
-| 56 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
+| 49 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
+| 50 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
+| 51 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
+| 52 | ~~Desactivar, no borrar~~ | ✅ **Criterio aplicado.** Todo lo de Zoe quedó pausado sin borrar nada |
+| 53 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
+| 54 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
+| 55 | ~~Medir la RAM antes y después~~ | ✅ **Hecho.** De 777 MB disponibles a 2,3 GB |
+| 56 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
+| 57 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
 ---
 
@@ -260,11 +261,11 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 57 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 58 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 59 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 60 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 61 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 58 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 59 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 60 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 61 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 62 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
@@ -293,9 +294,9 @@ Zoe nunca cerró, pero seguía consumiendo infraestructura por tres vías distin
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 62 | **Pasar el repositorio de GitHub a privado** | Hoy `dileroc6/n8nclaudecode` es **público**. Ahí está: que solo Bejauha paga y cuánto, que Zoe rechazó los $5.500.000 y que se le va a recotizar $1.200.000, que SM Grand está en negociación, la estructura de precios y el piso, el reparto 50/50 y los datos tributarios de Vassco. **Ventana de riesgo:** Ferney manda propuestas esta semana; si un prospecto busca «ToqueFlow» encuentra el precio de respaldo y que es el único caliente. Settings → General → Danger Zone → Change visibility. 30 segundos, no rompe nada. *Aplazado por decisión del 27-ago* | Diego |
-| 63 | **Dar acceso del repo a Ferney** | Es socio al 50% y el repo es el negocio: la plataforma, la estrategia y el tablero que le asigna tareas. Settings → Collaborators. Ojo: va a leer el diagnóstico de ventas, que lo toca directamente — mejor contárselo antes | Diego |
-| 64 | **Gestor de contraseñas compartido** | Más importante que el acceso al repo. `credentials.env`, el token de Hostinger, la llave de n8n y la contraseña del correo **viven solo en la máquina de Diego**. Si le pasa algo, Ferney no puede desplegar el sitio, ni dar de alta un cliente, ni entrar a Supabase: el negocio se detiene. Bitwarden gratis resuelve. 15 minutos | Ambos |
+| 63 | **Pasar el repositorio de GitHub a privado** | Hoy `dileroc6/n8nclaudecode` es **público**. Ahí está: que solo Bejauha paga y cuánto, que Zoe rechazó los $5.500.000 y que se le va a recotizar $1.200.000, que SM Grand está en negociación, la estructura de precios y el piso, el reparto 50/50 y los datos tributarios de Vassco. **Ventana de riesgo:** Ferney manda propuestas esta semana; si un prospecto busca «ToqueFlow» encuentra el precio de respaldo y que es el único caliente. Settings → General → Danger Zone → Change visibility. 30 segundos, no rompe nada. *Aplazado por decisión del 27-ago* | Diego |
+| 64 | **Dar acceso del repo a Ferney** | Es socio al 50% y el repo es el negocio: la plataforma, la estrategia y el tablero que le asigna tareas. Settings → Collaborators. Ojo: va a leer el diagnóstico de ventas, que lo toca directamente — mejor contárselo antes | Diego |
+| 65 | **Gestor de contraseñas compartido** | Más importante que el acceso al repo. `credentials.env`, el token de Hostinger, la llave de n8n y la contraseña del correo **viven solo en la máquina de Diego**. Si le pasa algo, Ferney no puede desplegar el sitio, ni dar de alta un cliente, ni entrar a Supabase: el negocio se detiene. Bitwarden gratis resuelve. 15 minutos | Ambos |
 
 ---
 

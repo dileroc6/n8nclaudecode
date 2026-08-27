@@ -1,9 +1,14 @@
 // ============================================================================
 // cargar-conocimiento — Le da al agente el conocimiento del negocio
 // ----------------------------------------------------------------------------
-// Recibe la URL del sitio del cliente, recorre unas pocas páginas, limpia el
-// HTML y le pide a un modelo que lo ORDENE en un documento de conocimiento:
-// servicios, precios, horarios, ubicación, políticas y preguntas frecuentes.
+// Recibe la URL del sitio del cliente O un texto pegado, y le pide a un modelo
+// que lo ORDENE en un documento de conocimiento: servicios, precios, horarios,
+// ubicación, políticas y preguntas frecuentes.
+//
+// Dos entradas, un solo camino. Se acepta texto pegado a propósito: la lista de
+// precios del cliente ya existe en un WhatsApp o un Word, y pedirle que la
+// convierta a PDF es trabajo extra para él y extracción sucia para nosotros.
+// El PDF es formato de impresión, no de datos.
 //
 // Por qué el paso de la IA: bajar el texto es fácil, pero una web trae menú,
 // pie de página, banners de cookies y ruido. Lo que hoy cuesta 20–40 horas por
@@ -91,7 +96,7 @@ async function bajar(url: string): Promise<string> {
 
 const PROMPT = (negocio: string, crudo: string) => `Eres un asistente que prepara la base de conocimiento de un negocio para que un agente de WhatsApp pueda atender a sus clientes.
 
-Abajo está el texto extraído del sitio web de "${negocio}". Viene sucio: trae restos de menús, pies de página y texto de relleno.
+Abajo está la información de "${negocio}", tal como vino: puede traer restos de menús, pies de página, texto de relleno o notas sueltas sin orden.
 
 Escribe un documento de conocimiento limpio, en español, con esta estructura. Omite por completo las secciones para las que no encuentres información — no inventes ni pongas "no disponible".
 
@@ -119,7 +124,7 @@ REGLAS:
 - Los precios y los números van exactos, sin redondear ni convertir.
 - Escribe para que lo lea un agente que va a responderle a un cliente, no para una página web.
 
-TEXTO DEL SITIO:
+INFORMACIÓN DEL NEGOCIO:
 ${crudo}`;
 
 async function registrarUso(usage: any, meta: any) {
@@ -156,32 +161,52 @@ Deno.serve(async (req: Request) => {
   const companyId = (prof[0].role === "super_admin" && body.company_id) ? body.company_id : prof[0].company_id;
   if (!companyId) return json({ error: "El usuario no tiene empresa asignada." }, 400);
 
-  let base: URL;
-  try { base = new URL(body.url); } catch (_) { return json({ error: "URL inválida." }, 400); }
-  if (!/^https?:$/.test(base.protocol)) return json({ error: "La URL debe ser http o https." }, 400);
+  // ── 1. Conseguir el texto crudo: del sitio o pegado a mano ────────────────
+  // Dos entradas, un solo camino después. Lo que da el valor es el paso de IA
+  // que ordena el contenido; de dónde viene el crudo da igual.
+  //
+  // Se acepta texto pegado a propósito, y es la vía más simple para todos: la
+  // lista de precios del cliente ya existe en un WhatsApp o un Word. Pedirle
+  // que la convierta a PDF es trabajo extra para él y extracción sucia para
+  // nosotros. El PDF es formato de impresión, no de datos.
+  let crudo = "";
+  let base: URL | null = null;
+  let paginas: string[] = [];
+  const modo: "web" | "manual" = body.texto ? "manual" : "web";
 
-  // ── 1. Recorrer el sitio ──────────────────────────────────────────────────
-  const portadaHtml = await fetch(base.toString(), { headers: { "User-Agent": "ToqueFlow/1.0" } })
-    .then((r) => r.ok ? r.text() : "").catch(() => "");
-  if (!portadaHtml) return json({ error: "No se pudo acceder al sitio. Revisa la URL." }, 422);
+  if (modo === "manual") {
+    crudo = String(body.texto).slice(0, MAX_BYTES_DOC * 3);
+    if (crudo.trim().length < 100) {
+      return json({ error: "El texto es muy corto. Pega al menos los servicios y los precios." }, 400);
+    }
+  } else {
+    try { base = new URL(body.url); } catch (_) { return json({ error: "Falta la URL o el texto." }, 400); }
+    if (!/^https?:$/.test(base.protocol)) return json({ error: "La URL debe ser http o https." }, 400);
 
-  const paginas = [base.toString(), ...enlacesInternos(portadaHtml, base)].slice(0, MAX_PAGINAS);
-  const partes: string[] = [textoDesdeHtml(portadaHtml.slice(0, MAX_BYTES_URL))];
-  for (const u of paginas.slice(1)) {
-    const t = await bajar(u);
-    if (t.length > 200) partes.push("\n\n--- " + u + " ---\n" + t);
-  }
+    const portadaHtml = await fetch(base.toString(), { headers: { "User-Agent": "ToqueFlow/1.0" } })
+      .then((r) => r.ok ? r.text() : "").catch(() => "");
+    if (!portadaHtml) return json({ error: "No se pudo acceder al sitio. Revisa la URL." }, 422);
 
-  const crudo = partes.join("\n").slice(0, MAX_BYTES_DOC * 3);
-  if (crudo.length < 300) {
-    return json({ error: "El sitio tiene muy poco texto legible. Puede estar hecho en JavaScript; carga la información en un PDF o a mano." }, 422);
+    paginas = [base.toString(), ...enlacesInternos(portadaHtml, base)].slice(0, MAX_PAGINAS);
+    const partes: string[] = [textoDesdeHtml(portadaHtml.slice(0, MAX_BYTES_URL))];
+    for (const u of paginas.slice(1)) {
+      const t = await bajar(u);
+      if (t.length > 200) partes.push("\n\n--- " + u + " ---\n" + t);
+    }
+    crudo = partes.join("\n").slice(0, MAX_BYTES_DOC * 3);
+    if (crudo.length < 300) {
+      return json({
+        error: "El sitio tiene muy poco texto legible — puede estar hecho en JavaScript. " +
+               "Copia la información del negocio y pégala en el campo de texto.",
+      }, 422);
+    }
   }
 
   // ── 2. Ordenarlo con IA ───────────────────────────────────────────────────
   const KEY = Deno.env.get("ANTHROPIC_API_KEY");
   if (!KEY) return json({ error: "Falta ANTHROPIC_API_KEY en los secretos de la función." }, 500);
 
-  const negocio = body.negocio || base.hostname;
+  const negocio = body.negocio || base?.hostname || "el negocio";
   let ai: Response | null = null, ultimoErr = "";
   for (let intento = 1; intento <= 3; intento++) {
     try {
@@ -217,29 +242,31 @@ Deno.serve(async (req: Request) => {
 
   // ── 3. Guardar ────────────────────────────────────────────────────────────
   const hash = [...documento].reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0).toString(16);
+  const origen = base ? base.toString() : "texto:" + (body.titulo || "pegado");
+  const titulo = base ? "Sitio web — " + base.hostname : (body.titulo || "Información del negocio");
 
   // Si ya existía una fuente para esta misma URL, se reemplaza en vez de duplicar
   const previas = await fetch(
-    SB + "/rest/v1/agent_knowledge?company_id=eq." + companyId + "&origen=eq." + encodeURIComponent(base.toString()) + "&select=id,hash_origen",
+    SB + "/rest/v1/agent_knowledge?company_id=eq." + companyId + "&origen=eq." + encodeURIComponent(origen) + "&select=id,hash_origen",
     { headers: SH },
   ).then((r) => r.json()).catch(() => []);
 
   if (Array.isArray(previas) && previas[0]?.hash_origen === hash) {
     return json({ ok: true, sin_cambios: true, bytes: documento.length, paginas: paginas.length,
-                  mensaje: "El sitio no ha cambiado desde la última carga." });
+                  mensaje: modo === "web" ? "El sitio no ha cambiado desde la última carga." : "El texto es igual al que ya estaba cargado." });
   }
 
   if (Array.isArray(previas) && previas.length) {
     await fetch(SB + "/rest/v1/agent_knowledge?id=eq." + previas[0].id, {
       method: "PATCH", headers: { ...SH, Prefer: "return=minimal" },
-      body: JSON.stringify({ contenido: documento, hash_origen: hash, titulo: "Sitio web — " + base.hostname, actualizado_por: me.id }),
+      body: JSON.stringify({ contenido: documento, hash_origen: hash, titulo, actualizado_por: me.id }),
     });
   } else {
     await fetch(SB + "/rest/v1/agent_knowledge", {
       method: "POST", headers: { ...SH, Prefer: "return=minimal" },
       body: JSON.stringify({
-        company_id: companyId, tipo: "web", origen: base.toString(),
-        titulo: "Sitio web — " + base.hostname, contenido: documento,
+        company_id: companyId, tipo: modo, origen,
+        titulo, contenido: documento,
         hash_origen: hash, orden: 0, actualizado_por: me.id,
       }),
     });

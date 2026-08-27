@@ -172,6 +172,42 @@ Contra 45–90 hoy. **Ese salto es todo el modelo de negocio.**
 
 ---
 
+## La economía por mensaje: el caché es obligatorio
+
+El documento de conocimiento entra **en cada llamada al modelo**, no una sola vez. Eso convierte su tamaño en un costo recurrente por conversación, y es la razón real del límite de 40 KB — no la ventana de contexto.
+
+**40 KB ≈ 11.000 tokens.** Haiku 4.5 tiene ventana de 200.000, así que técnicamente cabría veinte veces más. El límite es de plata, no de espacio.
+
+Con Haiku 4.5 a $1 por millón de tokens de entrada y $5 de salida:
+
+| | Sin caché | Con caché de 1 h |
+|---|---|---|
+| Por mensaje | ~$0,014 | ~$0,004 |
+| Clínica activa (≈3.600 llamadas/mes) | **~$50 USD/mes** | **~$12 USD/mes** |
+| Sobre un cliente de $600.000 COP | **34% de los ingresos** | **8%** |
+
+**Sin caché, un cliente ocupado se come un tercio de lo que paga solo en IA.** Eso rompe el modelo de negocio. Con caché, el margen se sostiene.
+
+### Cómo se aplica
+
+Anthropic cachea por **coincidencia de prefijo**: el contenido estable va primero y se marca con `cache_control`. Como el documento de conocimiento no cambia entre mensajes, se escribe una vez y las lecturas siguientes cuestan cerca del 10%.
+
+Dos condiciones que hay que respetar en el workflow del agente:
+
+1. **TTL de 1 hora, no el de 5 minutos por defecto.** Un bot de WhatsApp recibe mensajes espaciados; con 5 minutos casi siempre fallaría el caché y se pagaría precio completo.
+2. **Nada volátil antes del punto de corte.** Ni la fecha, ni el nombre del contacto, ni un identificador de conversación. Un solo byte que cambie invalida todo lo que viene después y el caché deja de servir en silencio.
+
+**Cómo verificar que funciona:** la respuesta trae `usage.cache_read_input_tokens`. Si sale en cero mensaje tras mensaje, algo volátil se coló en el prefijo.
+
+### Por qué 40 KB y no más
+
+Los servicios, precios, políticas y preguntas frecuentes de un spa real ocupan entre 5 y 15 KB. El límite casi nunca se va a activar: es una barandilla, no una restricción.
+
+Subirlo a 100 KB costaría unos $25 USD/mes por cliente activo en vez de $12. Se puede, pero empieza a notarse. **Si un cliente necesita más de 40 KB, es señal de que su caso no es el producto estándar** — y esa conversación es mejor tenerla en la venta que en la factura.
+
+
+---
+
 ## Qué falta construir
 
 Ya existe: multi-tenant con RLS verificado, `contacts`, `message_log`, el sandbox `test_messages`, el receptor `toque-events` y el portal.
