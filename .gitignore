@@ -34,3 +34,8 @@ Vassco/Rut*.pdf
 # plugin desde github.com/czlonkowski/n8n-skills. Ninguna se versiona aqui.
 n8n-mcp/
 n8n-skills/
+
+# Exportaciones crudas de n8n: pueden traer credenciales embebidas
+_bf-*.json
+_wf-*.json
+*-export.json
