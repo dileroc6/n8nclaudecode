@@ -1,0 +1,227 @@
+[
+  {
+    "id": "ybgnIi1YfqZ3UpVX",
+    "name": "Toque - Supabase Postgres (n8n_worker)",
+    "type": "postgres"
+  },
+  {
+    "id": "E5J7iAL9CHiUVrE3",
+    "name": "Anthropic - Ferre Rappi",
+    "type": "anthropicApi"
+  },
+  {
+    "id": "KtNplJrgMaGoKMGU",
+    "name": "BC - Sheets Service Account",
+    "type": "googleApi"
+  },
+  {
+    "id": "kfmx1gj6KPrgmj2E",
+    "name": "BF - Sheets Service Account",
+    "type": "googleApi"
+  },
+  {
+    "id": "bdFoVsi2qdFV3fvT",
+    "name": "Luxe Smile - CRM API",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "BILafuZfMFFyO04t",
+    "name": "Savia - OpenAI account",
+    "type": "openAiApi"
+  },
+  {
+    "id": "0H1hsKpCAEbKGXPv",
+    "name": "Ferreteriaya_Siigo_bot",
+    "type": "telegramApi"
+  },
+  {
+    "id": "3o3N6kBR8CbwcJDD",
+    "name": "Zoe — Postgres",
+    "type": "postgres"
+  },
+  {
+    "id": "eymxaFnzFTpMKxP6",
+    "name": "Zoe — Evolution",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "h6Iv2GjVJYmMUGuc",
+    "name": "Zoe - OpenAI account",
+    "type": "openAiApi"
+  },
+  {
+    "id": "g7wMmmirtuG1Ryu9",
+    "name": "BF - Telegram",
+    "type": "telegramApi"
+  },
+  {
+    "id": "yyhjFRj5iigjQV9y",
+    "name": "BC - WordPress",
+    "type": "wordpressApi"
+  },
+  {
+    "id": "3PUYdqQCYA50xjIu",
+    "name": "Wordpress account",
+    "type": "wordpressApi"
+  },
+  {
+    "id": "ALqgbg5Kq6byqHSI",
+    "name": "BC - OpenAI Account",
+    "type": "openAiApi"
+  },
+  {
+    "id": "iCOrdfxr2sS8UqkL",
+    "name": "WooCommerce FerreteriaYa",
+    "type": "httpBasicAuth"
+  },
+  {
+    "id": "ZJgX8fvpUBL2VMek",
+    "name": "WooCommerce FerreteriaYa",
+    "type": "httpBasicAuth"
+  },
+  {
+    "id": "EKjOILVzVa1M4ZDm",
+    "name": "Telegram Bot FerreteriaYa",
+    "type": "telegramApi"
+  },
+  {
+    "id": "qoDPp0fY5sJ8AmbE",
+    "name": "Ferre_Telegram",
+    "type": "telegramApi"
+  },
+  {
+    "id": "tSY0QM8DwewkbOvJ",
+    "name": "Ferre_WordPress",
+    "type": "wordpressApi"
+  },
+  {
+    "id": "LvqgRgxnk4BolESc",
+    "name": "Ferre",
+    "type": "googleOAuth2Api"
+  },
+  {
+    "id": "uonq78tDtE28NMdx",
+    "name": "Ferre Google Sheets account",
+    "type": "googleSheetsOAuth2Api"
+  },
+  {
+    "id": "RTWfgCqeObrVs9Pk",
+    "name": "Ferre_Blog_NanoBanana",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "5Rvr3r9lUss9Vb5j",
+    "name": "Ferre_Blog_OpenAi",
+    "type": "openAiApi"
+  },
+  {
+    "id": "IHe5FCEzs9GC5BlE",
+    "name": "Ferre_SerpApi",
+    "type": "serpApi"
+  },
+  {
+    "id": "jW1QbVsyLlLsDOGK",
+    "name": "AP - Anthropic API",
+    "type": "anthropicApi"
+  },
+  {
+    "id": "44hTDtjkVRDKJOeU",
+    "name": "BF - SerpAPI",
+    "type": "serpApi"
+  },
+  {
+    "id": "WWC6aZedqHsUA3nd",
+    "name": "Anthropic account",
+    "type": "anthropicApi"
+  },
+  {
+    "id": "XWbfIBmitmx1uByl",
+    "name": "BF - Google OAuth",
+    "type": "googleOAuth2Api"
+  },
+  {
+    "id": "7iBygAb1uGxktnFH",
+    "name": "BF - Telegram Bot",
+    "type": "telegramApi"
+  },
+  {
+    "id": "ysOycTrtxEO3BRcW",
+    "name": "BF - BC - nano banana",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "Cz01dfl6QExI66H3",
+    "name": "Google Sheets Trigger account",
+    "type": "googleSheetsTriggerOAuth2Api"
+  },
+  {
+    "id": "r90z9yKyuuNlhBLy",
+    "name": "BF - WordPress",
+    "type": "wordpressApi"
+  },
+  {
+    "id": "sZscccSGx3nfNyOm",
+    "name": "BF - OpenAI",
+    "type": "openAiApi"
+  },
+  {
+    "id": "8AdaqfBuf9lQgubL",
+    "name": "OpenAi account 3",
+    "type": "openAiApi"
+  },
+  {
+    "id": "6a9Pt3vI39KsmCa0",
+    "name": "Anthropic API — LeadAI",
+    "type": "anthropicApi"
+  },
+  {
+    "id": "vzzTNppBFKg9XCiK",
+    "name": "PostgreSQL — LeadAI",
+    "type": "postgres"
+  },
+  {
+    "id": "QT0zn550ysJh8VpI",
+    "name": "Evolution API — Luxe Smile",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "0cuvaOyHmq74Ri5a",
+    "name": "LeadAI Postgres",
+    "type": "postgres"
+  },
+  {
+    "id": "70heM3IFsNK9Cyak",
+    "name": "BF - Google Sheets",
+    "type": "googleSheetsOAuth2Api"
+  },
+  {
+    "id": "OXuKZ17wG6y1lPrO",
+    "name": "Ferreteria Ya Api Woocommerce 3.1",
+    "type": "httpBasicAuth"
+  },
+  {
+    "id": "Ue8wdfEgMoZ8Cn1h",
+    "name": "OpenAi account 2",
+    "type": "openAiApi"
+  },
+  {
+    "id": "2VcuaBfAaHcbxuEF",
+    "name": "OpenAi account",
+    "type": "openAiApi"
+  },
+  {
+    "id": "cWhaoZh83aJqhlWg",
+    "name": "Google Gemini(PaLM) Api account",
+    "type": "googlePalmApi"
+  },
+  {
+    "id": "oVODLb2rYvvOAiW5",
+    "name": "Header Auth account",
+    "type": "httpHeaderAuth"
+  },
+  {
+    "id": "2I7Z6kwiTbYWPoVT",
+    "name": "Woocommerce Ferretería Api",
+    "type": "httpBasicAuth"
+  }
+]

@@ -1,0 +1,2054 @@
+[
+  {
+    "id": "077bV810y5Q4jUZ5",
+    "name": "67-Automatic_Shopify_Order_Fulfillment_Process",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:08:30.336Z",
+    "archivo": "workflows/077bV810y5Q4jUZ5.json"
+  },
+  {
+    "id": "0MCRs1IboWc6GRUd",
+    "name": "42-search-linkedin-companies,-score-with-ai-and-add-them-to-google-sheet-crm",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2025-07-14T19:06:49.211Z",
+    "archivo": "workflows/0MCRs1IboWc6GRUd.json"
+  },
+  {
+    "id": "0aWdCuqrqJEfmvgX",
+    "name": "84-Gmail_MCP_Server___Your_All_in_One_AI_Email_Toolkit",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 27,
+    "updatedAt": "2025-07-14T19:09:44.299Z",
+    "archivo": "workflows/0aWdCuqrqJEfmvgX.json"
+  },
+  {
+    "id": "0iaqtcZ2nm2ARTHt",
+    "name": "52-Analyze_Reddit_Posts_with_AI_to_Identify_Business_Opportunities",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2025-07-14T19:07:29.736Z",
+    "archivo": "workflows/0iaqtcZ2nm2ARTHt.json"
+  },
+  {
+    "id": "106G2ZYRQTzoVwSI",
+    "name": "Tool - Escalar a Humano",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 6,
+    "updatedAt": "2026-04-17T01:40:04.000Z",
+    "archivo": "workflows/106G2ZYRQTzoVwSI.json"
+  },
+  {
+    "id": "1PDBTJsZ1pNgzeQ0",
+    "name": "12-Automate_WhatsApp_Booking_System_with_GPT_4_Assistant__Cal_com_and_SMS_Reminders",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 26,
+    "updatedAt": "2025-07-14T19:04:42.550Z",
+    "archivo": "workflows/1PDBTJsZ1pNgzeQ0.json"
+  },
+  {
+    "id": "1zkSdcF3dn1K0kpd",
+    "name": "Savia — Confirmar Transferencia (WF-04)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-06-04T19:35:26.492Z",
+    "archivo": "workflows/1zkSdcF3dn1K0kpd.json"
+  },
+  {
+    "id": "20Hni3eSEwS2kVra",
+    "name": "BF - Test WordPress Content",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-04-24T01:31:43.290Z",
+    "archivo": "workflows/20Hni3eSEwS2kVra.json"
+  },
+  {
+    "id": "25czr8OCfn0fOup0",
+    "name": "_test_exceljs_tmp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-04T22:12:34.726Z",
+    "archivo": "workflows/25czr8OCfn0fOup0.json"
+  },
+  {
+    "id": "2TIXtqSAWxX1QjP9",
+    "name": "39-upload-to-instagram-and-tiktok-from-google-drive",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2025-07-14T19:06:34.721Z",
+    "archivo": "workflows/2TIXtqSAWxX1QjP9.json"
+  },
+  {
+    "id": "2vsMJm8sVOmqtBjR",
+    "name": "9-Automate_Blog_Content_Creation_with_Notion_MCP__DeepSeek_AI__and_WordPress",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2025-07-14T19:10:10.572Z",
+    "archivo": "workflows/2vsMJm8sVOmqtBjR.json"
+  },
+  {
+    "id": "37ZMWhzGb3ObewQ6",
+    "name": "BC - WF6 - Pillar Generator: Crear Página Pilar por Hub",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2026-05-26T15:52:10.218Z",
+    "archivo": "workflows/37ZMWhzGb3ObewQ6.json"
+  },
+  {
+    "id": "39sEBfGprwCtVKOD",
+    "name": "BC - WF11 - GSC Weekly Dashboard",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-05-26T15:46:36.325Z",
+    "archivo": "workflows/39sEBfGprwCtVKOD.json"
+  },
+  {
+    "id": "3IxIbIMw3QMB64zm",
+    "name": "Zoe — WF7 Festivos cron anual",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-14T18:04:06.995Z",
+    "archivo": "workflows/3IxIbIMw3QMB64zm.json"
+  },
+  {
+    "id": "3T4zuEH0Ysf6mThU",
+    "name": "81-Control_your_discord_server_with_natural_language_via_GPT4o_and_MCP_Client",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2025-07-14T19:09:33.342Z",
+    "archivo": "workflows/3T4zuEH0Ysf6mThU.json"
+  },
+  {
+    "id": "3mG8pAcZfH6AiWtP",
+    "name": "3-Generate_AI_Viral_Videos_with_Seedance_and_Upload_to_TikTok__YouTube___Instagram",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 41,
+    "updatedAt": "2025-07-14T19:05:56.030Z",
+    "archivo": "workflows/3mG8pAcZfH6AiWtP.json"
+  },
+  {
+    "id": "48PfLIeIhbPdkwZQ",
+    "name": "_test_exceljs_tmp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-05T00:33:19.888Z",
+    "archivo": "workflows/48PfLIeIhbPdkwZQ.json"
+  },
+  {
+    "id": "4Bs80edTasB3Dwxy",
+    "name": "79-Automate_LinkedIn_Candidates_Sourcing_with_Google_X_ray_Boolean_Search",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:09:21.988Z",
+    "archivo": "workflows/4Bs80edTasB3Dwxy.json"
+  },
+  {
+    "id": "4O94ldg3HvuV1FDf",
+    "name": "Parqueadero - API auth",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-08-25T02:26:30.447Z",
+    "archivo": "workflows/4O94ldg3HvuV1FDf.json"
+  },
+  {
+    "id": "4ZwAofqjnHnShiDL",
+    "name": "37-ai-generated-linkedin-posts-with-openai,-google-sheets-&-email-approval-workflow",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:06:27.294Z",
+    "archivo": "workflows/4ZwAofqjnHnShiDL.json"
+  },
+  {
+    "id": "4vPCym417t5nO9ru",
+    "name": "BC - WF8 - Bulk AEO Migrator: AEO en posts existentes (sin GSC)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2026-05-26T15:52:15.965Z",
+    "archivo": "workflows/4vPCym417t5nO9ru.json"
+  },
+  {
+    "id": "4wscpGzlhWwSwJdX",
+    "name": "46-Enhance Customer Chat Buffer Messages with Twilio and Redis",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:41:17.348Z",
+    "archivo": "workflows/4wscpGzlhWwSwJdX.json"
+  },
+  {
+    "id": "4xQaoS9O8JcWYW7C",
+    "name": "_test_exceljs_tmp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-04T22:24:14.999Z",
+    "archivo": "workflows/4xQaoS9O8JcWYW7C.json"
+  },
+  {
+    "id": "5D7MXjr4LQdypZqk",
+    "name": "58-Post_New_YouTube_Videos_to_X",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2025-07-14T19:07:51.850Z",
+    "archivo": "workflows/5D7MXjr4LQdypZqk.json"
+  },
+  {
+    "id": "5Zj45UEnuezzzTHM",
+    "name": "Tool - Confirmar Cita",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-04-17T01:51:18.487Z",
+    "archivo": "workflows/5Zj45UEnuezzzTHM.json"
+  },
+  {
+    "id": "62MN6oqxOs3levjh",
+    "name": "15-AI_Youtube_Trend_Finder_Based_On_Niche",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2025-07-14T19:04:53.753Z",
+    "archivo": "workflows/62MN6oqxOs3levjh.json"
+  },
+  {
+    "id": "6QMFduaiUqYWdu9s",
+    "name": "Bejauha - Panel Clientes (Sheet)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-06-30T20:49:33.708Z",
+    "archivo": "workflows/6QMFduaiUqYWdu9s.json"
+  },
+  {
+    "id": "6yuuBScT8qA7QxPk",
+    "name": "Bejauha - Dashboard Admin (WF05)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-06-22T03:03:27.738Z",
+    "archivo": "workflows/6yuuBScT8qA7QxPk.json"
+  },
+  {
+    "id": "73UFpj4m2vke6IPk",
+    "name": "BF - WF7 - AEO Monitor: Detectar citas en Google AI Overview",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-06-03T22:12:22.060Z",
+    "archivo": "workflows/73UFpj4m2vke6IPk.json"
+  },
+  {
+    "id": "7D9mWt3zJePCco3Q",
+    "name": "25-scrape-business-emails-from-google-maps-without-the-use-of-any-third-party-apis",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2025-07-14T19:05:37.405Z",
+    "archivo": "workflows/7D9mWt3zJePCco3Q.json"
+  },
+  {
+    "id": "7DSTqhxbzWRQsIyJ",
+    "name": "Parqueadero - API resumen",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-08-25T02:26:31.865Z",
+    "archivo": "workflows/7DSTqhxbzWRQsIyJ.json"
+  },
+  {
+    "id": "7WUUv3Cneyug0nd3",
+    "name": "74-Invoice_data_extraction_with_LlamaParse_and_OpenAI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 26,
+    "updatedAt": "2025-07-14T19:08:59.716Z",
+    "archivo": "workflows/7WUUv3Cneyug0nd3.json"
+  },
+  {
+    "id": "7X45f7qscFTW3W5o",
+    "name": "Ferretería Ya - WF-2 - Generador de Ideas",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2026-05-04T23:05:07.048Z",
+    "archivo": "workflows/7X45f7qscFTW3W5o.json"
+  },
+  {
+    "id": "7sHYts3pBkYe3Kon",
+    "name": "24-simple-telegram-ai-chatbot",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 16,
+    "updatedAt": "2025-07-14T19:05:33.748Z",
+    "archivo": "workflows/7sHYts3pBkYe3Kon.json"
+  },
+  {
+    "id": "87OWMbv49XhU2GGE",
+    "name": "Advalis Growth Advisor - ChatGPT Edition",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-04-25T15:16:06.330Z",
+    "archivo": "workflows/87OWMbv49XhU2GGE.json"
+  },
+  {
+    "id": "8DgZqVSwtc7fMasV",
+    "name": "WF-06 - Reporte Semanal",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-04-16T19:19:32.513Z",
+    "archivo": "workflows/8DgZqVSwtc7fMasV.json"
+  },
+  {
+    "id": "8MEK3BFvu2f0pege",
+    "name": "Agente FerreteríaYa 3.3",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-24T14:44:41.489Z",
+    "archivo": "workflows/8MEK3BFvu2f0pege.json"
+  },
+  {
+    "id": "8UpqTxZE8W7papQu",
+    "name": "11-Auto_Publish_Social_Videos_to_9_Platforms_via_Google_Sheets_and_Blotato",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 16,
+    "updatedAt": "2025-07-14T19:04:38.814Z",
+    "archivo": "workflows/8UpqTxZE8W7papQu.json"
+  },
+  {
+    "id": "8nGraWbaUJdUQn02",
+    "name": "Tool - Actualizar Lead",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 3,
+    "updatedAt": "2026-04-16T20:20:27.020Z",
+    "archivo": "workflows/8nGraWbaUJdUQn02.json"
+  },
+  {
+    "id": "8o6MezK5LYNn7CBL",
+    "name": "41-analyze-any-website-with-openai-and-get-on-page-seo-audit",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2025-07-14T19:06:45.573Z",
+    "archivo": "workflows/8o6MezK5LYNn7CBL.json"
+  },
+  {
+    "id": "99yXL5T7suCrTvYB",
+    "name": "35-ai-agent-google-calendar-assistant-using-openai",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2025-07-14T19:06:19.941Z",
+    "archivo": "workflows/99yXL5T7suCrTvYB.json"
+  },
+  {
+    "id": "ABAyJnSeLFNnwbWy",
+    "name": "Bejauha - PROSPECCIÓN Outbound (WF01)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 6,
+    "updatedAt": "2026-05-28T14:07:46.401Z",
+    "archivo": "workflows/ABAyJnSeLFNnwbWy.json"
+  },
+  {
+    "id": "AJcl5Fq5ND2bqoro",
+    "name": "100-Automated_Stock_Analysis_Reports_with_Technical___News_Sentiment_using_GPT_4o",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:04:35.204Z",
+    "archivo": "workflows/AJcl5Fq5ND2bqoro.json"
+  },
+  {
+    "id": "AevCEffvMg3JjcQC",
+    "name": "40-Telegram_Messaging_Agent_for_Text_Audio_Images",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 39,
+    "updatedAt": "2025-07-14T19:06:41.924Z",
+    "archivo": "workflows/AevCEffvMg3JjcQC.json"
+  },
+  {
+    "id": "AvBR1nVafJzwHLpH",
+    "name": "Zoe — WF4 Recordatorio 24h",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-14T18:05:24.757Z",
+    "archivo": "workflows/AvBR1nVafJzwHLpH.json"
+  },
+  {
+    "id": "AyB7JjSTzAwt9myC",
+    "name": "49-Respond to WhatsApp Messages with AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 35,
+    "updatedAt": "2025-07-14T19:41:35.064Z",
+    "archivo": "workflows/AyB7JjSTzAwt9myC.json"
+  },
+  {
+    "id": "AziomwL7xhfSSL7I",
+    "name": "My workflow",
+    "active": false,
+    "isArchived": true,
+    "nodeCount": 0,
+    "updatedAt": "2026-03-12T13:42:42.000Z",
+    "archivo": "workflows/AziomwL7xhfSSL7I.json"
+  },
+  {
+    "id": "BRHUxVlU8lpqoEwW",
+    "name": "13-Convert_YouTube_Videos_to_Shorts_with_Klap___Auto_Post_to_Multiple_Social_Platforms",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 36,
+    "updatedAt": "2025-07-14T19:04:46.327Z",
+    "archivo": "workflows/BRHUxVlU8lpqoEwW.json"
+  },
+  {
+    "id": "BlH769YZbjQ0rT4I",
+    "name": "69-Automate_New_Customer_Onboarding_with_HubSpot__Google_Calendar__and_AI_Powered_Gmail",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 30,
+    "updatedAt": "2025-07-14T19:08:37.608Z",
+    "archivo": "workflows/BlH769YZbjQ0rT4I.json"
+  },
+  {
+    "id": "CGjSu6Enk5oPngL6",
+    "name": "1-Clone_Viral_TikToks_with_AI_Avatars___Auto_Post_to_9_Platforms_using_Perplexity___Blotato",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 42,
+    "updatedAt": "2025-07-14T19:04:27.816Z",
+    "archivo": "workflows/CGjSu6Enk5oPngL6.json"
+  },
+  {
+    "id": "CTeTsjolLpdIfxMf",
+    "name": "Bejauha - Seed Test Row (one-shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-07-07T14:17:23.797Z",
+    "archivo": "workflows/CTeTsjolLpdIfxMf.json"
+  },
+  {
+    "id": "CjloFf9OZBafHB9o",
+    "name": "87-HR_Job_Posting_and_Evaluation_with_AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 36,
+    "updatedAt": "2025-07-14T19:09:55.648Z",
+    "archivo": "workflows/CjloFf9OZBafHB9o.json"
+  },
+  {
+    "id": "CuBrhx5KucZ4mMXX",
+    "name": "Luxe Smile WF01 — Captación y Calificación",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 42,
+    "updatedAt": "2026-05-28T18:00:23.997Z",
+    "archivo": "workflows/CuBrhx5KucZ4mMXX.json"
+  },
+  {
+    "id": "D4lIdDMN8fKb5bqE",
+    "name": "LeadAI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-04-01T23:32:25.631Z",
+    "archivo": "workflows/D4lIdDMN8fKb5bqE.json"
+  },
+  {
+    "id": "D9SZmib0atDn3Qno",
+    "name": "23-fully-automated-ai-video-generation-&-multi-platform-publishing",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 51,
+    "updatedAt": "2025-07-14T19:05:30.015Z",
+    "archivo": "workflows/D9SZmib0atDn3Qno.json"
+  },
+  {
+    "id": "EXotNwCwWbg6tg2x",
+    "name": "FerreteriaYa - Bot Admin Telegram",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 51,
+    "updatedAt": "2026-05-20T16:03:09.146Z",
+    "archivo": "workflows/EXotNwCwWbg6tg2x.json"
+  },
+  {
+    "id": "EeroWXsAytgZm3ee",
+    "name": "33-Automate Multi-Platform Social Media Content Creation",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 100,
+    "updatedAt": "2025-07-14T19:35:40.000Z",
+    "archivo": "workflows/EeroWXsAytgZm3ee.json"
+  },
+  {
+    "id": "Et8gzLTUbwLvilTl",
+    "name": "Toque - Handler Ejecutar Campaña",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-07-10T12:26:37.506Z",
+    "archivo": "workflows/Et8gzLTUbwLvilTl.json"
+  },
+  {
+    "id": "FIdLhfE1md7YYU2c",
+    "name": "19-ai-marketing-report-(google-analytics-&-ads,-meta-ads),-sent-via-email_telegram",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 51,
+    "updatedAt": "2025-07-14T19:05:11.567Z",
+    "archivo": "workflows/FIdLhfE1md7YYU2c.json"
+  },
+  {
+    "id": "FLcj4EWmaPvsQmpj",
+    "name": "20-building-your-first-whatsapp-chatbot",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 27,
+    "updatedAt": "2025-07-14T19:05:18.902Z",
+    "archivo": "workflows/FLcj4EWmaPvsQmpj.json"
+  },
+  {
+    "id": "FNvLFgtHlZ65P3O0",
+    "name": "97-ai-prompt-generator-workflow",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2025-07-14T19:10:40.268Z",
+    "archivo": "workflows/FNvLFgtHlZ65P3O0.json"
+  },
+  {
+    "id": "FhOqTJ2lAtR6MRWp",
+    "name": "55-Real_Estate_Lead_Generation_with_BatchData_Skip_Tracing___CRM_Integration",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2025-07-14T19:07:40.843Z",
+    "archivo": "workflows/FhOqTJ2lAtR6MRWp.json"
+  },
+  {
+    "id": "FsRTGVuFuFqqoW0u",
+    "name": "Parqueadero - API registro",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2026-08-25T02:26:32.933Z",
+    "archivo": "workflows/FsRTGVuFuFqqoW0u.json"
+  },
+  {
+    "id": "GaTuSv4LfAI30ojK",
+    "name": "FERRE - Agente WA Nico Bogotá",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-05-20T15:36:36.062Z",
+    "archivo": "workflows/GaTuSv4LfAI30ojK.json"
+  },
+  {
+    "id": "HEd07Mg7zIbBp2ti",
+    "name": "90-Daily_AI_News_Translation___Summary_with_GPT_4_and_Telegram_Delivery",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2025-07-14T19:10:14.366Z",
+    "archivo": "workflows/HEd07Mg7zIbBp2ti.json"
+  },
+  {
+    "id": "HKHtYpK4qR2dlwHe",
+    "name": "18-automated-ai-content-creation-&-instagram-publishing-from-google-sheets-",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 25,
+    "updatedAt": "2025-07-14T19:05:07.669Z",
+    "archivo": "workflows/HKHtYpK4qR2dlwHe.json"
+  },
+  {
+    "id": "HU8Dh4reb4fNJH9g",
+    "name": "Toque - Handler Pago Fallido",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-07-09T17:11:32.680Z",
+    "archivo": "workflows/HU8Dh4reb4fNJH9g.json"
+  },
+  {
+    "id": "I5s9ttKr1xNnUAHh",
+    "name": "FerreteríaYa WA — Agente Nico",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-05-09T16:05:35.593Z",
+    "archivo": "workflows/I5s9ttKr1xNnUAHh.json"
+  },
+  {
+    "id": "IBbRJV2G7DyFN020",
+    "name": "66-Automatic_Shopify_Order_Fulfillment_Process",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2025-07-14T19:08:26.805Z",
+    "archivo": "workflows/IBbRJV2G7DyFN020.json"
+  },
+  {
+    "id": "IKxkfrw9u0bFJnFy",
+    "name": "Bejauha - Sandbox Page (HTML)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-06-23T03:18:12.459Z",
+    "archivo": "workflows/IKxkfrw9u0bFJnFy.json"
+  },
+  {
+    "id": "ILMUPuNWbBEtoWTk",
+    "name": "21-scrape-and-summarize-webpages-with-ai",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 16,
+    "updatedAt": "2025-07-14T19:05:22.613Z",
+    "archivo": "workflows/ILMUPuNWbBEtoWTk.json"
+  },
+  {
+    "id": "IMmZ34MsJ2Qv6aFB",
+    "name": "WF-02 — Agente IA (v2)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-04-17T01:54:10.624Z",
+    "archivo": "workflows/IMmZ34MsJ2Qv6aFB.json"
+  },
+  {
+    "id": "IVKelNHLoEaWD92B",
+    "name": "BF - WF1 - Blog SEO: Keyword → Publicar en WordPress",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 38,
+    "updatedAt": "2026-05-26T15:31:57.079Z",
+    "archivo": "workflows/IVKelNHLoEaWD92B.json"
+  },
+  {
+    "id": "Iw58NDHtQF8YYQN6",
+    "name": "Parqueadero - Bot Telegram",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2026-08-23T15:36:40.583Z",
+    "archivo": "workflows/Iw58NDHtQF8YYQN6.json"
+  },
+  {
+    "id": "IxpEmIZCHPPp4sC7",
+    "name": "WA Router - Dev Multi-Proyecto",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 10,
+    "updatedAt": "2026-05-26T11:30:04.893Z",
+    "archivo": "workflows/IxpEmIZCHPPp4sC7.json"
+  },
+  {
+    "id": "J2zsV8reeuJaPLNr",
+    "name": "65-Extract_and_process_information_directly_from_PDF_using_Claude_and_Gemini",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2025-07-14T19:08:23.251Z",
+    "archivo": "workflows/J2zsV8reeuJaPLNr.json"
+  },
+  {
+    "id": "JQEvRdrNvyNZBjfC",
+    "name": "AP - brief-blog (form)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-05-13T15:36:08.806Z",
+    "archivo": "workflows/JQEvRdrNvyNZBjfC.json"
+  },
+  {
+    "id": "JkW5xEbusWOJKI1R",
+    "name": "Savia — Bot Ventas WhatsApp (WF-01)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 63,
+    "updatedAt": "2026-06-11T21:19:28.014Z",
+    "archivo": "workflows/JkW5xEbusWOJKI1R.json"
+  },
+  {
+    "id": "Jxc1UVPoK4mGJVHJ",
+    "name": "Luxe Smile — Confirmación de Pago Manual",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2026-04-21T21:50:09.277Z",
+    "archivo": "workflows/Jxc1UVPoK4mGJVHJ.json"
+  },
+  {
+    "id": "JzBBDAfhcex4YIH6",
+    "name": "94-multiple-websites-monitoring-with-notifications-including-phone-calls",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 20,
+    "updatedAt": "2025-07-14T19:10:29.307Z",
+    "archivo": "workflows/JzBBDAfhcex4YIH6.json"
+  },
+  {
+    "id": "KLlvvroNA04WBiE6",
+    "name": "93-content-farming---_-ai-powered-blog-automation-for-wordpress-",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 81,
+    "updatedAt": "2025-07-14T19:10:25.506Z",
+    "archivo": "workflows/KLlvvroNA04WBiE6.json"
+  },
+  {
+    "id": "KSUMI2TaXjYyjZOc",
+    "name": "Ferre Impresion Rappi",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-06-20T23:29:43.672Z",
+    "archivo": "workflows/KSUMI2TaXjYyjZOc.json"
+  },
+  {
+    "id": "KoERsd8s61nmKSrv",
+    "name": "AP - brief-blog",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 6,
+    "updatedAt": "2026-04-30T14:51:05.899Z",
+    "archivo": "workflows/KoERsd8s61nmKSrv.json"
+  },
+  {
+    "id": "L12azXpMr4i2VUQ2",
+    "name": "_test_exceljs_tmp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-04T22:31:18.423Z",
+    "archivo": "workflows/L12azXpMr4i2VUQ2.json"
+  },
+  {
+    "id": "L5F8zRK31RnRiayq",
+    "name": "02 - Envío WhatsApp (lee MENSAJE vacío)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-06-04T13:41:22.168Z",
+    "archivo": "workflows/L5F8zRK31RnRiayq.json"
+  },
+  {
+    "id": "M0Uqiu8ggudqtqDh",
+    "name": "BF - WF-Diag - GSC Coverage Check (TEMP)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-06T02:06:32.616Z",
+    "archivo": "workflows/M0Uqiu8ggudqtqDh.json"
+  },
+  {
+    "id": "M4tZI2AQqT0K5cnj",
+    "name": "FERRE - Agente WA Nico",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-05-20T14:05:07.804Z",
+    "archivo": "workflows/M4tZI2AQqT0K5cnj.json"
+  },
+  {
+    "id": "MtGd2426PSNaYgTC",
+    "name": "BF - WF-Util - Cleanup Posts",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-05-06T02:51:20.223Z",
+    "archivo": "workflows/MtGd2426PSNaYgTC.json"
+  },
+  {
+    "id": "MvDo4iHbD5Trxv1u",
+    "name": "Luxe Smile — CRM Smoke Test",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-05-19T15:35:25.597Z",
+    "archivo": "workflows/MvDo4iHbD5Trxv1u.json"
+  },
+  {
+    "id": "MvNmMAAtuakYjEfQ",
+    "name": "36-personalize-marketing-emails-using-customer-data-and-ai",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 24,
+    "updatedAt": "2025-07-14T19:06:23.615Z",
+    "archivo": "workflows/MvNmMAAtuakYjEfQ.json"
+  },
+  {
+    "id": "NXaDYafkvgd2kp9m",
+    "name": "Zoe — WF5 OTP cron",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 8,
+    "updatedAt": "2026-05-13T10:22:25.574Z",
+    "archivo": "workflows/NXaDYafkvgd2kp9m.json"
+  },
+  {
+    "id": "NfyiIZRuRiwTl1no",
+    "name": "71-Breakdown_Documents_into_Study_Notes_using_Templating_MistralAI_and_Qdrant",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 42,
+    "updatedAt": "2025-07-14T19:08:48.544Z",
+    "archivo": "workflows/NfyiIZRuRiwTl1no.json"
+  },
+  {
+    "id": "Ntql6WamxvFSvBQW",
+    "name": "59-Create_LinkedIn_Contributions_with_AI_and_Notify_Users_On_Slack",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 32,
+    "updatedAt": "2025-07-14T19:07:55.501Z",
+    "archivo": "workflows/Ntql6WamxvFSvBQW.json"
+  },
+  {
+    "id": "O1vQmi3bXIqJ8dCb",
+    "name": "50-Amazon_Product_Search_Scraper_with_BrightData__GPT_4__and_Google_Sheets",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2025-07-14T19:07:22.645Z",
+    "archivo": "workflows/O1vQmi3bXIqJ8dCb.json"
+  },
+  {
+    "id": "OGepgAooB93FaKKo",
+    "name": "Bejauha - Outbound Reactivación (Sheet)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-07-07T14:47:24.714Z",
+    "archivo": "workflows/OGepgAooB93FaKKo.json"
+  },
+  {
+    "id": "OGn6dGGPCNUqvzJP",
+    "name": "30-transcribe-audio-files,-summarize-with-gpt-4-and-store-in-notion",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 8,
+    "updatedAt": "2025-07-14T19:05:59.714Z",
+    "archivo": "workflows/OGn6dGGPCNUqvzJP.json"
+  },
+  {
+    "id": "OSUs3lfEmwCNXbhy",
+    "name": "Parqueadero - Respaldo semanal",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-08-23T11:50:54.756Z",
+    "archivo": "workflows/OSUs3lfEmwCNXbhy.json"
+  },
+  {
+    "id": "ObCSdDVajfhBYY4A",
+    "name": "62-Automated_Generation_of_AI_Advertising_Photos_for_Product_Marketing",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:08:12.442Z",
+    "archivo": "workflows/ObCSdDVajfhBYY4A.json"
+  },
+  {
+    "id": "OiHsGnrs0QJyemfO",
+    "name": "26-ask-questions-about-a-pdf-using-ai",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2025-07-14T19:05:41.138Z",
+    "archivo": "workflows/OiHsGnrs0QJyemfO.json"
+  },
+  {
+    "id": "Ok1bO3wdBvjttlhF",
+    "name": "8-Automate_Lead_Qualification_with_RetellAI_Phone_Agent__OpenAI_GPT___Google_Sheet",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 19,
+    "updatedAt": "2025-07-14T19:09:25.873Z",
+    "archivo": "workflows/Ok1bO3wdBvjttlhF.json"
+  },
+  {
+    "id": "OnQuzPOh17zMRAQh",
+    "name": "Nico - Ferretería Ya (GPT primero + WooCommerce)",
+    "active": false,
+    "isArchived": true,
+    "nodeCount": 10,
+    "updatedAt": "2026-02-27T13:19:01.000Z",
+    "archivo": "workflows/OnQuzPOh17zMRAQh.json"
+  },
+  {
+    "id": "PloVJdTP2G8lKMNo",
+    "name": "BC - WF3 - Re-optimización SEO: Posts GSC posición 6-50",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 26,
+    "updatedAt": "2026-05-26T15:52:09.150Z",
+    "archivo": "workflows/PloVJdTP2G8lKMNo.json"
+  },
+  {
+    "id": "PmQJibZ4nM4dGCFh",
+    "name": "Ferreter�aYa - Bot Precios Siigo",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 38,
+    "updatedAt": "2026-05-20T23:30:00.459Z",
+    "archivo": "workflows/PmQJibZ4nM4dGCFh.json"
+  },
+  {
+    "id": "QCRewv0AGcfFqINt",
+    "name": "Bejauha - Agente Admin Sheet (WF-ADM)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-07-09T17:48:39.958Z",
+    "archivo": "workflows/QCRewv0AGcfFqINt.json"
+  },
+  {
+    "id": "QVuiHfOES87aMFf1",
+    "name": "Prueba",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-03-03T20:28:49.396Z",
+    "archivo": "workflows/QVuiHfOES87aMFf1.json"
+  },
+  {
+    "id": "RS4t963GlxCBNKq4",
+    "name": "Bejauha - Inbound Bot Planes (Sheet)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-07-14T21:51:37.613Z",
+    "archivo": "workflows/RS4t963GlxCBNKq4.json"
+  },
+  {
+    "id": "RU6ZaTA3nCZeWdy9",
+    "name": "99-Automated_Stock_Analysis_Reports_with_Technical___News_Sentiment_using_GPT_4o",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 44,
+    "updatedAt": "2025-07-14T19:10:47.434Z",
+    "archivo": "workflows/RU6ZaTA3nCZeWdy9.json"
+  },
+  {
+    "id": "RYhnbWPasSKE5HL6",
+    "name": "BC - WF7 - AEO Monitor: Detectar citas en Google AI Overview",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-05-26T15:52:13.050Z",
+    "archivo": "workflows/RYhnbWPasSKE5HL6.json"
+  },
+  {
+    "id": "Rzri51Vm4BdEA0Gy",
+    "name": "Tool - Enviar Mensaje",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-04-17T01:39:57.000Z",
+    "archivo": "workflows/Rzri51Vm4BdEA0Gy.json"
+  },
+  {
+    "id": "S3Yx1gWQAJYy7mYM",
+    "name": "31-ai-voice-chatbot-with-elevenlabs-&-openai-for-customer-service-and-restaurants",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2025-07-14T19:06:04.921Z",
+    "archivo": "workflows/S3Yx1gWQAJYy7mYM.json"
+  },
+  {
+    "id": "SB10zprJRSAjEbTH",
+    "name": "Luxe Smile — CRM Exploration (test endpoints)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 10,
+    "updatedAt": "2026-05-19T16:46:09.522Z",
+    "archivo": "workflows/SB10zprJRSAjEbTH.json"
+  },
+  {
+    "id": "SBhElhiVwF1JNOeI",
+    "name": "WF-04 - Escalacion",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-04-16T02:01:55.212Z",
+    "archivo": "workflows/SBhElhiVwF1JNOeI.json"
+  },
+  {
+    "id": "SRCYX5c8qImyTYt9",
+    "name": "Bejauha - Recordatorios de Vencimiento (WF04)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-05-28T21:36:31.545Z",
+    "archivo": "workflows/SRCYX5c8qImyTYt9.json"
+  },
+  {
+    "id": "SzxB0IQBRthioBDR",
+    "name": "89-Translate_Telegram_audio_messages_with_AI__55_supported_languages_",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2025-07-14T19:10:05.699Z",
+    "archivo": "workflows/SzxB0IQBRthioBDR.json"
+  },
+  {
+    "id": "T3VNbFLsRZEQjhAo",
+    "name": "64-Integrating_AI_with_Open_Meteo_API_for_Enhanced_Weather_Forecasting",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2025-07-14T19:08:19.609Z",
+    "archivo": "workflows/T3VNbFLsRZEQjhAo.json"
+  },
+  {
+    "id": "T46531TOrPeT6VmS",
+    "name": "BF - WF3 - Re-optimización SEO: Posts GSC posición 6-50",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 26,
+    "updatedAt": "2026-06-03T22:12:45.557Z",
+    "archivo": "workflows/T46531TOrPeT6VmS.json"
+  },
+  {
+    "id": "TUClcBl9RKIzw7Tz",
+    "name": "BC - WF-Util - Footer Insert Legales",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-05-11T21:18:07.132Z",
+    "archivo": "workflows/TUClcBl9RKIzw7Tz.json"
+  },
+  {
+    "id": "TcVKslh4l9CriUx0",
+    "name": "92-Daily_AI_News_Translation___Summary_with_GPT_4_and_Telegram_Delivery",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:10:21.900Z",
+    "archivo": "workflows/TcVKslh4l9CriUx0.json"
+  },
+  {
+    "id": "TiYyaqXDH4sJT6y3",
+    "name": "WF-03 - Agendador",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 20,
+    "updatedAt": "2026-04-16T02:02:43.209Z",
+    "archivo": "workflows/TiYyaqXDH4sJT6y3.json"
+  },
+  {
+    "id": "TxLStGP5K2wCNj9I",
+    "name": "WF-01 — Receptor de mensajes",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-04-16T19:28:22.826Z",
+    "archivo": "workflows/TxLStGP5K2wCNj9I.json"
+  },
+  {
+    "id": "Ufd0oZjrQuUixrU2",
+    "name": "29-ai-researcher-for-sales",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2025-07-14T19:05:52.293Z",
+    "archivo": "workflows/Ufd0oZjrQuUixrU2.json"
+  },
+  {
+    "id": "VUA4Rnm3hYWVqcE5",
+    "name": "BC - WF9 - Pilares Auto-Sync (cluster injection diaria)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-05-26T15:52:17.253Z",
+    "archivo": "workflows/VUA4Rnm3hYWVqcE5.json"
+  },
+  {
+    "id": "W1032lBc7omoAYYP",
+    "name": "AP - brief-blog (form GET)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 3,
+    "updatedAt": "2026-05-13T13:51:29.312Z",
+    "archivo": "workflows/W1032lBc7omoAYYP.json"
+  },
+  {
+    "id": "W5LJm55H7GjGHPAr",
+    "name": "Tool - Buscar Slots",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-04-17T01:39:35.000Z",
+    "archivo": "workflows/W5LJm55H7GjGHPAr.json"
+  },
+  {
+    "id": "X0uSjcINb8pNndoU",
+    "name": "32-notion-ai-assistant-generator",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2025-07-14T19:06:08.927Z",
+    "archivo": "workflows/X0uSjcINb8pNndoU.json"
+  },
+  {
+    "id": "X1efkOass1xPVcCw",
+    "name": "61-Transform_Gmail_Newsletters_into_Insightful_LinkedIn_Posts_Using_OpenAI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2025-07-14T19:08:08.791Z",
+    "archivo": "workflows/X1efkOass1xPVcCw.json"
+  },
+  {
+    "id": "XS6osnLbJDbsmeLe",
+    "name": "77-Automate_Customer_Support_Issue_Resolution_using_AI_Text_Classifier",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 36,
+    "updatedAt": "2025-07-14T19:09:14.575Z",
+    "archivo": "workflows/XS6osnLbJDbsmeLe.json"
+  },
+  {
+    "id": "XvMhI97WVqj49U9f",
+    "name": "BF - WF9 - Pilares Auto-Sync (cluster injection diaria)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-06-03T22:10:57.414Z",
+    "archivo": "workflows/XvMhI97WVqj49U9f.json"
+  },
+  {
+    "id": "Y2MJTGvUzvOCkozQ",
+    "name": "22-Automate_Multi_Platform_Social_Media_Content_Creation",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 57,
+    "updatedAt": "2025-07-14T19:05:26.251Z",
+    "archivo": "workflows/Y2MJTGvUzvOCkozQ.json"
+  },
+  {
+    "id": "Y4t0DOPGdYXQFoyx",
+    "name": "6-Auto_create_and_publish_AI_social_videos_with_Telegram__GPT_4_and_Blotato",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 43,
+    "updatedAt": "2025-07-14T19:07:59.259Z",
+    "archivo": "workflows/Y4t0DOPGdYXQFoyx.json"
+  },
+  {
+    "id": "YYtujp8tsfw0Mkmp",
+    "name": "Bejauha - Recordatorio Última Clase (Sheet)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-07-07T14:43:42.214Z",
+    "archivo": "workflows/YYtujp8tsfw0Mkmp.json"
+  },
+  {
+    "id": "Ybas1LAHGiMWtSM5",
+    "name": "28-generate-instagram-content-from-top-trends-with-ai-image-generation",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 44,
+    "updatedAt": "2025-07-14T19:05:48.573Z",
+    "archivo": "workflows/Ybas1LAHGiMWtSM5.json"
+  },
+  {
+    "id": "YfVJeScFyVKodWwA",
+    "name": "85-Get_notified_when_your_competitors_change_their_pricing_with_Airtop_and_Slack",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 10,
+    "updatedAt": "2025-07-14T19:09:48.110Z",
+    "archivo": "workflows/YfVJeScFyVKodWwA.json"
+  },
+  {
+    "id": "YnrDJqWTWe96OpR8",
+    "name": "Zoe — WF2 Agendar",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-05-08T13:40:02.411Z",
+    "archivo": "workflows/YnrDJqWTWe96OpR8.json"
+  },
+  {
+    "id": "ZRix3z7YkYl9KLpq",
+    "name": "Zoe — WF3 Reprogramar/Cancelar/OTP",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 22,
+    "updatedAt": "2026-05-13T10:22:12.366Z",
+    "archivo": "workflows/ZRix3z7YkYl9KLpq.json"
+  },
+  {
+    "id": "ZXGkalck7p1Ugj26",
+    "name": "BC - WF-Util - Force Publish Drafts (one-off)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-07T19:30:11.600Z",
+    "archivo": "workflows/ZXGkalck7p1Ugj26.json"
+  },
+  {
+    "id": "aJ0ZM1g2Z1dFhZnm",
+    "name": "91-turn-google-sheets-ideas-into-ai-videos-with-gpt-4o-and-fal.ai-veo-3",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:10:18.047Z",
+    "archivo": "workflows/aJ0ZM1g2Z1dFhZnm.json"
+  },
+  {
+    "id": "aLB0VsDk4CVi6drB",
+    "name": "Savia — [Tool] Crear Pedido WC",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-14T01:30:11.943Z",
+    "archivo": "workflows/aLB0VsDk4CVi6drB.json"
+  },
+  {
+    "id": "aSy1GEWhtUzIHncw",
+    "name": "Luxe Smile — Admin Control",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2026-04-19T03:18:43.896Z",
+    "archivo": "workflows/aSy1GEWhtUzIHncw.json"
+  },
+  {
+    "id": "ayIVK6sa3ymy7lU7",
+    "name": "54-Automatic_Background_Removal_for_Images_in_Google_Drive",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 16,
+    "updatedAt": "2025-07-14T19:07:37.220Z",
+    "archivo": "workflows/ayIVK6sa3ymy7lU7.json"
+  },
+  {
+    "id": "bTiwxsf3heQmsDcA",
+    "name": "95-build-custom-workflows-automatically-with-gpt-4o,-rag,-and-web-search",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 33,
+    "updatedAt": "2025-07-14T19:10:33.103Z",
+    "archivo": "workflows/bTiwxsf3heQmsDcA.json"
+  },
+  {
+    "id": "bUzKAIBYmJvNa1ME",
+    "name": "Luxe Smile — Cotización y Cierre",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-04-19T03:04:37.008Z",
+    "archivo": "workflows/bUzKAIBYmJvNa1ME.json"
+  },
+  {
+    "id": "bWYAwFDRlU7bIYRH",
+    "name": "BF - WF-Util - Publish Interactive Page (Calculadora)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-05-07T17:33:01.628Z",
+    "archivo": "workflows/bWYAwFDRlU7bIYRH.json"
+  },
+  {
+    "id": "cDkui7UtHcN4JJBo",
+    "name": "27-flux-ai-image-generator",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2025-07-14T19:05:44.805Z",
+    "archivo": "workflows/cDkui7UtHcN4JJBo.json"
+  },
+  {
+    "id": "cE3mJkzcKmJrWg4z",
+    "name": "BF - WF6 - Pillar Generator: Crear Página Pilar por Hub",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2026-05-04T22:53:10.284Z",
+    "archivo": "workflows/cE3mJkzcKmJrWg4z.json"
+  },
+  {
+    "id": "cgAXqzntirV1uDb5",
+    "name": "Luxe Smile — Datos y Agendamiento",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2026-04-19T03:15:28.806Z",
+    "archivo": "workflows/cgAXqzntirV1uDb5.json"
+  },
+  {
+    "id": "dkILwdJwtinnWZ97",
+    "name": "53-Invoice_data_extraction_with_LlamaParse_and_OpenAI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 26,
+    "updatedAt": "2025-07-14T19:07:33.486Z",
+    "archivo": "workflows/dkILwdJwtinnWZ97.json"
+  },
+  {
+    "id": "dvCmBSenNjiJlh1J",
+    "name": "14-Generate_SEO_Optimized_WordPress_Content_with_AI_Powered_Perplexity_Research",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 25,
+    "updatedAt": "2025-07-14T19:04:50.124Z",
+    "archivo": "workflows/dvCmBSenNjiJlh1J.json"
+  },
+  {
+    "id": "e5ydQXJsdvzkBTKZ",
+    "name": "01 - Milanuncios Scraper → Sheets (ofertas)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-05-14T19:09:51.518Z",
+    "archivo": "workflows/e5ydQXJsdvzkBTKZ.json"
+  },
+  {
+    "id": "e7YOBL7bWtBgsz6B",
+    "name": "68-Collect_LinkedIn_Profiles_with_AI_Processing_using_SerpAPI__OpenAI__and_NocoDB",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2025-07-14T19:08:33.925Z",
+    "archivo": "workflows/e7YOBL7bWtBgsz6B.json"
+  },
+  {
+    "id": "eyXPtwAYcbebUEkJ",
+    "name": "82-Google_Calendar_Reminder_System_with_GPT_4o_and_Telegram",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2025-07-14T19:09:36.982Z",
+    "archivo": "workflows/eyXPtwAYcbebUEkJ.json"
+  },
+  {
+    "id": "f04pApXeC3bLbR8K",
+    "name": "Toque - Receptor de Eventos (n8n)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-07-09T16:58:50.613Z",
+    "archivo": "workflows/f04pApXeC3bLbR8K.json"
+  },
+  {
+    "id": "f5L8E185jJVFYgW0",
+    "name": "Tool - Cancelar Cita",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-04-17T01:39:42.000Z",
+    "archivo": "workflows/f5L8E185jJVFYgW0.json"
+  },
+  {
+    "id": "fMYxEPMypkMLsOsY",
+    "name": "Zoe — WF1 Orquestador WhatsApp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 19,
+    "updatedAt": "2026-05-28T18:10:44.065Z",
+    "archivo": "workflows/fMYxEPMypkMLsOsY.json"
+  },
+  {
+    "id": "fdummfmXRr5tXHRR",
+    "name": "5-Automate_Product_Training___Customer_Support_via_WhatsApp__GPT_4___Google_Sheets",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2025-07-14T19:07:19.063Z",
+    "archivo": "workflows/fdummfmXRr5tXHRR.json"
+  },
+  {
+    "id": "ffy0Dd6Jo6pc7uYC",
+    "name": "Bejauha - Sandbox API (portal)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-06-23T03:08:50.577Z",
+    "archivo": "workflows/ffy0Dd6Jo6pc7uYC.json"
+  },
+  {
+    "id": "fmdlcPbN8juFuCMN",
+    "name": "BF - WF-Util - Publicar Páginas Legales",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-05-07T17:31:18.574Z",
+    "archivo": "workflows/fmdlcPbN8juFuCMN.json"
+  },
+  {
+    "id": "fsagpuIlY9PSLQif",
+    "name": "AP - Test exceljs (one-shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-04-29T22:39:28.112Z",
+    "archivo": "workflows/fsagpuIlY9PSLQif.json"
+  },
+  {
+    "id": "fxEhH1vl02ZaDieM",
+    "name": "InsightA - ChatGPT",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 4,
+    "updatedAt": "2026-03-10T21:40:14.372Z",
+    "archivo": "workflows/fxEhH1vl02ZaDieM.json"
+  },
+  {
+    "id": "gjBMsSnFRefCpIiP",
+    "name": "Savia — Sync Catálogo WC",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 6,
+    "updatedAt": "2026-06-04T18:11:19.220Z",
+    "archivo": "workflows/gjBMsSnFRefCpIiP.json"
+  },
+  {
+    "id": "gu2XtRkhfEVDsyai",
+    "name": "BF - WF-Util - Force Re-optimize Post",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 22,
+    "updatedAt": "2026-06-03T22:13:30.295Z",
+    "archivo": "workflows/gu2XtRkhfEVDsyai.json"
+  },
+  {
+    "id": "hRMGFBcoRuGGWIDF",
+    "name": "Bejauha - Sheet Reader (one-shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 3,
+    "updatedAt": "2026-07-07T00:35:51.139Z",
+    "archivo": "workflows/hRMGFBcoRuGGWIDF.json"
+  },
+  {
+    "id": "hsMut1IvWs7WmrlR",
+    "name": "63-Build_Your_Own_Counseling_Chatbot_on_LINE_to_Support_Mental_Health_Conversations",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:08:16.054Z",
+    "archivo": "workflows/hsMut1IvWs7WmrlR.json"
+  },
+  {
+    "id": "i36e0Jd36SjBAaUa",
+    "name": "51-Extract_Amazon_Best_Seller_Electronic_Info_with_Bright_Data_and_Google_Gemini",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2025-07-14T19:07:26.187Z",
+    "archivo": "workflows/i36e0Jd36SjBAaUa.json"
+  },
+  {
+    "id": "iJ7mwdB80RM9VcEP",
+    "name": "Savia — Follow-up Fotos (WF-06)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-06-06T22:28:24.206Z",
+    "archivo": "workflows/iJ7mwdB80RM9VcEP.json"
+  },
+  {
+    "id": "ie9nsLCofbWUliYi",
+    "name": "_test_exceljs_tmp",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-04T22:39:37.941Z",
+    "archivo": "workflows/ie9nsLCofbWUliYi.json"
+  },
+  {
+    "id": "ihVPSi7lXpGi9v4C",
+    "name": "Savia — [Tool] Buscar Productos WC",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-06-06T19:47:55.218Z",
+    "archivo": "workflows/ihVPSi7lXpGi9v4C.json"
+  },
+  {
+    "id": "ip9QrWYS9byvDaRV",
+    "name": "17-gmail-ai-auto-responder_-create-draft-replies-to-incoming-emails",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2025-07-14T19:05:01.330Z",
+    "archivo": "workflows/ip9QrWYS9byvDaRV.json"
+  },
+  {
+    "id": "jeFR0qJOte0JuzTf",
+    "name": "Luxe Smile — Revisión de Caso (Human Loop)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 25,
+    "updatedAt": "2026-05-28T18:00:34.413Z",
+    "archivo": "workflows/jeFR0qJOte0JuzTf.json"
+  },
+  {
+    "id": "k0RqPhnzM3ZjQeEe",
+    "name": "Luxe Smile — Confirmación de Pago PayPal",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2026-04-19T03:09:23.755Z",
+    "archivo": "workflows/k0RqPhnzM3ZjQeEe.json"
+  },
+  {
+    "id": "kIGzvLlIYz4PKrrV",
+    "name": "WF-07 - Confirmacion Calendly",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2026-04-17T02:32:29.138Z",
+    "archivo": "workflows/kIGzvLlIYz4PKrrV.json"
+  },
+  {
+    "id": "kcXaDud4ghg0XP80",
+    "name": "Toque - Handler Mensaje Prueba (sandbox)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-07-09T17:49:34.352Z",
+    "archivo": "workflows/kcXaDud4ghg0XP80.json"
+  },
+  {
+    "id": "kmzPOEewpVzQMOd9",
+    "name": "78-Automated_Resume_Review_System_Using_OpenAI___Google_Sheets",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2025-07-14T19:09:18.239Z",
+    "archivo": "workflows/kmzPOEewpVzQMOd9.json"
+  },
+  {
+    "id": "kzmOC4VXnTZe0PiO",
+    "name": "70-Summarise_MS_Teams_Channel_Activity_for_Weekly_Reports_with_AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2025-07-14T19:08:44.878Z",
+    "archivo": "workflows/kzmOC4VXnTZe0PiO.json"
+  },
+  {
+    "id": "luUL1h3EVmzeUFCQ",
+    "name": "BF - WF11 - GSC Weekly Dashboard",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 11,
+    "updatedAt": "2026-06-03T22:12:24.529Z",
+    "archivo": "workflows/luUL1h3EVmzeUFCQ.json"
+  },
+  {
+    "id": "mGUqQkOF2PtmPH5l",
+    "name": "BF - WF-Diag - URL Inspection Coverage Audit",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 10,
+    "updatedAt": "2026-05-06T02:39:31.821Z",
+    "archivo": "workflows/mGUqQkOF2PtmPH5l.json"
+  },
+  {
+    "id": "mSpGasQvpUFT6qQz",
+    "name": "Zoe — WF6 Admin GPT",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 19,
+    "updatedAt": "2026-05-28T18:10:47.864Z",
+    "archivo": "workflows/mSpGasQvpUFT6qQz.json"
+  },
+  {
+    "id": "mob5ywZ3HCJ9wm6U",
+    "name": "Savia — Alerta Tarifa Premium (WF-03)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 6,
+    "updatedAt": "2026-05-13T01:38:48.010Z",
+    "archivo": "workflows/mob5ywZ3HCJ9wm6U.json"
+  },
+  {
+    "id": "n3j1DIxnMIJ5Xahw",
+    "name": "BC - WF-Util - Force Re-optimize Post",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 22,
+    "updatedAt": "2026-05-26T15:52:19.983Z",
+    "archivo": "workflows/n3j1DIxnMIJ5Xahw.json"
+  },
+  {
+    "id": "nWSTQqVMMvnl58To",
+    "name": "Parqueadero - Recordatorio diario",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-08-23T15:36:40.166Z",
+    "archivo": "workflows/nWSTQqVMMvnl58To.json"
+  },
+  {
+    "id": "nx5ivvkMVVMBDpqE",
+    "name": "BC - WF-Util - Publicar Páginas Legales",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2026-05-07T19:24:34.014Z",
+    "archivo": "workflows/nx5ivvkMVVMBDpqE.json"
+  },
+  {
+    "id": "oPs0aCKU4IKXBcex",
+    "name": "UL - GSC Full Analysis 12m (One-Shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-07T20:54:49.451Z",
+    "archivo": "workflows/oPs0aCKU4IKXBcex.json"
+  },
+  {
+    "id": "oUG64DakWCzEe1Wv",
+    "name": "34-ai-automated-hr-workflow-for-cv-analysis-and-candidate-evaluation",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:06:16.291Z",
+    "archivo": "workflows/oUG64DakWCzEe1Wv.json"
+  },
+  {
+    "id": "ozphMdSSQrt1NPv2",
+    "name": "75-Actioning_Your_Meeting_Next_Steps_using_Transcripts_and_AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 28,
+    "updatedAt": "2025-07-14T19:09:06.898Z",
+    "archivo": "workflows/ozphMdSSQrt1NPv2.json"
+  },
+  {
+    "id": "pHL12UGf8Tt5IBIS",
+    "name": "83-Build_a_Document_QA_System_with_RAG_using_Milvus__Cohere__and_OpenAI_for_Google_Drive",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:09:40.657Z",
+    "archivo": "workflows/pHL12UGf8Tt5IBIS.json"
+  },
+  {
+    "id": "pNrfCo3EeTXnvTIr",
+    "name": "80-Scrape_Indeed_Job_Listings_for_Hiring_Signals_Using_Bright_Data_and_LLMs",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 16,
+    "updatedAt": "2025-07-14T19:09:29.624Z",
+    "archivo": "workflows/pNrfCo3EeTXnvTIr.json"
+  },
+  {
+    "id": "pegNjHaDbrHH5X43",
+    "name": "73-Auto_Categorize_blog_posts_in_wordpress_using_A_I_",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2025-07-14T19:08:55.919Z",
+    "archivo": "workflows/pegNjHaDbrHH5X43.json"
+  },
+  {
+    "id": "px2ufO6KTxKcAMGC",
+    "name": "48-Appointment_Scheduling_with_Twilio__Cal_com__and_AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 36,
+    "updatedAt": "2025-07-14T19:07:12.032Z",
+    "archivo": "workflows/px2ufO6KTxKcAMGC.json"
+  },
+  {
+    "id": "q76O5UMoA8Btm5yQ",
+    "name": "60-Generate_Graphic_Wallpaper_with_Midjourney__GPT_4o_mini_and_Canvas_APIs",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:08:04.564Z",
+    "archivo": "workflows/q76O5UMoA8Btm5yQ.json"
+  },
+  {
+    "id": "qAyNfiKsRR09dBs6",
+    "name": "Luxe Smile — Cleanup Orphan Test Lead",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-19T17:07:21.604Z",
+    "archivo": "workflows/qAyNfiKsRR09dBs6.json"
+  },
+  {
+    "id": "qOwllAj32Pwo5l5g",
+    "name": "Savia — Webhook WooCommerce Order (WF-02)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-05-15T13:20:55.854Z",
+    "archivo": "workflows/qOwllAj32Pwo5l5g.json"
+  },
+  {
+    "id": "qrI64ER7gCd4jXSc",
+    "name": "Bejauha - Dashboard Acciones (WF06)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-06-22T03:02:21.352Z",
+    "archivo": "workflows/qrI64ER7gCd4jXSc.json"
+  },
+  {
+    "id": "rD794jC4vc9C1Ke7",
+    "name": "Bejauha - Orquestador WhatsApp (WF00)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-06-07T04:07:19.773Z",
+    "archivo": "workflows/rD794jC4vc9C1Ke7.json"
+  },
+  {
+    "id": "rNG8EVxwLsuwKHZM",
+    "name": "BC - WF5 - Generador de Ideas: Blog",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-05-07T03:13:17.234Z",
+    "archivo": "workflows/rNG8EVxwLsuwKHZM.json"
+  },
+  {
+    "id": "rctOPl2BpQ4UVjEk",
+    "name": "Bejauha - Agente Atencion Inbound (WF03)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2026-06-23T03:03:45.229Z",
+    "archivo": "workflows/rctOPl2BpQ4UVjEk.json"
+  },
+  {
+    "id": "rgR2jrzNgxoSOkI7",
+    "name": "47-AI_Powered_WooCommerce_Support_Agent",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:07:08.321Z",
+    "archivo": "workflows/rgR2jrzNgxoSOkI7.json"
+  },
+  {
+    "id": "sGD3TeuFpZNxUB6s",
+    "name": "43-sync-outlook-calendar-events-to-notion",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 9,
+    "updatedAt": "2025-07-14T19:06:52.944Z",
+    "archivo": "workflows/sGD3TeuFpZNxUB6s.json"
+  },
+  {
+    "id": "sILA5Co9FD3JI5eJ",
+    "name": "Bejauha - Agente Admin Control de Clases (WF02)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 22,
+    "updatedAt": "2026-06-23T03:05:58.553Z",
+    "archivo": "workflows/sILA5Co9FD3JI5eJ.json"
+  },
+  {
+    "id": "ssXTKiWQzvM8XaHj",
+    "name": "10-Generate___Auto_Post_Social_Videos_to_Multiple_Platforms_with_GPT_4_and_Kling_AI",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 39,
+    "updatedAt": "2025-07-14T19:04:31.485Z",
+    "archivo": "workflows/ssXTKiWQzvM8XaHj.json"
+  },
+  {
+    "id": "swSsUPvmiHAqz07J",
+    "name": "4-Scrape_business_leads_from_Google_Maps_using_OpenAI_and_Google_Sheets__Use_for_free",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:06:38.268Z",
+    "archivo": "workflows/swSsUPvmiHAqz07J.json"
+  },
+  {
+    "id": "tHJlDAAJ4sJcqDH1",
+    "name": "WF-05 - Recordatorios",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 15,
+    "updatedAt": "2026-04-16T14:55:29.543Z",
+    "archivo": "workflows/tHJlDAAJ4sJcqDH1.json"
+  },
+  {
+    "id": "tjmj6VvZdpWuJYQD",
+    "name": "86-Zoom_AI_Meeting_Assistant_creates_mail_summary__ClickUp_tasks_and_follow_up_call",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 25,
+    "updatedAt": "2025-07-14T19:09:51.868Z",
+    "archivo": "workflows/tjmj6VvZdpWuJYQD.json"
+  },
+  {
+    "id": "tm0g3UZ3Tl0ZxMb0",
+    "name": "7-Automate_Blog_Content_Creation_with_GPT_4__Perplexity___WordPress",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 18,
+    "updatedAt": "2025-07-14T19:08:41.324Z",
+    "archivo": "workflows/tm0g3UZ3Tl0ZxMb0.json"
+  },
+  {
+    "id": "u0Br3FJn0P2P7BY2",
+    "name": "38-automate-sales-cold-calling-pipeline-with-apify,-gpt-4o,-and-whatsapp",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 48,
+    "updatedAt": "2025-07-14T19:06:31.127Z",
+    "archivo": "workflows/u0Br3FJn0P2P7BY2.json"
+  },
+  {
+    "id": "u3Yfmb2dQS2oYnWo",
+    "name": "Ferretería Ya - WF-1 - Blog SEO",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 34,
+    "updatedAt": "2026-05-25T15:38:06.866Z",
+    "archivo": "workflows/u3Yfmb2dQS2oYnWo.json"
+  },
+  {
+    "id": "u97BtOjtwcMzwMbZ",
+    "name": "AP - Setup Schema (one-shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-04-29T15:52:22.681Z",
+    "archivo": "workflows/u97BtOjtwcMzwMbZ.json"
+  },
+  {
+    "id": "uAEfLPaShxPUoLSw",
+    "name": "16-personalized-ai-tech-newsletter-using-rss,-openai-and-gmail",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 24,
+    "updatedAt": "2025-07-14T19:04:57.343Z",
+    "archivo": "workflows/uAEfLPaShxPUoLSw.json"
+  },
+  {
+    "id": "uvF34jcQCb3yOIVC",
+    "name": "88-Daily_Podcast_Summary",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 21,
+    "updatedAt": "2025-07-14T19:09:59.342Z",
+    "archivo": "workflows/uvF34jcQCb3yOIVC.json"
+  },
+  {
+    "id": "v5WWkwGvXSnTGnRO",
+    "name": "BF - WF-Util - Update Page Content",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-07T17:56:22.029Z",
+    "archivo": "workflows/v5WWkwGvXSnTGnRO.json"
+  },
+  {
+    "id": "vB8ya9OSUyLsQuLg",
+    "name": "BF - WF8 - Bulk AEO Migrator: AEO en posts existentes (sin GSC)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 23,
+    "updatedAt": "2026-06-03T22:13:46.479Z",
+    "archivo": "workflows/vB8ya9OSUyLsQuLg.json"
+  },
+  {
+    "id": "vQJ5gCIDbNq2zqd8",
+    "name": "BC - WF1 - Blog SEO: Keyword → Publicar en WordPress",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 36,
+    "updatedAt": "2026-05-26T15:44:20.213Z",
+    "archivo": "workflows/vQJ5gCIDbNq2zqd8.json"
+  },
+  {
+    "id": "vinxf9fWxIDIbTk2",
+    "name": "Agente Ferretería Ya",
+    "active": false,
+    "isArchived": true,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-02T01:48:50.000Z",
+    "archivo": "workflows/vinxf9fWxIDIbTk2.json"
+  },
+  {
+    "id": "w5TYszsGokwF3cjn",
+    "name": "56-Create_Animated_Stories_using_GPT_4o_mini__Midjourney__Kling_and_Creatomate_API",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 52,
+    "updatedAt": "2025-07-14T19:07:44.445Z",
+    "archivo": "workflows/w5TYszsGokwF3cjn.json"
+  },
+  {
+    "id": "wwEqT9bHFb7VZCuB",
+    "name": "Savia — [Tool] Escalar Admin",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-05-14T01:30:12.623Z",
+    "archivo": "workflows/wwEqT9bHFb7VZCuB.json"
+  },
+  {
+    "id": "xWG4TEwb3FqiBQHn",
+    "name": "BC - WF-Util - Discover Widgets (one-off)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 5,
+    "updatedAt": "2026-05-11T20:50:07.684Z",
+    "archivo": "workflows/xWG4TEwb3FqiBQHn.json"
+  },
+  {
+    "id": "xqyQlvHel6vXea5R",
+    "name": "98-Private___Local_Ollama_Self_Hosted_AI_Assistant",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:10:43.852Z",
+    "archivo": "workflows/xqyQlvHel6vXea5R.json"
+  },
+  {
+    "id": "yRbv29Y6FiQHn1Qg",
+    "name": "BF - WF5 - Generador de Ideas: Blog + Entretenimiento",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2026-06-03T22:12:47.924Z",
+    "archivo": "workflows/yRbv29Y6FiQHn1Qg.json"
+  },
+  {
+    "id": "yrAIdTytSsUczphy",
+    "name": "44-WooCommerce AI Chatbot Workflow for Post Sales Support",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 31,
+    "updatedAt": "2025-07-14T19:37:25.430Z",
+    "archivo": "workflows/yrAIdTytSsUczphy.json"
+  },
+  {
+    "id": "ytKgfEaDImS0HBTU",
+    "name": "57-Twitter_Virtual_AI_Influencer",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 13,
+    "updatedAt": "2025-07-14T19:07:48.096Z",
+    "archivo": "workflows/ytKgfEaDImS0HBTU.json"
+  },
+  {
+    "id": "yyU7bunkmVQlCJOX",
+    "name": "FERRE - Agente WA Nico Medellín",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 12,
+    "updatedAt": "2026-05-20T15:36:36.340Z",
+    "archivo": "workflows/yyU7bunkmVQlCJOX.json"
+  },
+  {
+    "id": "zDsWN5ePbHLxyXRf",
+    "name": "45-AI-Powered WooCommerce Support Agent",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 40,
+    "updatedAt": "2025-07-14T19:40:47.263Z",
+    "archivo": "workflows/zDsWN5ePbHLxyXRf.json"
+  },
+  {
+    "id": "zIJ0SQy81T36FRIu",
+    "name": "72-Breakdown_Documents_into_Study_Notes_using_Templating_MistralAI_and_Qdrant",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 20,
+    "updatedAt": "2025-07-14T19:08:52.203Z",
+    "archivo": "workflows/zIJ0SQy81T36FRIu.json"
+  },
+  {
+    "id": "zUWf79L0yzlMdCMK",
+    "name": "76-Automate_Sales_Meeting_Prep_with_AI___APIFY_Sent_To_WhatsApp",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 61,
+    "updatedAt": "2025-07-14T19:09:10.939Z",
+    "archivo": "workflows/zUWf79L0yzlMdCMK.json"
+  },
+  {
+    "id": "zZlbePZDbGSezLjZ",
+    "name": "Bejauha - Sandbox Setup (one-shot)",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 2,
+    "updatedAt": "2026-07-07T14:32:11.367Z",
+    "archivo": "workflows/zZlbePZDbGSezLjZ.json"
+  },
+  {
+    "id": "zhgAnN8hDcgTqgqU",
+    "name": "WF-02 — Agente IA",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 17,
+    "updatedAt": "2026-04-16T02:22:45.095Z",
+    "archivo": "workflows/zhgAnN8hDcgTqgqU.json"
+  },
+  {
+    "id": "zoCQQgL9Ag9bLYWW",
+    "name": "96-scrape-tiktok-influencer-profiles-with-bright-data-api-to-google-sheets",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 14,
+    "updatedAt": "2025-07-14T19:10:36.637Z",
+    "archivo": "workflows/zoCQQgL9Ag9bLYWW.json"
+  },
+  {
+    "id": "zwo0bDvYzyO0iZY1",
+    "name": "2-Generate___Auto_post_AI_Videos_to_Social_Media_with_Veo3_and_Blotato",
+    "active": false,
+    "isArchived": false,
+    "nodeCount": 30,
+    "updatedAt": "2025-07-14T19:05:15.333Z",
+    "archivo": "workflows/zwo0bDvYzyO0iZY1.json"
+  },
+  {
+    "id": "zzYMcKKYAUShQ57f",
+    "name": "AP - Brief Noticias (form)",
+    "active": true,
+    "isArchived": false,
+    "nodeCount": 7,
+    "updatedAt": "2026-05-06T21:44:11.611Z",
+    "archivo": "workflows/zzYMcKKYAUShQ57f.json"
+  }
+]
