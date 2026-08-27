@@ -59,15 +59,31 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 ---
 
+## 🖥️ Consola de administración de ToqueFlow
+
+Que dar de alta y configurar un cliente se haga **desde el portal, sin correr código**. Hoy cada alta es un script y cada configuración es editar JSON a mano.
+
+| # | Tarea | Nota |
+|---|---|---|
+| 19 | **Pantalla de alta de cliente** | Crear empresa, usuario y flows desde el portal. Hoy es correr un `seed-<cliente>.cjs` |
+| 20 | **Pantalla de configuración del agente** | Formularios que llenan `agent_config`: tono, campos a capturar, reglas de enrutamiento, límites |
+| 21 | **Carga de la fuente de conocimiento desde el portal** | Pegar la URL o subir el PDF y que quede listo, sin tocar la base |
+| 22 | **Panel de consumo por cliente** | Tokens, costo en USD y por mes. **Los datos ya existen:** la tabla `ai_usage` registra `input_tokens`, `output_tokens`, `cost_usd` y `model` por empresa desde hace rato. Falta solo la pantalla |
+| 23 | **Plantilla del PDF que entrega el cliente** | El documento con "ciertos criterios" que debe traer: servicios, precios, horarios, políticas, preguntas frecuentes. Sirve como guion de venta y como checklist de onboarding |
+
+**Orden:** la **23 primero** (es un documento, cuesta una tarde y la necesitas en la primera venta). La **22 después** (los datos ya están, es solo leerlos). Las 19–21 cuando duela configurar a mano — realistamente al tercer cliente.
+
+---
+
 ## 🖼️ Sitio y operación
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 19 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
-| 20 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
-| 21 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
-| 22 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
-| 23 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
+| 24 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
+| 25 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
+| 26 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
+| 27 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
+| 28 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
 
 ---
 
@@ -75,11 +91,11 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 24 | ⚠️ **Regenerar el token de Hostinger** | **Ya no es opcional: el token está muerto (401 contra la API).** Sin él no funciona `deploy-safe.ps1` ni el MCP de Hostinger — no se puede publicar el sitio. Se genera en hPanel → API, y se pega en `.claude/settings.local.json` | Diego |
-| 25 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 26 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 27 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 28 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 29 | ⚠️ **Regenerar el token de Hostinger** | **Ya no es opcional: el token está muerto (401 contra la API).** Sin él no funciona `deploy-safe.ps1` ni el MCP de Hostinger — no se puede publicar el sitio. Se genera en hPanel → API, y se pega en `.claude/settings.local.json` | Diego |
+| 30 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 31 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 32 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 33 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
@@ -88,7 +104,7 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 | # | Pregunta | Por qué importa |
 |---|---|---|
 | A | **¿Qué pasa si el trato con FerreteríaYa no trae clientes?** Arrancó hace poco. Sin un punto de revisión, «esperamos que traiga» es la misma espera pasiva que mató a Savia, Zoe y LuxeSmile. **Propongo: si a los 3 meses no ha traído uno que cierre, se renegocia** | Es trabajo sin cobrar con retorno incierto |
-| B | **¿Se prueba $800.000/mes en el cuarto cliente?** Los primeros tres van a $600.000 para tener tres datos comparables. A $800.000 la meta baja de 9 clientes a 7: mismo dinero, menos carga operativa | Con tiempo escaso, el precio es la única palanca que no cuesta horas |
+| B | ~~¿Se prueba $800.000/mes en el cuarto cliente?~~ **Decidido: se queda en $600.000.** Costo de la decisión: dos clientes más para la misma plata (~24 h de implementación extra y dos operaciones más que sostener). Se revisa con datos tras los primeros tres cierres | — |
 | C | **¿Cuándo se decide el respaldo del VPS?** Propongo fijarlo ahora: **antes del cliente cinco**, no cuando duela | Una caída tumba a todos los clientes a la vez |
 
 **Ya respondidas:** la auditoría pagada aplica solo a prospectos fríos · la meta son $4.000.000 libres al mes, no dejar el empleo (eso serían $40.000.000 y no es prioridad hoy) · los costos salen de lo que paga Bejauha · la facturación «se podría manejar», pendiente confirmarlo antes de que alguien diga que sí · las caídas las atiende cualquiera de los dos según su día, lo cual aguanta hasta el cliente cinco.
