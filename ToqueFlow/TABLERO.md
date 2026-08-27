@@ -75,7 +75,7 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 24 | ⚠️ **Regenerar el token de Hostinger** | **Ya no es opcional: el token está muerto (401 contra la API).** Sin él no funciona  ni el MCP de Hostinger — no se puede publicar el sitio. Se genera en hPanel → API, y se pega en `.claude/settings.local.json` | Diego |
+| 24 | ⚠️ **Regenerar el token de Hostinger** | **Ya no es opcional: el token está muerto (401 contra la API).** Sin él no funciona `deploy-safe.ps1` ni el MCP de Hostinger — no se puede publicar el sitio. Se genera en hPanel → API, y se pega en `.claude/settings.local.json` | Diego |
 | 25 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
 | 26 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
 | 27 | Skill `/migracion` | SQL numerado e idempotente | Claude |
