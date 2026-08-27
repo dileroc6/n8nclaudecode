@@ -87,10 +87,35 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 | 29 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
 | 30 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
 | 31 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
-| 32 | ⚠️ **Vigilar los recursos del VPS y planear el upgrade** | Es un **KVM 1: 1 vCPU y 4 GB** corriendo n8n + Evolution + Postgres. Cada cliente suma una conexión permanente de WhatsApp. **Ese es el techo real, no el diseño del flujo.** Estimo que aguanta entre 5 y 8 clientes | Diego |
-| 33 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
-| 34 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
-| 35 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
+| 32 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
+| 33 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
+| 34 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
+
+---
+
+## 📊 Capacidad: cuánto aguanta el flujo compartido
+
+**Línea base medida hoy (24 h, con un solo cliente activo):**
+
+| Recurso | Uso | Lectura |
+|---|---|---|
+| CPU | 4,4% promedio · 5,5% pico | Sobra muchísimo. **No es el cuello** |
+| **RAM** | **3,24 GB de 4 GB — 81%** | **Aquí está el techo** |
+| Disco | 11,6 GB de 50 GB — 23% | Sin problema |
+| Uptime | 144 días | Estable |
+
+**La conclusión operativa:** el riesgo no es que diez clientes vivan en el mismo flujo de n8n — el CPU está en 4%. El riesgo es la **memoria**, porque cada cliente suma una conexión permanente de WhatsApp en Evolution que consume RAM todo el tiempo, y ya se está usando el 81% con uno solo.
+
+⚠️ **Con una advertencia importante:** esa métrica probablemente incluye la caché de Linux y de Postgres, que es memoria reclamable, no comprometida. Puede que el uso real sea bastante menor. **Por eso la primera tarea es medir adentro, no concluir desde afuera.**
+
+| # | Tarea | Nota |
+|---|---|---|
+| 35 | **Medir la memoria real dentro del VPS** | `free -h` y `docker stats`. Separar memoria comprometida de caché, y ver cuánto consume cada contenedor. Sin esto, el 81% es una señal, no un veredicto |
+| 36 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
+| 37 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
+| 38 | **Alerta automática de recursos** | Que un cron avise cuando la RAM pase el umbral, en vez de enterarse porque un cliente llamó. La API de Hostinger expone las métricas |
+| 39 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
+| 40 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
 
 ---
 
@@ -98,11 +123,11 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 36 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 37 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 38 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 39 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 40 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 41 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 42 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 43 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 44 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 45 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
