@@ -155,9 +155,10 @@ comment on function public.tf_agente_contexto(text, text) is
 
 
 -- ── 4. Permisos ──────────────────────────────────────────────────────────────
--- El worker de n8n puede LEER el contexto y nada más. No se le da select sobre
--- agent_config directamente: si mañana esa tabla guarda algo que el worker no
--- debe ver, la función sigue devolviendo solo lo que corresponde.
+-- El worker de n8n solo LEE. La función es la puerta preferida aunque el rol
+-- ya tenga select sobre agent_config: devuelve exactamente los campos que el
+-- agente necesita, así que el día que esa tabla guarde algo que el worker no
+-- deba ver, basta con quitarle el select a la tabla y nada más se rompe.
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'n8n_worker') then

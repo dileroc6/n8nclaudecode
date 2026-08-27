@@ -12,6 +12,19 @@
 -- ============================================================================
 
 
+-- ── 0. Marcar la hora del último cambio ──────────────────────────────────────
+-- `tf_touch_updated_at` toca la columna `updated_at`, y estas dos tablas usan
+-- `actualizado_at`. Apuntarlas a esa función las dejaba con un trigger que
+-- revienta en el primer UPDATE: «record "new" has no field "updated_at"».
+-- Nadie lo notó porque hasta ahora solo se habían hecho INSERT.
+create or replace function public.tf_touch_actualizado_at()
+returns trigger language plpgsql as $touch$
+begin
+  new.actualizado_at := now();
+  return new;
+end;
+$touch$;
+
 -- ── 1. agent_config — el comportamiento del agente, por empresa ──────────────
 -- Todo en jsonb a propósito: la forma va a cambiar mientras aprendemos con los
 -- primeros clientes, y no queremos una migración por cada campo nuevo.
@@ -76,7 +89,7 @@ create table if not exists public.agent_config (
 
 drop trigger if exists agent_config_touch on public.agent_config;
 create trigger agent_config_touch before update on public.agent_config
-  for each row execute function public.tf_touch_updated_at();
+  for each row execute function public.tf_touch_actualizado_at();
 
 
 -- ── 2. agent_knowledge — de dónde saca las respuestas ────────────────────────
@@ -114,11 +127,18 @@ create index if not exists agent_knowledge_company_idx
 
 drop trigger if exists agent_knowledge_touch on public.agent_knowledge;
 create trigger agent_knowledge_touch before update on public.agent_knowledge
-  for each row execute function public.tf_touch_updated_at();
+  for each row execute function public.tf_touch_actualizado_at();
 
 -- Vista: el conocimiento de una empresa, ya concatenado y listo para el prompt.
 -- n8n lee de aquí en vez de armar la concatenación por su cuenta.
-create or replace view public.agent_knowledge_prompt as
+-- Se eliminan antes de recrear, y en este orden. Los archivos que siguen en la
+-- cadena —schema-agente-uso.sql y schema-agente-runtime.sql— le AGREGAN
+-- columnas a esta vista, y `create or replace view` no sabe quitar columnas:
+-- volver a correr este archivo solo fallaba con «cannot drop columns from
+-- view». Los tres se corren en orden y quedan reconstruidos.
+drop view if exists public.agent_runtime;
+drop view if exists public.agent_knowledge_prompt;
+create view public.agent_knowledge_prompt as
 select
   company_id,
   string_agg('## ' || titulo || E'\n' || contenido, E'\n\n' order by orden, created_at) as texto,
