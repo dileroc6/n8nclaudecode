@@ -155,7 +155,7 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 |---|---|---|---|
 | 35 | **`docker stop zoe-metabase`** | Libera 1,5 GB al instante | Reversible con `docker start`. Verificar antes que nadie lo esté usando |
 | 36 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
-| 37 | **Habilitar un archivo de swap de 2 GB** | Red de seguridad contra el OOM killer | Ninguno |
+| 37 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
 | 38 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
 
 | # | Tarea | Nota |
@@ -166,6 +166,35 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 | 42 | **Alerta automática de recursos** | Que un cron avise cuando la RAM pase el umbral, en vez de enterarse porque un cliente llamó. La API de Hostinger expone las métricas |
 | 43 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
 | 44 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
+
+---
+
+### ✅ Cerrado el 27-ago — la capacidad dejó de ser un problema
+
+**Ejecutado:** `docker stop zoe-metabase` + swap de 2 GB.
+
+| | Antes | Después |
+|---|---|---|
+| Memoria usada | 3,1 GiB | **1,5 GiB** |
+| **Disponible** | **777 MiB** | **2,3 GiB** |
+| Swap | ninguno | **2,0 GiB activo, 0 usado** |
+| Ejecuciones diarias | ~410 | **~120** |
+
+Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó caché.
+
+**Qué significa para el plan:** Evolution atiende su carga actual con 142 MB. Con 2,3 GB disponibles más 2 GB de swap, **el VPS aguanta los 9 clientes de la meta sin upgrade.** El techo que preocupaba no era el diseño del flujo compartido ni la base de datos: era un tablero de Java corriendo para un cliente que nunca pagó.
+
+**Tareas de capacidad que se cierran o bajan de prioridad:**
+
+| Tarea | Nuevo estado |
+|---|---|
+| Medir la memoria real dentro del VPS | ✅ Hecho |
+| Definir el umbral de upgrade | 🟡 Baja a: revisar al cliente 8, no antes |
+| Cotizar el KVM 2 | 🟡 **Ya no urgente.** No hace falta para llegar a la meta |
+| Decidir cómo partir la infraestructura | 🟡 **Ya no urgente** |
+| Alerta automática de recursos | 🟠 Sigue valiendo: avisa antes de que duela |
+| Revisar el pool de Postgres (`maxConnections=4`) | 🟠 Sigue en pie, es otro límite distinto |
+
 
 ---
 
