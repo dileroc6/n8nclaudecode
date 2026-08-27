@@ -156,7 +156,7 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Acción | Efecto | Riesgo |
 |---|---|---|---|
-| 38 | **`docker stop zoe-metabase`** | Libera 1,5 GB al instante | Reversible con `docker start`. Verificar antes que nadie lo esté usando |
+| 38 | ~~docker stop zoe-metabase~~ | ✅ **Hecho el 27-ago.** Liberó 1,6 GiB. Reversible con `docker start zoe-metabase` | — |
 | 39 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
 | 40 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
 | 41 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
@@ -247,10 +247,10 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 | 48 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
 | 49 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
 | 50 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
-| 51 | **Desactivar, no borrar** | Reversible. Si Savia o Zoe cierran, se reactivan en un clic |
+| 51 | ~~Desactivar, no borrar~~ | ✅ **Criterio aplicado.** Todo lo de Zoe quedó pausado sin borrar nada |
 | 52 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
 | 53 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 54 | **Medir la RAM antes y después de desactivar** | Es la forma de saber cuánto libera de verdad, en vez de suponer |
+| 54 | ~~Medir la RAM antes y después~~ | ✅ **Hecho.** De 777 MB disponibles a 2,3 GB |
 | 55 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
 | 56 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
