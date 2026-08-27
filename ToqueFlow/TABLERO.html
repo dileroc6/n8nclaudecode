@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pendientes ToqueFlow</title>
+<title>Tablero ToqueFlow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Audiowide&display=swap">
@@ -183,93 +183,158 @@ footer p{margin:0 0 6px}
 footer code{font-family:var(--mono);font-size:.9em}
 </style>
 
+<style>
+.phase{margin-top:52px;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.phase>header{padding:20px 24px 18px;border-bottom:1px solid var(--line);background:var(--card)}
+.phase .pn{font-family:var(--mono);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brand-2);font-weight:600;margin:0 0 6px}
+.phase h2{font-family:var(--sans);font-weight:650;font-size:1.42rem;letter-spacing:-.022em;margin:0 0 8px}
+.phase .when{font-family:var(--mono);font-size:.74rem;color:var(--faint);margin:0}
+.phase .obj{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
+.phase .obj p{margin:0 0 10px;font-size:1.02rem;max-width:66ch}
+.phase .obj p:last-child{margin:0}
+.phase .obj b{font-family:var(--sans);font-weight:650}
+.cols{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:800px){.cols{grid-template-columns:1fr 1fr}}
+.col{padding:20px 24px;border-bottom:1px solid var(--line-soft)}
+@media(min-width:800px){.col.left{border-right:1px solid var(--line-soft)}}
+.col h3{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px;font-weight:600}
+.col.do h3{color:var(--done)} .col.dont h3{color:var(--crit)}
+.col ul{list-style:none;padding:0;margin:0}
+.col li{display:grid;grid-template-columns:14px 1fr;gap:9px;font-size:.9rem;color:var(--mute);margin-bottom:9px;line-height:1.5}
+.col li:last-child{margin-bottom:0}
+.col.do li::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--done);margin-top:8px}
+.col.dont li::before{content:'';width:7px;height:1.5px;background:var(--crit);margin-top:10px}
+.col li b{color:var(--ink);font-weight:600}
+.strip{padding:16px 24px;border-bottom:1px solid var(--line-soft);display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline}
+.strip .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.strip .v{font-size:.89rem;color:var(--mute)}
+.mtx{padding:18px 24px;border-bottom:1px solid var(--line-soft)}
+.mtx h3{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 11px;font-weight:600}
+.mtx .row2{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line-soft);font-size:.9rem}
+.mtx .row2:last-child{border-bottom:0}
+.mtx .row2 span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);font-weight:500;white-space:nowrap}
+.gate{padding:18px 24px;background:var(--warn-bg);border-left:3px solid var(--warn)}
+.gate .lb{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:600;display:block;margin-bottom:6px}
+.gate p{margin:0 0 8px;font-size:.93rem;max-width:70ch}
+.gate p:last-child{margin:0}
+.gate b{font-family:var(--sans);font-weight:650}
+.assume{border:1px solid var(--line);border-radius:4px;padding:18px 22px;margin:26px 0 0;background:var(--card)}
+.assume h3{font-family:var(--sans);font-weight:600;font-size:1rem;margin:0 0 8px}
+.assume p{font-size:.92rem;color:var(--mute);margin:0 0 10px;max-width:72ch}
+.assume p:last-child{margin:0}
+.hard{margin-top:56px;border-top:1px solid var(--line);padding-top:30px}
+.hard h2{font-family:var(--sans);font-weight:650;font-size:1.3rem;letter-spacing:-.02em;margin:0 0 6px}
+.hard>p{color:var(--mute);font-size:.95rem;margin:0 0 20px;max-width:70ch}
+.hard ol{list-style:none;padding:0;margin:0;counter-reset:h;display:flex;flex-direction:column;gap:15px}
+.hard li{counter-increment:h;display:grid;grid-template-columns:26px 1fr;gap:13px;max-width:74ch}
+.hard li::before{content:counter(h);font-family:var(--mono);font-size:.78rem;font-weight:600;width:24px;height:24px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;margin-top:1px}
+.hard b{font-family:var(--sans);font-weight:650;display:block;margin-bottom:1px}
+.hard span{font-size:.91rem;color:var(--mute)}
+</style>
+
 <div class="wrap">
 
 <header class="top">
   <p class="mark">TOQUEFLOW</p>
-  <h1>Pendientes</h1>
-  <p class="sub">Lo que falta, al 25 de agosto de 2026. Las 22 tareas ya cerradas estan en <code>ToqueFlow/TABLERO.md</code>.</p>
+  <h1>Tablero</h1>
+  <p class="sub">Estado al 27 de agosto de 2026, despues del diagnostico comercial. Un cliente pagando, cinco implementaciones entregadas sin cobrar, meta de 10 clientes en 6 meses.</p>
   <div class="counts">
-    <div class="ct c-crit"><span class="n">2</span><span class="l">Bloquean</span></div>
-    <div class="ct c-warn"><span class="n">4</span><span class="l">Accionables</span></div>
-    <div class="ct c-hold"><span class="n">12</span><span class="l">Por decidir</span></div>
-    <div class="ct c-done"><span class="n">22</span><span class="l">Cerradas</span></div>
+    <div class="ct c-crit"><span class="n">5</span><span class="l">Esta semana</span></div>
+    <div class="ct c-warn"><span class="n">11</span><span class="l">Ventas y producto</span></div>
+    <div class="ct c-hold"><span class="n">10</span><span class="l">Tecnico</span></div>
+    <div class="ct c-done"><span class="n">6</span><span class="l">Preguntas</span></div>
+  </div>
+  <div class="assume">
+    <h3>Las dos consecuencias que ordenan todo</h3>
+    <p><b>1.</b> El problema no es el producto ni el mercado: <b>es que no se corre un proceso de venta.</b> Tres negocios murieron sin que nadie pidiera una decision. Se arregla con calendario, no con codigo.</p>
+    <p><b>2.</b> <b>La meta de 10 clientes exige el producto estandar.</b> A 45–90 h cada uno son 450–900 horas: imposible. A 11–14 h son 120: cabe.</p>
+    <p><b>El reparto:</b> Ferney es dueno del cierre. Diego estandariza la entrega. Bolsillos de tiempo distintos, en paralelo, sin competir.</p>
   </div>
 </header>
 
 <section class="group">
-  <div class="ghead"><h2>Bloquean</h2><span class="gc">2 tareas</span></div>
+  <div class="ghead"><h2>Esta semana</h2><span class="gc">5 tareas</span></div>
+  <p class="gnote">Plantilla lista en <code>estrategia/plantilla-propuesta.md</code>: correo, seguimiento en 4 toques, y la pregunta que hay que hacer cuando dicen que no.</p>
   <div class="list">
-    <div class="row r-crit"><span class="id">01</span><div>
-      <p class="ttl">El logo y el favicon dan 404 en produccion</p>
-      <p class="det">Los archivos se perdieron: no estan en el repo, ni en el portatil viejo, ni en Cloudflare R2. El logo es un <code>&lt;img&gt;</code> en el nav y el footer de <code>chrome.jsx</code>, asi que esta roto en todas las paginas del portal. Sobrevive <code>FerreteriaYa/Impresion Rappi/Logo-ToqueFlow-blanco.png</code>, que solo sirve sobre fondo oscuro. <strong>En pendiente por decision tuya.</strong></p>
-    </div><div class="meta"><span class="chip st-crit">roto</span><span class="chip who">Tu</span></div></div>
-    <div class="row r-crit"><span class="id">35</span><div>
-      <p class="ttl">Comprar el dominio de outbound y arrancar el warm-up</p>
-      <p class="det"><strong>Camino critico: 3 a 4 semanas.</strong> Es lo unico que tarda por si solo. Toda la maquina de leads espera por esto, asi que cada dia sin comprarlo corre el arranque completo un dia.</p>
-    </div><div class="meta"><span class="chip st-crit">primero</span><span class="chip who">Tu</span></div></div>
+    <div class="row r-crit"><span class="id">01</span><div><p class="ttl">Propuesta con precio y fecha a SM Grand Hotel</p><p class="det">Es el mas caliente: esta en negociacion. Precio, alcance y fecha de decision por escrito.</p></div><div class="meta"><span class="chip st-crit">ya</span><span class="chip who">Ferney</span></div></div>
+    <div class="row r-crit"><span class="id">02</span><div><p class="ttl">Recotizar Zoe</p><p class="det">Le pasaste $5.500.000 de pago unico y nunca supiste si ese fue el freno. <strong>$1.200.000 + $600.000/mes es otra conversacion.</strong></p></div><div class="meta"><span class="chip st-crit">ya</span><span class="chip who">Ferney</span></div></div>
+    <div class="row r-crit"><span class="id">03</span><div><p class="ttl">Propuesta con precio y fecha a Savia y LuxeSmile</p><p class="det">Se enfriaron sin que nadie pidiera una decision. Ya conocen el producto: es lo mas barato que tienes disponible.</p></div><div class="meta"><span class="chip st-crit">ya</span><span class="chip who">Ferney</span></div></div>
+    <div class="row r-crit"><span class="id">04</span><div><p class="ttl">Revisar el extracto: ¿Vassco esta pagando?</p><p class="det">Cinco minutos. No se puede planear un negocio sin saber cuanto factura.</p></div><div class="meta"><span class="chip st-crit">5 min</span></div></div>
+    <div class="row r-crit"><span class="id">05</span><div><p class="ttl">Arrancar el cargador de conocimiento</p><p class="det">Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. <strong>Ahi esta el 40% del costo de implementar.</strong></p></div><div class="meta"><span class="chip st-crit">ya</span><span class="chip who">Diego</span></div></div>
   </div>
 </section>
 
 <section class="group">
-  <div class="ghead"><h2>Accionables ya</h2><span class="gc">4 tareas</span></div>
-  <p class="gnote">Nada las bloquea. Se pueden hacer hoy.</p>
+  <div class="ghead"><h2>Ventas</h2><span class="gc">5 tareas</span></div>
   <div class="list">
-    <div class="row r-warn"><span class="id">04</span><div>
-      <p class="ttl">Reiniciar Claude Code otra vez</p>
-      <p class="det">El reinicio anterior no cargo el MCP porque no habia <code>.mcp.json</code> en la raiz, que es donde se abre la sesion. Ya lo cree, junto con el plugin de skills apuntando al repo publico. <code>Ctrl+Shift+P</code> → <code>Developer: Reload Window</code>, y confirmar con <code>/mcp</code>.</p>
-    </div><div class="meta"><span class="chip st-warn">2 minutos</span><span class="chip who">Tu</span></div></div>
-    <div class="row r-warn"><span class="id">32</span><div>
-      <p class="ttl">Completar el bloque USER de seed-toqueflow.cjs y correrlo</p>
-      <p class="det">Tu correo y una contraseña en <code>ToqueFlow/plataforma/seed-toqueflow.cjs</code>. Al correrlo se crea la empresa ToqueFlow en tu propia plataforma con sus 4 flows, y ya puedes entrar al portal con ese usuario a ver tus prospectos.</p>
-    </div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Tu</span></div></div>
-    <div class="row r-warn"><span class="id">33</span><div>
-      <p class="ttl">Correr schema-prospeccion.sql en Supabase</p>
-      <p class="det">Crea el indice unico por <code>place_id</code>, mas <code>outreach_events</code>, <code>outreach_optouts</code> (las bajas, obligacion legal) y <code>demos</code>. Ya esta escrito e idempotente.</p>
-    </div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
-    <div class="row r-warn"><span class="id">15</span><div>
-      <p class="ttl">rappi-print y vassco-retencion no verifican quien las llama</p>
-      <p class="det">Toman <code>company_id</code> del payload y usan <code>service_role</code> sin comprobar el token del llamante. <strong>No leen datos de negocio</strong> (solo escriben en <code>ai_usage</code>), asi que no hay fuga entre clientes. Pero cualquiera con la URL y la llave anonima publica puede gastar tu API key de Anthropic y atribuir el costo a otra empresa.</p>
-    </div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Claude</span></div></div>
+    <div class="row r-warn"><span class="id">06</span><div><p class="ttl">Pedir dos referidos a Bejauha</p><p class="det">Incentivo explicito: un mes de operacion gratis por cada referido que cierre.</p></div><div class="meta"><span class="chip who">Ferney</span></div></div>
+    <div class="row r-warn"><span class="id">07</span><div><p class="ttl">Fijar el precio y no moverlo</p><p class="det">$1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes. <strong>"Vamos viendo" es donde mueren los precios</strong> — asi terminaste en $350k con Zoe.</p></div><div class="meta"><span class="chip who">Ambos</span></div></div>
+    <div class="row r-warn"><span class="id">08</span><div><p class="ttl">Definir el techo de una demo gratis</p><p class="det">Pediste un dia. Con la agenda de ustedes, ocho horas son dos tercios de una semana; cinco demos asi fueron mes y medio regalado. Propongo 2 h, y que la demo de verdad sea el bot automatico.</p></div><div class="meta"><span class="chip who">Ambos</span></div></div>
+    <div class="row r-warn"><span class="id">09</span><div><p class="ttl">Armar la lista del segmento</p><p class="det">Clinicas esteticas, odontologicas y spas de Bogota. Los contactos de Ferney son el <strong>canal</strong>, no un segmento aparte.</p></div><div class="meta"><span class="chip who">Ferney</span></div></div>
+    <div class="row r-warn"><span class="id">10</span><div><p class="ttl">Cronometrar el proximo cliente, hora por hora</p><p class="det">Por etapa. Es la hipotesis que decide si esto es un negocio o un empleo.</p></div><div class="meta"><span class="chip who">Diego</span></div></div>
   </div>
 </section>
 
 <section class="group">
-  <div class="ghead"><h2>Esperan una decision tuya</h2><span class="gc">7 tareas</span></div>
-  <p class="gnote">No puedo avanzarlas sin tu criterio. Las cuatro primeras desbloquean la Fase 1 de la maquina de leads.</p>
+  <div class="ghead"><h2>Producto estandar</h2><span class="gc">6 piezas</span></div>
+  <p class="gnote">Seis capacidades: responder y sugerir · <strong>agendar</strong> · capturar · <strong>recordar</strong> · enrutar · registrar. En orden de retorno sobre hora invertida.</p>
   <div class="list">
-    <div class="row r-hold"><span class="id">34</span><div><p class="ttl">Vertical y ciudad de arranque</p><p class="det">Recomendacion: spas, Bogota. Tienes a Zoe como caso de exito con precios y ROI ya modelados.</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
-    <div class="row r-hold"><span class="id">37</span><div><p class="ttl">Precio y alcance del piloto</p><p class="det">Propuesta a validar: ~$1.500.000 + $350.000/mes. El sistema completo ya tiene precio probado ($5.500.000 + $700.000/mes).</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
-    <div class="row r-hold"><span class="id">38</span><div><p class="ttl">Places API directa o proveedor gestionado</p><p class="det">Scrapear Google Maps a mano viola sus terminos. Hay que estimar el costo por 1.000 fichas y elegir.</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
-    <div class="row r-hold"><span class="id">39</span><div><p class="ttl">Capacidad mensual de implementacion</p><p class="det">Cuantos clientes nuevos puedes atender al mes sin afectar a los actuales. El cuello de botella no sera conseguir leads.</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
-    <div class="row r-hold"><span class="id">11</span><div><p class="ttl">Rotar el token de Hostinger</p><p class="det">Quedo impreso en la terminal al extraerlo del archivo viejo. No se filtro a ningun lado, pero rotarlo es gratis.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
-    <div class="row r-hold"><span class="id">14</span><div><p class="ttl">Limpiar el historial de git</p><p class="det">La API key vieja y los 70 MB de zips siguen en commits anteriores. Ya estan revocada y destrackeados: recuperarlo de verdad exige reescribir el historial con <code>push --force</code>.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
-    <div class="row r-hold"><span class="id">07</span><div><p class="ttl">Instalar Python</p><p class="det">Solo lo necesita <code>Bejauha/scripts/importar_seguimiento.py</code>.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
+    <div class="row r-warn"><span class="id">11</span><div><p class="ttl">Cargador de conocimiento</p><p class="det">Aprende del sitio web o de un PDF. Elimina las <strong>20–40 h de afinar prompts</strong> de las 45–90 actuales. La pieza con mayor retorno del proyecto.</p></div><div class="meta"><span class="chip st-warn">1º</span><span class="chip who">Diego</span></div></div>
+    <div class="row r-hold"><span class="id">12</span><div><p class="ttl">Tabla agent_config con RLS</p><p class="det">Una fila por empresa: tono, fuentes, campos a capturar, reglas de enrutamiento, limites.</p></div><div class="meta"><span class="chip st-hold">2º</span></div></div>
+    <div class="row r-hold"><span class="id">13</span><div><p class="ttl">Workflow generico de n8n</p><p class="det">Uno solo parametrizado por <code>company_id</code>. Se acaban los workflows por cliente.</p></div><div class="meta"><span class="chip st-hold">3º</span></div></div>
+    <div class="row r-hold"><span class="id">14</span><div><p class="ttl">Agenda simple</p><p class="det">Franjas horarias, duracion por servicio, cupos simultaneos, bloqueos. <strong>No</strong> contra personas ni recursos individuales — eso es lo que disparo las horas en Zoe.</p></div><div class="meta"><span class="chip st-hold">4º</span></div></div>
+    <div class="row r-hold"><span class="id">15</span><div><p class="ttl">Cron de recordatorios</p><p class="det">Confirmacion al agendar y aviso antes de la cita. Barato de construir y es <strong>el mayor argumento de venta</strong>: el no-show duele en el bolsillo.</p></div><div class="meta"><span class="chip st-hold">5º</span></div></div>
+    <div class="row r-hold"><span class="id">16</span><div><p class="ttl">Pantalla de configuracion</p><p class="det">Para no editar JSON a mano. Puede esperar al tercer cliente.</p></div><div class="meta"><span class="chip st-hold">despues</span></div></div>
   </div>
 </section>
 
 <section class="group">
-  <div class="ghead"><h2>Mi trabajo, cuando decidas</h2><span class="gc">5 tareas</span></div>
+  <div class="ghead"><h2>Sitio y operacion</h2><span class="gc">5 tareas</span></div>
   <div class="list">
-    <div class="row r-hold"><span class="id">36</span><div><p class="ttl">Configurar SPF, DKIM y DMARC</p><p class="det">Depende de la tarea 35: primero tiene que existir el dominio.</p></div><div class="meta"><span class="chip st-hold">tras la 35</span></div></div>
-    <div class="row r-hold"><span class="id">40</span><div><p class="ttl">Revisar 008_prospeccion.sql de Bejauha</p><p class="det">Ya hay precedente de prospeccion, no hay que diseñar desde cero.</p></div><div class="meta"><span class="chip st-hold">tras la 34</span></div></div>
-    <div class="row r-hold"><span class="id">28</span><div><p class="ttl">Skill /nuevo-flow</p><p class="det">Encodar el contrato: outbox <code>n8n_events</code>, receptor <code>toque-events</code>, modo prueba obligatorio antes de produccion.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
-    <div class="row r-hold"><span class="id">29</span><div><p class="ttl">Skill /migracion</p><p class="det">SQL numerado e idempotente al estilo de <code>Bejauha/database/</code>.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
-    <div class="row r-hold"><span class="id">31</span><div><p class="ttl">Retirar los docs obsoletos de Bejauha</p><p class="det"><code>claude.md</code> y <code>manual-admins*</code> describen el sistema viejo de Postgres y siguen ahi para tropezarse.</p></div><div class="meta"><span class="chip st-hold">cuando se pueda</span></div></div>
+    <div class="row r-crit"><span class="id">17</span><div><p class="ttl">El logo y el favicon dan 404 en produccion</p><p class="det">Los archivos se perdieron: no estan en el repo, ni en el portatil viejo, ni en R2. Roto en el nav y el footer de todas las paginas del portal.</p></div><div class="meta"><span class="chip st-crit">roto</span><span class="chip who">Diego</span></div></div>
+    <div class="row r-hold"><span class="id">18</span><div><p class="ttl">Resembrar last-good-site.zip cuando el logo vuelva</p><p class="det">El punto de restauracion actual no incluye imagenes.</p></div><div class="meta"><span class="chip st-hold">tras la 17</span></div></div>
+    <div class="row r-warn"><span class="id">19</span><div><p class="ttl">Configurar VASSCO_SHARED_SECRET y redesplegar</p><p class="det">La edge function de Vassco deja de responder hasta que se configure el secreto en Supabase y en el Apps Script.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Diego</span></div></div>
+    <div class="row r-warn"><span class="id">20</span><div><p class="ttl">Plan de respaldo del VPS de Evolution</p><p class="det">Cada cliente pone su numero, asi que un baneo tumba a uno solo. Pero Evolution corre en un unico VPS: <strong>si cae, caen todos a la vez.</strong> Con diez clientes son diez llamadas al tiempo. Decidir antes del cliente cinco.</p></div><div class="meta"><span class="chip st-warn">antes del 5º</span><span class="chip who">Diego</span></div></div>
+    <div class="row r-warn"><span class="id">21</span><div><p class="ttl">Encender WhatsApp en Bejauha</p><p class="det">Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo antes de venderlo.</p></div><div class="meta"><span class="chip st-warn">pendiente</span><span class="chip who">Diego</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Seguridad e higiene</h2><span class="gc">5 tareas</span></div>
+  <div class="list">
+    <div class="row r-hold"><span class="id">22</span><div><p class="ttl">Rotar el token de Hostinger</p><p class="det">Opcional. Quedo impreso en terminal, no se filtro a ningun lado.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
+    <div class="row r-hold"><span class="id">23</span><div><p class="ttl">Limpiar el historial de git</p><p class="det">Opcional. Exige <code>push --force</code>.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
+    <div class="row r-hold"><span class="id">24</span><div><p class="ttl">Skill /nuevo-flow</p><p class="det">Encoda el contrato con n8n y el modo prueba obligatorio antes de produccion.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
+    <div class="row r-hold"><span class="id">25</span><div><p class="ttl">Skill /migracion</p><p class="det">SQL numerado e idempotente.</p></div><div class="meta"><span class="chip st-hold">propuesto</span></div></div>
+    <div class="row r-hold"><span class="id">26</span><div><p class="ttl">Instalar Python</p><p class="det">Opcional, un solo script de Bejauha.</p></div><div class="meta"><span class="chip st-hold">opcional</span></div></div>
+  </div>
+</section>
+
+<section class="group">
+  <div class="ghead"><h2>Preguntas abiertas</h2><span class="gc">6 preguntas</span></div>
+  <p class="gnote">Ninguna bloquea lo de esta semana, pero todas cambian decisiones del mes que viene.</p>
+  <div class="list">
+    <div class="row r-hold"><span class="id">27</span><div><p class="ttl">¿La auditoria pagada aplica solo a prospectos frios?</p><p class="det"><strong>Mi propuesta: si.</strong> A los cuatro tibios se les vende directo, sin paso intermedio. La auditoria de $450.000 es el filtro para desconocidos, donde no hay confianza previa que gastar.</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
+    <div class="row r-hold"><span class="id">28</span><div><p class="ttl">¿Cuanto tendria que facturar para dejar el empleo?</p><p class="det">Dijiste que esa es la meta. Sin el numero no se sabe si el plan es de 6 meses o de 2 anos.</p></div><div class="meta"><span class="chip st-hold">decidir</span></div></div>
+    <div class="row r-hold"><span class="id">29</span><div><p class="ttl">¿Que es exactamente el trato con FerreteriaYa?</p><p class="det">Trabajo a cambio de que el amigo de Ferney traiga clientes. ¿Cuantos ha traido hasta ahora? ¿Hasta cuando va el trato? Es trabajo sin cobrar con retorno incierto.</p></div><div class="meta"><span class="chip st-hold">aclarar</span></div></div>
+    <div class="row r-hold"><span class="id">30</span><div><p class="ttl">¿Cuanto cuesta el VPS de Evolution y quien lo paga?</p><p class="det">Es tu costo fijo por cliente. Sin ese numero no hay margen calculable, y sin margen no se sabe si $600.000/mes es buen precio o malo.</p></div><div class="meta"><span class="chip st-hold">aclarar</span></div></div>
+    <div class="row r-hold"><span class="id">31</span><div><p class="ttl">¿Tienen con que facturar y contratar formalmente?</p><p class="det">Factura electronica, cuenta, contrato simple. Una clinica seria no paga $1.200.000 sin factura.</p></div><div class="meta"><span class="chip st-hold">aclarar</span></div></div>
+    <div class="row r-hold"><span class="id">32</span><div><p class="ttl">¿Quien atiende un cliente caido un martes a las 3 PM?</p><p class="det">Los dos tienen empleo de tiempo completo. Con uno o dos clientes se resuelve improvisando; con diez deja de ser hipotetico.</p></div><div class="meta"><span class="chip st-hold">aclarar</span></div></div>
   </div>
 </section>
 
 <section class="order">
-  <h2>Si solo haces dos cosas</h2>
+  <h2>Correccion: el dominio de outbound ya no es camino critico</h2>
   <ol class="steps">
-    <li><div><b>Comprar el dominio de outbound y arrancar el warm-up</b><span>Tarea 35. Es la unica que no se puede acelerar despues: son 3 o 4 semanas de espera pase lo que pase.</span></div></li>
-    <li><div><b>Reiniciar Claude Code</b><span>Tarea 04. Dos minutos, y desbloquea el MCP de n8n y los 7 skills para todo lo demas.</span></div></li>
+    <li><div><b>Lo puse como lo mas urgente cuando pensaba que el canal principal seria el correo en frio</b><span>No lo es. El canal principal son los contactos de Ferney, que es como llegaron Bejauha y los cinco prospectos.</span></div></li>
+    <li><div><b>El outbound frio entra cuando exista el producto estandar y haya capacidad libre</b><span>Realistamente en dos o tres meses.</span></div></li>
+    <li><div><b>El warm-up tarda 3–4 semanas, asi que el dominio se compra un mes antes de necesitarlo</b><span>No hoy. Comprarlo ahora seria adelantar un gasto para un canal que todavia no toca.</span></div></li>
   </ol>
 </section>
 
 <footer>
-  <p>Cerradas hoy: 22 tareas — entorno migrado a Windows, MCP por npx, secretos rotados y fuera del repo, repo reordenado, 5 docs duplicados eliminados, aislamiento RLS verificado 9/9, y la estrategia de captacion escrita.</p>
-  <p>Registro completo en <code>ToqueFlow/TABLERO.md</code> · estrategia en <code>ToqueFlow/estrategia/captacion-leads.md</code>.</p>
+  <p>Versionado en <code>ToqueFlow/TABLERO.md</code>. Plan por fases en <code>estrategia/plan-comercial.md</code> · producto en <code>estrategia/producto-estandar.md</code> · cierre en <code>estrategia/plantilla-propuesta.md</code>.</p>
+  <p>27 de agosto de 2026.</p>
 </footer>
 
 </div>

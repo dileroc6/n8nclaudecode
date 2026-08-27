@@ -1,108 +1,113 @@
-# ToqueFlow — Tablero de tareas
+# ToqueFlow — Tablero
 
-> Estado al **25 de agosto de 2026**, después de traer los archivos del portátil viejo.
-> Repo sincronizado con `origin/main` en `ea492f5`.
-> Leyenda: 🔴 bloquea · 🟠 importante · 🟡 cuando se pueda · ✅ hecho · ⛔ descartado
+> Estado al **27 de agosto de 2026**, después del diagnóstico comercial.
+> Organizado por tema. Lo que decide el negocio está arriba; lo técnico heredado, abajo.
 
----
+**Dónde estamos:** un cliente pagando (Bejauha, $620.000/mes, 3 meses). Cinco implementaciones entregadas sin cobrar, tres de ellas muertas porque nadie pidió una decisión. Meta a 6 meses: 10 clientes pagando.
 
-## 🔴 Producción rota — pendiente por decisión
+**Las dos consecuencias que ordenan todo:**
+1. El problema no es el producto ni el mercado — **es que no se corre un proceso de venta.** Se arregla con calendario, no con código.
+2. **La meta de 10 clientes exige el producto estándar.** A 45–90 h cada uno son 450–900 horas; a 11–14 h son 120.
 
-| # | Tarea | Detalle | Quién |
-|---|---|---|---|
-| 1 | **El logo y el favicon dan 404 en toqueflow.com** | Los archivos **se perdieron**: no están en el repo, ni en el portátil viejo, ni en Cloudflare R2 (probé seis rutas). El logo es un `<img>` plano en el nav y el footer de `chrome.jsx`, así que está roto en todas las páginas, incluido el portal de los clientes. Lo único que sobrevive es `FerreteríaYa/Impresión Rappi/Logo-ToqueFlow-blanco.png` (650×650, con alfa) — sirve solo sobre fondo oscuro | Tú |
-| 2 | ~~`deploy-safe.ps1` haría rollback de un deploy sano~~ ✅ **Hecho** | La URL del logo salio de la lista `Test-Live`, con un comentario para volver a agregarla cuando el logo se restaure. Ahora verifica 11 URLs que si existen | Claude |
-| 3 | ~~No existe `backups/last-good-site.zip`~~ ✅ **Hecho** | Creado con `deploy-safe.ps1 -SeedLastGood` (46 archivos, 209 KB). No se desplego nada. ⚠️ El punto de restauracion **no incluye las imagenes** porque no existen localmente — igual que produccion hoy, asi que no es una regresion | Claude |
-
-> **Decisión tomada:** el logo queda en pendiente. Las tres se destraban juntas cuando aparezca una versión usable — el original a color, o una versión oscura derivada del blanco.
+**El reparto:** Ferney es dueño del cierre. Diego estandariza la entrega. Bolsillos de tiempo distintos, en paralelo.
 
 ---
 
-## 🟠 Entorno
+## 🔥 Esta semana
 
-| # | Tarea | Detalle | Quién |
-|---|---|---|---|
-| 4 | ~~Reiniciar Claude Code~~ ✅ **Hecho** — MCP de n8n y Hostinger cargados | Los MCP y los plugins se cargan al arrancar. El MCP de n8n y los 7 skills no aparecen hasta abrir una sesión nueva | Tú |
-| 5 | ~~Instalar dependencias de Node~~ | ✅ **Hecho.** `pg` 8.23.0 instalado y verificado en `ToqueFlow/plataforma/` | — |
-| 6 | ~~Registrar los submódulos~~ | ✅ **Hecho.** Los dos gitlinks fantasma eliminados. `n8n-mcp/` borrada (estaba vacía, corre por `npx`); `n8n-skills` ahora se instala como plugin desde GitHub. Ambas gitignoreadas | — |
-| 7 | Instalar Python *(opcional)* | Solo lo necesita `Bejauha/scripts/importar_seguimiento.py` | Tú |
-| 8 | Commitear el trabajo de hoy | Nada versionado aún | Tú decides |
-
----
-
-## 🟠 Seguridad
-
-| # | Tarea | Estado | Quién |
-|---|---|---|---|
-| 9 | Rotar la `N8N_API_KEY` expuesta | ✅ **Hecha y verificada** — HTTP 200 contra la API. La vieja está muerta | — |
-| 10 | Sacar los secretos del repo | ✅ **Hecho** — los 6 archivos sensibles verificados como ignorados por git | — |
-| 11 | Rotar el token de Hostinger *(opcional)* | 🟡 Quedó impreso en la terminal al extraerlo. No se filtró a ningún lado, pero rotarlo es gratis | Tú |
-| 12 | ~~Auditar los usos de `service_role`~~ | ✅ **Hecho.** Los `.cjs` son herramientas de admin que corres a mano: acceso total esperado. **Hallazgo en las Edge Functions** — ver tarea 15 abajo | — |
-| 13 | ~~Probar el aislamiento con datos reales~~ | ✅ **Hecho: 9/9 pruebas pasaron.** Usuario temporal en FerreteríaYa intentando alcanzar los 46 contactos de Bejauha: cero filas en contacts, campaigns, campaign_runs, message_log, payments y profiles; UPDATE afectó 0 filas; INSERT rechazado con 403. Repetible con `plataforma/test-aislamiento.cjs` | — |
-| 15 | ~~`rappi-print` y `vassco-retencion` no verifican quién las llama~~ ✅ **Hecho** | 🟠 Toman `company_id` del payload y usan `service_role`, sin comprobar el token del llamante. **No leen datos de negocio** (solo escriben en `ai_usage`), así que no hay fuga entre clientes — pero cualquiera con la URL y la llave anónima pública puede gastar tu API key de Anthropic y ensuciar el registro de costos atribuyéndolo a otra empresa | Claude |
-| 14 | Decidir sobre el historial de git | 🟡 La llave vieja sigue en commits anteriores. Ya revocada, así que es cosmético | Tú |
-
----
-
-## ✅ Hecho
-
-| # | Tarea | Resultado |
+| # | Tarea | Quién |
 |---|---|---|
-| 15 | Clonar y sincronizar el repo | Fast-forward a `ea492f5` sin conflictos |
-| 16 | Reconectar los 9 MCP | De rutas absolutas de Linux a `npx`. Verificado que arranca en esta máquina |
-| 17 | Limpiar 6 `.claude/settings.json` por cliente | `LuxeSmile` tenía la API key en texto plano **dos veces más**, dentro de reglas de `curl` |
-| 18 | Corregir la variable de Hostinger | El `.mcp.json` viejo usaba `APITOKEN`, que **el paquete no lee**: ignoraba el token y se iba por OAuth. Ahora es `HOSTINGER_API_TOKEN` |
-| 19 | Traer los archivos del portátil viejo | `credentials.env`, los `.local.*` y `n8n-skills` completo. Verificado contra Supabase: 4 empresas, 8 perfiles |
-| 20 | Reescribir el `CLAUDE.md` raíz | Describe ToqueFlow como producto, el portal, las 3 reglas de oro y Bejauha como referencia |
-| 21 | Corregir `CONTEXT.md` | Describía un sitio que ya no existe: stack, paleta, fuentes, URL y páginas |
-| 22 | Escribir la estrategia de captación | `_docs/estrategia-leads.md` |
-| 23 | Reescribir `/nuevo-cliente` | Enseñaba la arquitectura **obsoleta**. Ahora enseña Supabase multi-tenant |
-| 24 | Crear el skill `deploy-toqueflow` | Encoda la regla de oro: nunca un deploy parcial |
-| 25 | Simplificar la máquina de leads | `contacts`, `campaigns`, `campaign_runs` y la vista Prospectos **ya sirven**. De 5 tablas nuevas a 1 tabla + 1 índice |
-| 26 | Escribir `schema-prospeccion.sql` | Índice único por `place_id`, `outreach_events`, `outreach_optouts` (bajas) y `demos`, con RLS |
-| 27 | Escribir `seed-toqueflow.cjs` | Da de alta ToqueFlow como empresa con sus 4 flows. **Falta completar el bloque `USER`** antes de correrlo |
+| 1 | **Propuesta con precio y fecha a SM Grand Hotel** — es el más caliente, está en negociación | Ferney |
+| 2 | **Recotizar Zoe a $1.200.000 + $600.000/mes** — le pasaste $5.5M y nunca supiste si ese fue el freno | Ferney |
+| 3 | **Propuesta con precio y fecha a Savia y LuxeSmile** | Ferney |
+| 4 | **Revisar el extracto: ¿Vassco está pagando?** Cinco minutos. No se puede planear sin saber cuánto factura el negocio | Cualquiera |
+| 5 | **Arrancar el cargador de conocimiento** — el 40% del costo de implementar está ahí | Diego |
+
+Plantilla lista en [estrategia/plantilla-propuesta.md](estrategia/plantilla-propuesta.md): correo, seguimiento en 4 toques, y la pregunta que hay que hacer cuando dicen que no.
 
 ---
 
-## 🟡 Skills
-
-| # | Tarea | Para qué |
-|---|---|---|
-| 28 | `/nuevo-flow` | Encodar el contrato: outbox `n8n_events`, receptor `toque-events`, modo prueba obligatorio |
-| 29 | `/migracion` | SQL numerado e idempotente al estilo `Bejauha/database/` |
-| 30 | ⛔ Superpowers | **Descartado.** Metodología con TDD y subagentes; este repo no tiene pruebas ni build |
-
----
-
-## 🟡 Documentación
-
-| # | Tarea | Detalle |
-|---|---|---|
-| 31 | ~~Retirar los docs obsoletos de Bejauha~~ ✅ **Hecho** | `claude.md` y `manual-admins*` describen el sistema viejo de Postgres |
-
----
-
-## 🟢 Máquina de leads — Fase 0
-
-**Decisión tomada: Opción A** — ToqueFlow se da de alta como una empresa más en su propia plataforma. Sus prospectos viven en `contacts` con `status='prospecto'`, reusando la vista Prospectos y `campanas.html`.
+## 💰 Ventas
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 32 | Completar el bloque `USER` de `seed-toqueflow.cjs` y correrlo | Es el usuario con el que entras a ver tus prospectos | Tú |
-| 33 | Correr `schema-prospeccion.sql` en Supabase | Ya está escrito e idempotente | Claude |
-| 34 | Confirmar vertical y ciudad | Recomendación: **spas, Bogotá** | Tú |
-| 35 | **Comprar el dominio de outbound y arrancar el warm-up** | ⏱️ **Camino crítico: 3–4 semanas.** Va primero aunque el resto no esté listo | Tú |
-| 36 | Configurar SPF, DKIM y DMARC | Antes del primer envío | Claude |
-| 37 | Cerrar precio y alcance del piloto | Propuesta: ~$1.500.000 + $350.000/mes | Tú |
-| 38 | Places API directa o proveedor gestionado | Estimar costo por 1.000 fichas | Tú + Claude |
-| 39 | Definir capacidad mensual de implementación | El cuello de botella no será conseguir leads, será poder atenderlos | Tú |
-| 40 | Revisar `Bejauha/database/008_prospeccion.sql` | Ya hay precedente, no diseñar desde cero | Claude |
+| 6 | Pedir dos referidos a Bejauha | Incentivo: un mes de operación gratis por referido que cierre | Ferney |
+| 7 | Fijar el precio y no moverlo | $1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes | Ambos |
+| 8 | Definir el techo de una demo gratis | Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana | Ambos |
+| 9 | Armar la lista del segmento | Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte | Ferney |
+| 10 | Cronometrar el próximo cliente, hora por hora | Es la hipótesis que decide si esto es negocio o empleo | Diego |
 
 ---
 
-## Orden sugerido
+## 🏗️ Producto estándar
 
-1. **Reiniciar Claude Code** (tarea 4) para que carguen el MCP de n8n y los skills.
-2. **Arrancar el warm-up del dominio** (tarea 35). Tarda semanas: cada día que pase retrasa la máquina completa.
-3. **Correr el seed y el schema** (tareas 32 y 33). Con eso ToqueFlow existe en su propia plataforma y la Fase 1 puede empezar.
-4. **El logo** (tareas 1–3) cuando aparezca una versión usable.
+Seis capacidades: responder y sugerir · agendar · capturar · recordar · enrutar · registrar.
+Especificación completa en [estrategia/producto-estandar.md](estrategia/producto-estandar.md).
+
+**En orden de retorno sobre hora invertida:**
+
+| # | Pieza | Por qué ahí | Quién |
+|---|---|---|---|
+| 11 | **Cargador de conocimiento** | Que el agente aprenda del sitio web o un PDF en vez de escribir el prompt a mano. **20–40 h de las 45–90 actuales** | Diego |
+| 12 | Tabla `agent_config` + RLS | Una fila por empresa: tono, fuentes, campos, reglas, límites | Diego |
+| 13 | Workflow genérico de n8n | Uno solo parametrizado por `company_id`. Se acaban los workflows por cliente | Diego |
+| 14 | Agenda simple | Franjas, duración por servicio, cupos simultáneos, bloqueos. **No** contra personas o recursos | Diego |
+| 15 | Cron de recordatorios | Barato y es el mayor argumento de venta: el no-show duele en el bolsillo | Diego |
+| 16 | Pantalla de configuración | Para no editar JSON a mano. Puede esperar al tercer cliente | Diego |
+
+---
+
+## 🖼️ Sitio y operación
+
+| # | Tarea | Nota | Quién |
+|---|---|---|---|
+| 17 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
+| 18 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
+| 19 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
+| 20 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
+| 21 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
+
+---
+
+## 🔐 Seguridad e higiene
+
+| # | Tarea | Nota | Quién |
+|---|---|---|---|
+| 22 | Rotar el token de Hostinger | Opcional. Quedó impreso en terminal, no se filtró | Diego |
+| 23 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 24 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 25 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 26 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+
+---
+
+## ❓ Preguntas abiertas
+
+| # | Pregunta | Por qué importa |
+|---|---|---|
+| 27 | **¿La auditoría pagada aplica solo a prospectos fríos?** Mi propuesta: sí. A los cuatro tibios se les vende directo, sin paso intermedio; la auditoría de $450.000 es el filtro para desconocidos | Cambia el embudo según el origen del prospecto |
+| 28 | **¿Cuánto tendría que facturar el negocio para dejar el empleo?** Dijiste que la meta es esa; necesito el número | Define si el plan es de 6 meses o de 2 años |
+| 29 | **¿Qué es el trato con FerreteríaYa?** Trabajo a cambio de que el amigo de Ferney traiga clientes. ¿Cuántos ha traído? ¿Hasta cuándo va? | Es trabajo sin cobrar con retorno incierto |
+| 30 | **¿Cuánto cuesta el VPS de Evolution y quién lo paga?** | Es tu costo fijo por cliente. Sin ese número no hay margen calculable |
+| 31 | **¿Tienen con qué facturar y contratar formalmente?** Factura electrónica, cuenta, contrato simple | Una pyme seria no paga $1.200.000 sin factura |
+| 32 | **¿Quién atiende un cliente caído un martes a las 3 PM?** Los dos tienen empleo de tiempo completo | Con diez clientes esto deja de ser hipotético |
+
+---
+
+## Corrección: el dominio de outbound ya no es camino crítico
+
+Lo puse como lo más urgente cuando pensaba que el canal principal iba a ser correo en frío. **No lo es: el canal principal son los contactos de Ferney.**
+
+El outbound frío entra cuando el producto estándar exista y haya capacidad libre — realistamente en dos o tres meses. El warm-up del dominio tarda 3–4 semanas, así que se compra **un mes antes de necesitarlo**, no hoy.
+
+Retiro esa urgencia. Comprarlo hoy sería adelantar un gasto para un canal que todavía no toca.
+
+---
+
+## Referencias
+
+- [estrategia/plan-comercial.md](estrategia/plan-comercial.md) — las cinco fases con puerta de salida
+- [estrategia/producto-estandar.md](estrategia/producto-estandar.md) — el Agente de Atención
+- [estrategia/plantilla-propuesta.md](estrategia/plantilla-propuesta.md) — cómo se cierra
+- [estrategia/captacion-leads.md](estrategia/captacion-leads.md) — la máquina de outbound, para cuando toque
+- [estrategia/cuestionario-decisiones.md](estrategia/cuestionario-decisiones.md) — las decisiones ya tomadas
