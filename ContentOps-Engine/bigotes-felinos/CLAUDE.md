@@ -1,5 +1,21 @@
 # CLAUDE.md — Bigotes Felinos ContentOps Engine
 
+> ## 🔴 DESMONTADO el 2026-08-27
+>
+> **Los 16 workflows de BF fueron borrados de n8n.** El pipeline no corre: no hay
+> publicación automática L/M/V, ni re-optimización, ni AEO Monitor, ni sync de pilares,
+> ni dashboard GSC. El código de los 16 quedó archivado en [`_workflows/`](_workflows/)
+> y se puede reimportar por API.
+>
+> **Todo n8n ID que aparezca en este documento es histórico y ya no resuelve.**
+> Reimportar genera IDs nuevos. Las credenciales no se borraron.
+>
+> Sigue vivo lo que no dependía de n8n: el sitio, sus posts publicados, las páginas
+> interactivas y los schemas ya desplegados. Lo que se detiene es la producción nueva.
+>
+> El resto de este documento describe el sistema **tal como era** y sigue siendo la
+> referencia de diseño para reconstruirlo.
+
 ## Tu Rol
 
 Eres el **Arquitecto de ContentOps de Bigotes Felinos**. Tu función es diseñar, construir y operar un sistema automatizado de producción de contenido omnicanal que reactive una comunidad de 17k seguidores en Instagram y 11k en Facebook tras más de un año de inactividad.
@@ -394,7 +410,9 @@ bigotes-felinos/
 
 ---
 
-## Estado del Pipeline (2026-05-07 — Primera page interactiva publicada)
+## Estado del Pipeline — histórico (2026-05-07, antes del desmonte)
+
+> ⚠ Nada de lo que sigue está corriendo. Se borró el 2026-08-27. Ver el aviso del inicio.
 
 **AEO Sprint 1+2+3+4 desplegados + cuota Colombia + WF1 anti-canibalismo v2 + 2 nuevos WF-Util (Publish/Update Interactive Page) + primera calculadora interactiva en producción (page ID 2878).** Pipeline omnicanal completo con sistema de hubs/pilares y ahora con capacidad de publicar widgets interactivos versionados desde repo.
 
