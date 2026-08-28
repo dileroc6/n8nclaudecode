@@ -479,6 +479,15 @@ TF_AUTH.guard().then(async (profile) => {
   // empresa con ?empresa=<id>. Carga sus sedes/empresa antes de renderizar.
   const params = new URLSearchParams(window.location.search);
   const previewId = profile.role === 'super_admin' ? params.get('empresa') : null;
+
+  // Un super admin no pertenece a ninguna empresa, asi que este panel le sale
+  // vacio: no hay flows que mostrar. Su casa es la consola. Antes se quedaba
+  // mirando una pantalla en blanco sin entender por que.
+  if (profile.role === 'super_admin' && !profile.company_id && !previewId) {
+    window.location.replace('admin.html');
+    return;
+  }
+
   let companyId = profile.company_id;
   let previewName = null;
 

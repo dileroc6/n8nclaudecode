@@ -33,10 +33,6 @@ function AdminTopbar({ profile }) {
         <a href="index.html" className="dash-tf-logo"><img src="assets/toqueflow-logo.png" alt="ToqueFlow" /></a>
         <span className="dash-vdivider"></span>
         <span className="admin-badge">★ consola admin</span>
-        {/* Desde la consola siempre se puede salir al panel. Antes el único
-            enlace era el logo, que lleva al sitio público — que no es a donde
-            quiere volver alguien que está trabajando. */}
-        <a href="dashboard.html" className="admin-salir">← Ir al panel</a>
       </div>
       <div className="dash-actions">
         <div className={`dash-profile ${menu ? 'open' : ''}`} ref={ref}>
@@ -338,7 +334,9 @@ function AdminApp({ profile }) {
   // Tarjetas o lista. Se recuerda entre visitas: con cuatro empresas mandan
   // las tarjetas; con veinte, la lista. Que lo elija quien mira.
   const [vistaEmp, setVistaEmp] = React.useState(() => {
-    try { return localStorage.getItem('tf_vista_empresas') || 'tarjetas'; } catch (e) { return 'tarjetas'; }
+    // Por defecto la lista: se comparan mejor los numeros de una empresa
+    // contra otra en renglones que en tarjetas sueltas.
+    try { return localStorage.getItem('tf_vista_empresas') || 'lista'; } catch (e) { return 'lista'; }
   });
   const cambiarVista = (v) => { setVistaEmp(v); try { localStorage.setItem('tf_vista_empresas', v); } catch (e) {} };
 
