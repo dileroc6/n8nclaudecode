@@ -470,6 +470,15 @@ function AdminApp({ profile }) {
           ))}
         </div>
 
+        {fichaCo ? (
+          <EmpresaVista company={fichaCo} catalogo={catalogo} matriz={matriz}
+                        usuarios={users} consumo={usage} runtime={runtime} resumen={resumen}
+                        busy={catBusy}
+                        onConfig={setConfigCo} onConocimiento={setSaberCo}
+                        onCambiar={cambiarPieza}
+                        onVolver={() => setFichaCo(null)} />
+        ) : (
+        <React.Fragment>
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
           <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
@@ -514,7 +523,7 @@ function AdminApp({ profile }) {
                   );
                 })()}
                 <div className="admin-co-foot">
-                  <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Productos →</button>
+                  <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Entrar →</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setConsumoCo(c.id); setTab('consumo'); }}>Consumo IA</button>
                 </div>
@@ -674,17 +683,12 @@ function AdminApp({ profile }) {
             </div>
           );
         })()}
+        </React.Fragment>
+        )}
       </main>
 
       {modal === 'company' && <CompanyModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {modal === 'user' && <UserModal companies={companies} onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
-      {fichaCo && <EmpresaModal company={fichaCo} catalogo={catalogo} matriz={matriz}
-                                usuarios={users} consumo={usage} busy={catBusy}
-                                onConfig={(co) => { setFichaCo(null); setConfigCo(co); }}
-                                onConocimiento={(co) => { setFichaCo(null); setSaberCo(co); }}
-                                onCambiar={cambiarPieza}
-                                onVerUsuarios={(co) => { setFichaCo(null); setCompanyFilter(co.id); setTab('usuarios'); }}
-                                onClose={() => setFichaCo(null)} />}
       {configCo && <AgenteModal company={configCo}
                                 config={runtime.find((r) => r.company_id === configCo.id) || null}
                                 onClose={() => setConfigCo(null)}

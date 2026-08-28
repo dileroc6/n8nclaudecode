@@ -1,19 +1,22 @@
 /* ============================================================================
  * Consola de ToqueFlow — la ficha de una empresa
  * ----------------------------------------------------------------------------
- * Todo lo de un cliente en un solo sitio: sus productos, y dentro de cada uno
- * su configuración.
+ * Se ENTRA a un cliente y se ve todo lo suyo. No es un modal: reemplaza la
+ * pantalla, con su propio «volver». Un popup sirve para confirmar algo; para
+ * revisar a un cliente uno quiere entrar, no asomarse.
  *
- * Por qué existe: antes había una pestaña «Agentes» suelta, y no cuadraba —
- * ¿el agente de qué producto? Un agente no es una categoría: es la
- * configuración de UN producto, «Toque Atiende». Ponerlo aparte hacía que el
- * panel no se pareciera a cómo está hecho el negocio.
+ * El orden mental es: empresa → sus productos → el detalle de cada uno.
+ * Un agente no es una categoría aparte: es la configuración de UN producto.
  *
- * El orden mental correcto es: empresa → sus productos → configurar este.
+ * Sobre los dos estados que se ven aquí, que son EJES DISTINTOS:
+ *   la pieza      qué tan construida está    funciona · a medias · en el papel
+ *   este cliente  si la tiene encendida      encendido · sin encender · no
+ * Mezclarlos fue un error: «próximamente» parecía decir algo del producto
+ * cuando solo decía que a ESE cliente se lo anunciaron y no está prendido.
  * ========================================================================== */
 
-// Qué producto abre qué configuración. Es lo único que hace falta declarar para
-// que un producto nuevo traiga sus pantallas: se agrega su clave aquí.
+// Qué producto abre qué pantallas. Un producto nuevo trae las suyas agregando
+// su clave aquí: no hay que tocar esta pantalla.
 const EMP_CONFIGURABLES = {
   'agente-atencion': [
     ['agente',       'Configurar',   'tono, qué capturar, cuándo escalar'],
@@ -21,123 +24,166 @@ const EMP_CONFIGURABLES = {
   ],
 };
 
-function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
-                        onConfig, onConocimiento, onCambiar, onVerUsuarios, onClose, busy }) {
-  const mias = matriz.filter((m) => m.company_id === company.id);
-  const cel = (claveOId) => mias.find((m) => m.catalogo_id === claveOId || m.clave === claveOId);
+const EMP_MADUREZ = {
+  funcionando: ['funciona', 'ok'],
+  a_medias:    ['a medias', 'medio'],
+  en_papel:    ['en el papel', 'papel'],
+};
 
-  const tiene = mias.filter((m) => m.estado_empresa !== 'no')
-                    .sort((a, b) => a.orden - b.orden);
-  const noTiene = mias.filter((m) => m.estado_empresa === 'no' && m.tipo !== 'herramienta')
-                      .sort((a, b) => a.orden - b.orden);
-
+function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, runtime, resumen,
+                        onConfig, onConocimiento, onCambiar, onVolver, busy }) {
+  const [abierto, setAbierto] = React.useState(null);
   const [mostrarResto, setMostrarResto] = React.useState(false);
 
-  const gasto = consumo
-    .filter((u) => u.company_id === company.id)
-    .reduce((a, u) => a + Number(u.cost_usd || 0), 0);
-  const nUsuarios = usuarios.filter((u) => u.company_id === company.id).length;
+  const mias = matriz.filter((m) => m.company_id === company.id);
+  const tiene   = mias.filter((m) => m.estado_empresa !== 'no').sort((a, b) => a.orden - b.orden);
+  const noTiene = mias.filter((m) => m.estado_empresa === 'no' && m.tipo !== 'herramienta' && m.vendible)
+                      .sort((a, b) => a.orden - b.orden);
+
+  const r  = resumen.find((x) => x.company_id === company.id) || {};
+  const ag = runtime.find((x) => x.company_id === company.id);
+  const misUsuarios = usuarios.filter((u) => u.company_id === company.id);
+
+  // Las piezas se pasan al cambiar de estado con la forma que espera el
+  // insert: la matriz trae el id del catálogo, no el objeto entero.
+  const comoPieza = (p) => ({
+    id: p.catalogo_id, clave: p.clave, nombre: p.nombre,
+    tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion,
+  });
 
   return (
-    <Modal title={company.name} onClose={onClose}>
-      <div className="adm-form emp-ficha">
+    <div className="emp-vista">
 
-        <div className="emp-resumen">
-          <div><b>{tiene.filter((t) => t.estado_empresa === 'activo').length}</b><span>productos andando</span></div>
-          <div><b>{tiene.filter((t) => t.estado_empresa === 'proximamente').length}</b><span>próximamente</span></div>
-          <div><b>{nUsuarios}</b><span>usuarios</span></div>
-          <div><b>${gasto.toFixed(2)}</b><span>IA acumulada</span></div>
-        </div>
+      <div className="emp-cabeza">
+        <button type="button" className="emp-volver" onClick={onVolver}>← Empresas</button>
+        <h2>{company.name}</h2>
+        <span className={`flow-status ${company.status === 'active' ? 'on' : 'off'}`}>
+          <span className="flow-status-dot"></span>{company.status === 'active' ? 'activa' : 'pausada'}
+        </span>
+        <a className="ag-mini emp-ir" href={'dashboard.html?empresa=' + company.id}>ver su panel →</a>
+      </div>
 
-        <div className="emp-atajos">
-          <button type="button" className="ag-mini" onClick={() => onVerUsuarios(company)}>ver sus usuarios</button>
-          <a className="ag-mini" href={'dashboard.html?empresa=' + company.id}>entrar a su panel →</a>
-        </div>
+      <div className="emp-resumen">
+        <div><b>{r.usuarios ?? 0}</b><span>usuarios</span></div>
+        <div><b>{r.productos_activos ?? 0}</b><span>productos encendidos</span></div>
+        <div><b>{r.productos_proximamente ?? 0}</b><span>sin encender</span></div>
+        <div><b>${Number(r.ia_usd_mes ?? 0).toFixed(2)}</b><span>IA este mes</span></div>
+        <div><b>${Number(r.ia_usd ?? 0).toFixed(2)}</b><span>IA acumulada</span></div>
+      </div>
 
-        {/* ── Lo que tiene ─────────────────────────────────────────────── */}
-        <div className="emp-bloque">
-          <h4>Lo que tiene</h4>
-          {tiene.length === 0 && (
-            <div className="ag-lista-vacia">Todavía no tiene nada activo. Enciéndele algo abajo.</div>
-          )}
-          {tiene.map((p) => (
-            <div key={p.catalogo_id} className={'emp-pieza is-' + p.estado_empresa}>
-              <div className="emp-pieza-top">
-                <b>{p.nombre}</b>
-                {p.veces > 1 && <i className="emp-sedes">{p.veces} sedes</i>}
-                <span className={'emp-estado e-' + p.estado_empresa}>
-                  {p.estado_empresa === 'activo' ? 'andando' : 'próximamente'}
+      {/* ── Sus productos ─────────────────────────────────────────────── */}
+      <section className="emp-seccion">
+        <h3>Sus productos</h3>
+        {tiene.length === 0 && <div className="ag-lista-vacia">Todavía no tiene nada. Actívale algo abajo.</div>}
+
+        {tiene.map((p) => {
+          const esta = abierto === p.catalogo_id;
+          const encendido = p.estado_empresa === 'activo';
+          return (
+            <article key={p.catalogo_id} className={'emp-item' + (encendido ? '' : ' is-apagado')}>
+              <button type="button" className="emp-item-cabeza" onClick={() => setAbierto(esta ? null : p.catalogo_id)}>
+                <span className={'emp-luz ' + (encendido ? 'on' : 'off')}></span>
+                <span className="emp-item-n">
+                  {p.nombre}
+                  {p.veces > 1 && <i className="emp-sedes">{p.veces} sedes</i>}
+                  {!p.vendible && <i className="emp-sedes">viene con la plataforma</i>}
                 </span>
-              </div>
-              <p className="emp-pieza-d">{p.beneficio || p.descripcion}</p>
+                <span className={'emp-estado e-' + (encendido ? 'activo' : 'apagado')}>
+                  {encendido ? 'encendido' : 'sin encender'}
+                </span>
+                <span className="emp-chevron">{esta ? '−' : '+'}</span>
+              </button>
 
-              {/* Las pantallas propias de este producto, si las tiene. */}
-              {(EMP_CONFIGURABLES[p.clave] || []).length > 0 && (
-                <div className="emp-acciones">
-                  {EMP_CONFIGURABLES[p.clave].map(([que, etiqueta, ayuda]) => (
-                    <button key={que} type="button" className="emp-accion"
-                            onClick={() => (que === 'agente' ? onConfig(company) : onConocimiento(company))}>
-                      <b>{etiqueta}</b><span>{ayuda}</span>
+              {esta && (
+                <div className="emp-item-cuerpo">
+                  <p className="emp-item-d">{p.beneficio || p.descripcion}</p>
+
+                  <dl className="emp-datos">
+                    <div><dt>la pieza</dt><dd>
+                      <i className={'cat-estado e-' + EMP_MADUREZ[p.estado_pieza][1]}>{EMP_MADUREZ[p.estado_pieza][0]}</i>
+                    </dd></div>
+                    <div><dt>en su panel</dt><dd>{encendido ? 'la ve y la usa' : 'la ve como «próximamente»'}</dd></div>
+                    {p.nombres_para_el_cliente && (
+                      <div><dt>{p.veces > 1 ? 'tarjetas' : 'tarjeta'}</dt><dd>{p.nombres_para_el_cliente.join(' · ')}</dd></div>
+                    )}
+                    {p.clave === 'agente-atencion' && ag && (
+                      <React.Fragment>
+                        <div><dt>instancia</dt><dd>{ag.whatsapp_instance || '—'}</dd></div>
+                        <div><dt>conocimiento</dt><dd>{ag.conocimiento_fuentes} documentos · {Math.round(ag.conocimiento_bytes / 1024 * 10) / 10} KB</dd></div>
+                        <div><dt>el agente</dt><dd>{ag.activo ? 'respondiendo' : 'apagado'}</dd></div>
+                      </React.Fragment>
+                    )}
+                  </dl>
+
+                  {(EMP_CONFIGURABLES[p.clave] || []).length > 0 && (
+                    <div className="emp-acciones">
+                      {EMP_CONFIGURABLES[p.clave].map(([que, etiqueta, ayuda]) => (
+                        <button key={que} type="button" className="emp-accion"
+                                onClick={() => (que === 'agente' ? onConfig(company) : onConocimiento(company))}>
+                          <b>{etiqueta}</b><span>{ayuda}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="emp-cambiar">
+                    <button type="button" className="ag-mini" disabled={busy}
+                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'proximamente' : 'activo')}>
+                      {encendido ? 'apagar' : 'encender'}
                     </button>
-                  ))}
+                    <button type="button" className="ag-mini danger" disabled={busy}
+                            onClick={() => onCambiar(company, comoPieza(p), 'no')}>
+                      quitárselo
+                    </button>
+                  </div>
                 </div>
               )}
+            </article>
+          );
+        })}
+      </section>
 
-              <div className="emp-cambiar">
-                {p.estado_empresa === 'proximamente' && (
-                  <button type="button" className="ag-mini" disabled={busy}
-                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'activo')}>
-                    encender
-                  </button>
-                )}
-                {p.estado_empresa === 'activo' && (
-                  <button type="button" className="ag-mini" disabled={busy}
-                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'proximamente')}>
-                    pausar
-                  </button>
-                )}
-                <button type="button" className="ag-mini danger" disabled={busy}
-                        onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'no')}>
-                  quitar
+      {/* ── Lo que se le podría vender ────────────────────────────────── */}
+      <section className="emp-seccion">
+        <h3>
+          Se le podría activar
+          <button type="button" className="ag-mini" onClick={() => setMostrarResto(!mostrarResto)}>
+            {mostrarResto ? 'ocultar' : 'ver ' + noTiene.length}
+          </button>
+        </h3>
+        {mostrarResto && (
+          <div className="emp-resto">
+            {noTiene.map((p) => (
+              <div key={p.catalogo_id} className="emp-resto-fila">
+                <div>
+                  <b>{p.nombre}</b>
+                  <i className={'cat-estado e-' + EMP_MADUREZ[p.estado_pieza][1]}>{EMP_MADUREZ[p.estado_pieza][0]}</i>
+                  <span>{p.beneficio || p.descripcion}</span>
+                </div>
+                <button type="button" className="ag-mini" disabled={busy}
+                        onClick={() => onCambiar(company, comoPieza(p), 'proximamente')}>
+                  activar
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-        {/* ── Lo que se le podría activar ──────────────────────────────── */}
-        <div className="emp-bloque">
-          <h4>
-            Lo que se le podría activar
-            <button type="button" className="ag-mini" onClick={() => setMostrarResto(!mostrarResto)}>
-              {mostrarResto ? 'ocultar' : 'ver ' + noTiene.length}
-            </button>
-          </h4>
-          {mostrarResto && (
-            <div className="emp-resto">
-              {noTiene.map((p) => (
-                <div key={p.catalogo_id} className="emp-resto-fila">
-                  <div>
-                    <b>{p.nombre}</b>
-                    <i className={'cat-estado e-' + (p.estado_pieza === 'funcionando' ? 'ok' : p.estado_pieza === 'a_medias' ? 'medio' : 'papel')}>
-                      {p.estado_pieza === 'funcionando' ? 'funciona' : p.estado_pieza === 'a_medias' ? 'a medias' : 'en el papel'}
-                    </i>
-                    <span>{p.beneficio || p.descripcion}</span>
-                  </div>
-                  <button type="button" className="ag-mini" disabled={busy}
-                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'proximamente')}>
-                    activar
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="adm-form-foot">
-          <button type="button" className="btn btn-primary" onClick={onClose}>Cerrar</button>
-        </div>
-      </div>
-    </Modal>
+      {/* ── Sus usuarios ──────────────────────────────────────────────── */}
+      <section className="emp-seccion">
+        <h3>Sus usuarios</h3>
+        {misUsuarios.length === 0 && <div className="ag-lista-vacia">Sin usuarios todavía.</div>}
+        {misUsuarios.map((u) => (
+          <div key={u.id} className="emp-usuario">
+            <span className="dash-avatar sm">{initials(u.full_name || u.email)}</span>
+            <div><b>{u.full_name || '—'}</b><span>{u.email}</span></div>
+            <span className={`flow-status ${u.status === 'active' ? 'on' : 'off'}`}>
+              <span className="flow-status-dot"></span>{u.status === 'active' ? 'activo' : 'inactivo'}
+            </span>
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }
