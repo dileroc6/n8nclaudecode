@@ -1,51 +1,38 @@
 /* ============================================================================
  * Consola de ToqueFlow — la pestaña Productos
  * ----------------------------------------------------------------------------
- * La matriz: todas las piezas del catálogo por cada empresa, con su estado.
- * Activar un producto deja de ser teclear una fila en `flows` y pasa a ser
- * pulsar una casilla.
+ * El catálogo de lo que ToqueFlow puede ofrecer, con lo que hace falta para
+ * venderlo sin prometer de más y para configurarlo sin adivinar: qué hace cada
+ * pieza, qué se le puede tocar, de qué está compuesta, si ya se puede vender y
+ * cuántos clientes la tienen.
  *
- * Tres estados por celda, y los tres significan algo distinto:
- *   activo      la tiene andando
- *   proximamente  asi lo ve el cliente en su panel. Es una deuda, no un logro
- *   —           no la tiene
+ * Antes esto vivía en la cabeza de Diego y en varios markdown sueltos.
+ *
+ * OJO CON LOS DOS ESTADOS, que son ejes distintos:
+ *   liberado   si se le puede vender a un cliente nuevo tal cual está
+ *   estado     qué tan construida está la pieza
+ * Algo puede FUNCIONAR para un cliente concreto y no estar listo para
+ * cualquiera: eso es «en construcción» aunque funcione.
  * ========================================================================== */
 
 const CAT_TIPOS = [
-  ['producto',       'Productos',       'Lo que se vende y se factura. El cliente lo ve como una tarjeta en su panel.'],
-  ['herramienta',    'Herramientas',    'Lo que el agente hace dentro de una conversación. No son productos aparte: son de qué está hecho el agente.'],
+  ['producto',       'Productos',        'Lo que se vende y se factura. El cliente lo ve como una tarjeta en su panel.'],
+  ['herramienta',    'Herramientas',     'Lo que el agente hace dentro de una conversación. No son productos aparte: son de qué está hecho el agente.'],
   ['automatizacion', 'Automatizaciones', 'Corren solas, sin conversación de por medio: un cron, un pago que entra, una campaña que sale.'],
 ];
 
-const CAT_ESTADO_PIEZA = {
+const CAT_MADUREZ = {
   funcionando: ['funciona', 'ok'],
   a_medias:    ['a medias', 'medio'],
   en_papel:    ['en el papel', 'papel'],
 };
 
-// El ciclo al pulsar una celda. Se pasa por «prometido» a propósito: es el
-// estado real de casi todo lo que se vende antes de encenderlo, y esconderlo
-// haría que el tablero mienta.
-const CAT_CICLO = { no: 'proximamente', proximamente: 'activo', activo: 'no' };
-
-function CatalogoTab({ companies, matriz, catalogo, onCambiar, busy }) {
+function CatalogoTab({ catalogo }) {
   const [tipo, setTipo] = React.useState('producto');
-  const [soloConAlgo, setSoloConAlgo] = React.useState(false);
+  const [abierta, setAbierta] = React.useState(null);
 
-  const piezas = catalogo
-    .filter((c) => c.tipo === tipo)
-    .sort((a, b) => a.orden - b.orden);
-
-  const celda = (companyId, catalogoId) =>
-    matriz.find((m) => m.company_id === companyId && m.catalogo_id === catalogoId);
-
-  const visibles = soloConAlgo
-    ? piezas.filter((p) => companies.some((co) => (celda(co.id, p.id) || {}).estado_empresa !== 'no'))
-    : piezas;
-
-  // Cuántas piezas tiene encendidas cada empresa, para la fila de resumen.
-  const cuenta = (companyId, estado) =>
-    matriz.filter((m) => m.company_id === companyId && m.estado_empresa === estado).length;
+  const piezas = catalogo.filter((c) => c.tipo === tipo).sort((a, b) => a.orden - b.orden);
+  const liberadas = piezas.filter((p) => p.liberado).length;
 
   return (
     <div>
@@ -54,77 +41,92 @@ function CatalogoTab({ companies, matriz, catalogo, onCambiar, busy }) {
           {CAT_TIPOS.map(([k, etiqueta]) => (
             <button key={k} type="button"
                     className={'cat-tipo' + (tipo === k ? ' is-active' : '')}
-                    onClick={() => setTipo(k)}>
+                    onClick={() => { setTipo(k); setAbierta(null); }}>
               {etiqueta}
               <span>{catalogo.filter((c) => c.tipo === k).length}</span>
             </button>
           ))}
         </div>
-        <label className="ag-check cat-solo">
-          <input type="checkbox" checked={soloConAlgo} onChange={(e) => setSoloConAlgo(e.target.checked)} />
-          <span>solo lo que alguien tiene</span>
-        </label>
       </div>
 
-      <p className="cat-ayuda">{CAT_TIPOS.find(([k]) => k === tipo)[2]}</p>
+      <p className="cat-ayuda">
+        {CAT_TIPOS.find(([k]) => k === tipo)[2]}
+        {' '}<b>{liberadas} de {piezas.length} se pueden vender hoy.</b>
+      </p>
 
-      <div className="cat-tabla-wrap">
-        <table className="cat-tabla">
-          <thead>
-            <tr>
-              <th>Pieza</th>
-              {companies.map((co) => (
-                <th key={co.id} title={co.name}>
-                  <span className="cat-emp">{co.name}</span>
-                  <span className="cat-emp-n">{cuenta(co.id, 'activo')} activas</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visibles.length === 0 && (
-              <tr><td colSpan={companies.length + 1} className="admin-empty">Nadie tiene piezas de este tipo todavía.</td></tr>
-            )}
-            {visibles.map((p) => (
-              <tr key={p.id}>
-                <td className="cat-pieza">
-                  <span className="cat-pieza-n">
-                    {p.nombre}
-                    <i className={'cat-estado e-' + CAT_ESTADO_PIEZA[p.estado][1]}>{CAT_ESTADO_PIEZA[p.estado][0]}</i>
-                  </span>
-                  <span className="cat-pieza-d">{p.descripcion}</span>
-                </td>
-                {companies.map((co) => {
-                  const c = celda(co.id, p.id) || { estado_empresa: 'no' };
-                  const e = c.estado_empresa;
-                  return (
-                    <td key={co.id} className="cat-celda">
-                      <button type="button" disabled={busy}
-                              className={'cat-marca m-' + e}
-                              title={
-                                (c.veces > 1 ? 'En ' + c.veces + ' sedes. La casilla las cambia todas. ' : '') + (
-                                e === 'activo' ? 'Andando. Pulsa para quitarla.'
-                                : e === 'proximamente' ? 'Anunciada en su panel como «próximamente». Pulsa para encenderla.'
-                                : 'No la tiene. Pulsa para prometerla.')
-                              }
-                              onClick={() => onCambiar(co, p, CAT_CICLO[e])}>
-                        {e === 'activo' ? '●' : e === 'proximamente' ? '◐' : '·'}
-                        {c.veces > 1 && <i className="cat-veces">{c.veces}</i>}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <div className="cat-lista">
+        {piezas.map((p) => {
+          const esta = abierta === p.id;
+          const tieneParams = (p.parametros || []).length > 0;
+          return (
+            <article key={p.id} className={'cat-item' + (p.liberado ? '' : ' is-obra')}>
+              <button type="button" className="cat-item-cabeza" onClick={() => setAbierta(esta ? null : p.id)}>
+                <span className="cat-item-n">
+                  {p.nombre}
+                  {!p.vendible && <i className="emp-sedes">viene con la plataforma</i>}
+                </span>
+                <span className={'cat-liberado ' + (p.liberado ? 'si' : 'no')}>
+                  {p.liberado ? 'liberado' : 'en construcción'}
+                </span>
+                <i className={'cat-estado e-' + CAT_MADUREZ[p.estado][1]}>{CAT_MADUREZ[p.estado][0]}</i>
+                <span className="cat-clientes">
+                  {p.clientes_encendido > 0 && <b>{p.clientes_encendido} andando</b>}
+                  {p.clientes_sin_encender > 0 && <em>{p.clientes_sin_encender} sin encender</em>}
+                  {p.clientes_encendido === 0 && p.clientes_sin_encender === 0 && <em>nadie</em>}
+                </span>
+                <span className="emp-chevron">{esta ? '−' : '+'}</span>
+              </button>
 
-      <div className="cat-leyenda">
-        <span><b className="m-activo">●</b> andando</span>
-        <span><b className="m-proximamente">◐</b> «próximamente» en su panel</span>
-        <span><b className="m-no">·</b> no la tiene</span>
-        <span className="cat-leyenda-nota">Pulsa una celda para cambiarla.</span>
+              {esta && (
+                <div className="cat-item-cuerpo">
+                  <p className="cat-item-d"><b>Qué hace:</b> {p.descripcion}</p>
+                  {p.beneficio && <p className="cat-item-d"><b>Cómo se lo explicas al cliente:</b> «{p.beneficio}»</p>}
+
+                  <div className="cat-cols">
+                    <div className="cat-col">
+                      <h5>Qué se le puede configurar</h5>
+                      {tieneParams ? (
+                        <ul>{p.parametros.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                      ) : (
+                        <p className="cat-nada">Nada: se enciende y ya. Igual para todos los clientes.</p>
+                      )}
+                    </div>
+
+                    <div className="cat-col">
+                      <h5>De qué se compone</h5>
+                      {(p.incluye_nombres || []).length > 0 && (
+                        <React.Fragment>
+                          <span className="cat-sub">siempre lleva</span>
+                          <ul>{p.incluye_nombres.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                        </React.Fragment>
+                      )}
+                      {(p.puede_llevar_nombres || []).length > 0 && (
+                        <React.Fragment>
+                          <span className="cat-sub">se le puede sumar</span>
+                          <ul className="cat-opcional">{p.puede_llevar_nombres.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                        </React.Fragment>
+                      )}
+                      {(p.incluye_nombres || []).length === 0 && (p.puede_llevar_nombres || []).length === 0 && (
+                        <p className="cat-nada">Es una pieza suelta: no lleva otras adentro.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {p.workflow && <p className="cat-tech">corre en <code>{p.workflow}</code></p>}
+
+                  {!p.liberado && (
+                    <p className="cat-aviso">
+                      <b>No ofrecerla como lista.</b>{' '}
+                      {p.estado === 'a_medias'
+                        ? 'Existe para algún cliente como flujo aparte; falta volverla pieza del catálogo.'
+                        : 'Está pensada pero no construida. Sirve para decir «podemos hacerlo», no para prometer una fecha.'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

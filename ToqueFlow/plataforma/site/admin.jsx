@@ -33,6 +33,10 @@ function AdminTopbar({ profile }) {
         <a href="index.html" className="dash-tf-logo"><img src="assets/toqueflow-logo.png" alt="ToqueFlow" /></a>
         <span className="dash-vdivider"></span>
         <span className="admin-badge">★ consola admin</span>
+        {/* Desde la consola siempre se puede salir al panel. Antes el único
+            enlace era el logo, que lleva al sitio público — que no es a donde
+            quiere volver alguien que está trabajando. */}
+        <a href="dashboard.html" className="admin-salir">← Ir al panel</a>
       </div>
       <div className="dash-actions">
         <div className={`dash-profile ${menu ? 'open' : ''}`} ref={ref}>
@@ -345,7 +349,7 @@ function AdminApp({ profile }) {
       // Una fila por empresa que YA tiene agente. Las que no, no salen: se
       // cruzan en JS contra `companies` para poder ofrecer configurarlo.
       sb.from('agent_runtime').select('*'),
-      sb.from('catalogo').select('*').eq('activo', true).order('orden'),
+      sb.from('catalogo_detalle').select('*').order('orden'),
       sb.from('empresa_catalogo').select('*'),
       sb.from('empresa_resumen').select('*'),
     ]);
@@ -482,7 +486,7 @@ function AdminApp({ profile }) {
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
           <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
-          <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Catálogo</button>
+          <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Productos</button>
           <button type="button" className={`admin-tab ${tab === 'consumo' ? 'is-active' : ''}`} onClick={() => setTab('consumo')}>Consumo IA</button>
           <div className="admin-tabs-spacer"></div>
           {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('company')}>+ Nueva empresa</button>}
@@ -533,8 +537,7 @@ function AdminApp({ profile }) {
         )}
 
         {!loading && tab === 'productos' && (
-          <CatalogoTab companies={companies} matriz={matriz} catalogo={catalogo}
-                       busy={catBusy} onCambiar={cambiarPieza} />
+          <CatalogoTab catalogo={catalogo} />
         )}
 
         {!loading && tab === 'usuarios' && (

@@ -3957,3 +3957,59 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
   .emp-resto-fila { flex-direction: column; gap: 8px; }
   .emp-item-cabeza { flex-wrap: wrap; }
 }
+
+/* ── Consola: el catálogo con detalle ──────────────────────────────────────
+   Cada pieza se abre para ver qué hace, qué se le configura y de qué se
+   compone. Dos estados que NO son lo mismo: `liberado` (se le puede vender a
+   alguien nuevo) y `estado` (qué tan construida está). */
+
+.cat-lista { display: flex; flex-direction: column; gap: 9px; }
+.cat-item { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
+.cat-item.is-obra { border-style: dashed; }
+.cat-item-cabeza {
+  width: 100%; display: flex; align-items: center; gap: 11px; text-align: left;
+  padding: 14px 17px; background: transparent; border: none; cursor: pointer;
+  font-family: var(--sans); flex-wrap: wrap;
+}
+.cat-item-cabeza:hover { background: color-mix(in oklab, var(--ink) 3%, transparent); }
+.cat-item-n { flex: 1; min-width: 160px; font-size: 15px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+
+.cat-liberado { font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; flex: 0 0 auto; }
+.cat-liberado.si { color: #1f8a5b; background: color-mix(in oklab, #1f8a5b 12%, transparent); }
+.cat-liberado.no { color: #b06a12; background: color-mix(in oklab, #d98324 14%, transparent); }
+
+.cat-clientes { font-family: var(--mono); font-size: 11px; display: flex; gap: 9px; flex: 0 0 auto; }
+.cat-clientes b { color: #1f8a5b; font-weight: 500; }
+.cat-clientes em { color: var(--mute); font-style: normal; }
+
+.cat-item-cuerpo { padding: 0 17px 16px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 13px; }
+.cat-item-d { margin: 0; font-size: 13.5px; color: var(--mute); line-height: 1.6; max-width: 76ch; }
+.cat-item-d b { color: var(--ink); font-weight: 600; }
+
+.cat-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+.cat-col { background: var(--bg); padding: 13px 15px; }
+.cat-col h5 { margin: 0 0 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mute); font-weight: 500; }
+.cat-col ul { margin: 0 0 4px; padding-left: 17px; }
+.cat-col li { font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+.cat-col ul.cat-opcional li { color: var(--mute); }
+.cat-sub { display: block; font-family: var(--mono); font-size: 10px; color: var(--mute); margin: 8px 0 3px; }
+.cat-sub:first-of-type { margin-top: 0; }
+.cat-nada { margin: 0; font-size: 12.5px; color: var(--mute); font-style: italic; line-height: 1.5; }
+
+.cat-tech { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--mute); }
+.cat-tech code { background: color-mix(in oklab, var(--ink) 7%, transparent); padding: 2px 6px; border-radius: 4px; }
+
+.cat-aviso {
+  margin: 0; font-size: 12.5px; line-height: 1.55; color: #b06a12;
+  background: color-mix(in oklab, #d98324 9%, transparent);
+  border-left: 2px solid #d98324; border-radius: 0 8px 8px 0; padding: 9px 13px;
+}
+.cat-aviso b { color: #8a5410; }
+
+@media (max-width: 640px) { .cat-clientes { width: 100%; } }
+.admin-salir {
+  font-family: var(--mono); font-size: 12px; color: var(--mute); text-decoration: none;
+  border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; white-space: nowrap;
+}
+.admin-salir:hover { color: var(--ink); border-color: var(--ink); }
+@media (max-width: 620px) { .admin-salir { display: none; } }
