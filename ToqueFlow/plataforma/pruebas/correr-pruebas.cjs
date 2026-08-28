@@ -104,7 +104,13 @@ function fundir(base, extra) {
       const evento = turno.evento ? fundir(base, { data: turno.evento }) : base;
 
       try {
-        await fetch(WEBHOOK, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(evento) });
+        await fetch(WEBHOOK, {
+          method: "POST",
+          // El webhook exige la firma del contrato. Sin ella devuelve 403 y no
+          // ejecuta nada — que es justo lo que se quiere.
+          headers: { "Content-Type": "application/json", "X-Toque-Signature": process.env.TOQUE_AGENTE_FIRMA || "" },
+          body: JSON.stringify(evento),
+        });
       } catch (e) { /* el workflow puede devolver 500; lo que importa es lo que quedó en la base */ }
       await esperar(1500);
 

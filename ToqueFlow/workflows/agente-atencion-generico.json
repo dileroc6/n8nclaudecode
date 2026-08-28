@@ -14,9 +14,16 @@
         "httpMethod": "POST",
         "path": "toque-agente",
         "responseMode": "lastNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
-      "notes": "Un solo webhook para TODOS los clientes. La empresa se resuelve por el nombre de la instancia de Evolution, no por la URL."
+      "notes": "Exige la cabecera X-Toque-Signature, como manda ToqueFlow/arquitectura/contrato-n8n.md. Sin esto cualquiera que conozca la URL y el nombre de una instancia podria inyectar mensajes y hacer que el WhatsApp del cliente escriba al numero que el elija: el destinatario sale del payload. Eso es como se gana un baneo. El secreto vive en credentials.env (TOQUE_AGENTE_FIRMA) y en la credencial de n8n. En este JSON no puede ir: el repositorio es publico.",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      }
     },
     {
       "id": "a2",
