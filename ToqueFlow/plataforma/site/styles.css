@@ -4058,3 +4058,61 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .cat-pieza-fila span { display: block; font-size: 11.5px; color: var(--mute); margin-top: 2px; line-height: 1.45; }
 .cat-pieza-fila .cat-liberado { font-style: normal; font-size: 9px; padding: 1px 6px; }
 .cat-piezas-pie { margin: 0; font-family: var(--mono); font-size: 10.5px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 9px; }
+
+/* ── Consola: dar de alta un cliente, paso a paso ──────────────────────────── */
+
+.alta { display: flex; flex-direction: column; gap: 22px; margin-top: 22px; max-width: 760px; }
+
+.alta-pasos { list-style: none; display: flex; gap: 6px; margin: 0; padding: 0; flex-wrap: wrap; }
+.alta-pasos li {
+  display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--mute);
+  border: 1px solid var(--line); border-radius: 99px; padding: 5px 13px 5px 6px;
+}
+.alta-pasos li span {
+  width: 20px; height: 20px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; font-family: var(--mono); font-size: 10.5px;
+  background: color-mix(in oklab, var(--ink) 8%, transparent); color: var(--mute);
+}
+.alta-pasos li.is-aqui { color: var(--ink); border-color: var(--orange-2); }
+.alta-pasos li.is-aqui span { background: var(--orange-grad); color: #fff; }
+.alta-pasos li.is-hecho span { background: #1f8a5b; color: #fff; }
+
+.alta-caja { border: 1px solid var(--line); border-radius: 16px; background: var(--card); padding: 24px 26px; display: flex; flex-direction: column; gap: 14px; }
+.alta-caja h3 { margin: 0; font-family: var(--display, var(--sans)); font-size: 20px; font-weight: 600; }
+.alta-caja textarea {
+  width: 100%; font-family: var(--sans); font-size: 13.5px; line-height: 1.55;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); color: var(--ink); resize: vertical;
+}
+.alta-caja textarea:focus { outline: none; border-color: var(--orange-2); }
+
+.alta-pieza { display: flex; gap: 12px; align-items: flex-start; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.alta-pieza:hover { border-color: var(--ink); }
+.alta-pieza.is-puesta { border-color: var(--orange-2); background: color-mix(in oklab, var(--orange-2) 5%, transparent); }
+.alta-pieza input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--orange-2); flex: 0 0 auto; }
+.alta-pieza b { display: block; font-size: 14px; font-weight: 600; }
+.alta-pieza span { display: block; font-size: 12.5px; color: var(--mute); line-height: 1.5; margin-top: 3px; }
+.alta-sub { margin: 8px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .04em; color: var(--mute); }
+.alta-sub-pieza { margin-left: 22px; }
+
+.alta-campos { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+.alta-label { font-family: var(--mono); font-size: 11px; letter-spacing: .04em; text-transform: lowercase; color: var(--mute); }
+.alta-campo { display: flex; align-items: center; gap: 9px; opacity: .5; }
+.alta-campo.is-puesto { opacity: 1; }
+.alta-campo > input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--orange-2); flex: 0 0 auto; }
+.alta-campo code { font-family: var(--mono); font-size: 11.5px; background: color-mix(in oklab, var(--ink) 8%, transparent); padding: 3px 7px; border-radius: 5px; flex: 0 0 auto; min-width: 88px; }
+.alta-campo input[type="text"] { flex: 1; min-width: 0; padding: 7px 10px; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+.alta-campo .ag-check { flex: 0 0 auto; font-size: 12px; }
+
+.alta-ok { margin: 0; font-size: 14.5px; color: var(--ink); line-height: 1.6; }
+.alta-siguiente { margin: 4px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; }
+.alta-siguiente li { font-size: 13.5px; color: var(--mute); line-height: 1.55; }
+.alta-siguiente b { color: var(--ink); }
+.alta-siguiente code { font-family: var(--mono); font-size: 12px; background: color-mix(in oklab, var(--ink) 8%, transparent); padding: 2px 6px; border-radius: 4px; }
+
+.alta-pie { display: flex; gap: 9px; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 4px; }
+
+@media (max-width: 560px) {
+  .alta-campo { flex-wrap: wrap; }
+  .alta-campo input[type="text"] { flex: 1 1 100%; }
+}

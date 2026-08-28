@@ -331,6 +331,7 @@ function AdminApp({ profile }) {
   const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
   const [catBusy, setCatBusy] = React.useState(false);
   const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
+  const [dandoAlta, setDandoAlta] = React.useState(false);
   // Tarjetas o lista. Se recuerda entre visitas: con cuatro empresas mandan
   // las tarjetas; con veinte, la lista. Que lo elija quien mira.
   const [vistaEmp, setVistaEmp] = React.useState(() => {
@@ -478,7 +479,11 @@ function AdminApp({ profile }) {
           ))}
         </div>
 
-        {fichaCo ? (
+        {dandoAlta ? (
+          <AltaClienteVista catalogo={catalogo}
+                            onCancelar={() => setDandoAlta(false)}
+                            onListo={(co) => { setDandoAlta(false); reload(); setFichaCo(co); }} />
+        ) : fichaCo ? (
           <EmpresaVista company={fichaCo} catalogo={catalogo} matriz={matriz}
                         usuarios={users} consumo={usage} runtime={runtime} resumen={resumen}
                         busy={catBusy}
@@ -505,7 +510,7 @@ function AdminApp({ profile }) {
               </button>
             </div>
           )}
-          {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('company')}>+ Nueva empresa</button>}
+          {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setDandoAlta(true)}>+ Nuevo cliente</button>}
           {tab === 'usuarios' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('user')}>+ Nuevo usuario</button>}
         </div>
 
