@@ -17,7 +17,6 @@
     "  que no aparezca ninguna URL que no esté en el documento de conocimiento",
     "  que no aparezca ningún precio que no esté en el documento de conocimiento"
   ],
-
   "escenarios": [
     {
       "id": "precio",
@@ -28,14 +27,21 @@
           "cliente": "hola, cuanto vale la membresia?",
           "espera": {
             "responde": true,
-            "contiene": ["79.900"],
-            "no_contiene": ["consultar", "no tengo esa informacion"],
-            "accion": ["responder", "enviar_link"]
+            "contiene": [
+              "79.900"
+            ],
+            "no_contiene": [
+              "consultar",
+              "no tengo esa informacion"
+            ],
+            "accion": [
+              "responder",
+              "enviar_link"
+            ]
           }
         }
       ]
     },
-
     {
       "id": "diferenciador",
       "titulo": "Por qué ustedes y no otro",
@@ -45,14 +51,20 @@
           "cliente": "y por que ustedes y no otro estudio de yoga?",
           "espera": {
             "responde": true,
-            "contiene": ["comunidad"],
-            "no_contiene": ["no tengo esa informacion", "no se"],
-            "accion": ["responder"]
+            "contiene": [
+              "comunidad"
+            ],
+            "no_contiene": [
+              "no tengo esa informacion",
+              "no se"
+            ],
+            "accion": [
+              "responder"
+            ]
           }
         }
       ]
     },
-
     {
       "id": "fuera-del-documento",
       "titulo": "Algo que NO está en el documento",
@@ -62,26 +74,38 @@
           "cliente": "tienen parqueadero gratis en el parque el country?",
           "espera": {
             "responde": true,
-            "no_contiene": ["si, tenemos parqueadero", "el parqueadero es gratis"],
-            "accion": ["responder", "escalar"]
+            "no_contiene": [
+              "si, tenemos parqueadero",
+              "el parqueadero es gratis"
+            ],
+            "accion": [
+              "responder",
+              "escalar"
+            ]
           }
         }
       ]
     },
-
     {
       "id": "molesto",
       "titulo": "Alguien que se enoja",
       "porque": "Un cliente molesto atendido por un bot se pierde. Tiene que llegar a una persona.",
       "turnos": [
-        { "cliente": "llevo dos dias escribiendo y nadie me responde" },
+        {
+          "cliente": "llevo dos dias escribiendo y nadie me responde"
+        },
         {
           "cliente": "esto es el colmo, me cobraron dos veces y nadie da la cara",
-          "espera": { "responde": true, "accion": ["escalar", "responder"] }
+          "espera": {
+            "responde": true,
+            "accion": [
+              "escalar",
+              "responder"
+            ]
+          }
         }
       ]
     },
-
     {
       "id": "consejo-medico",
       "titulo": "Pide consejo médico",
@@ -91,13 +115,18 @@
           "cliente": "tengo una hernia discal, que posturas puedo hacer?",
           "espera": {
             "responde": true,
-            "no_contiene": ["puedes hacer la postura", "te recomiendo hacer"],
-            "accion": ["responder", "escalar"]
+            "no_contiene": [
+              "puedes hacer la postura",
+              "te recomiendo hacer"
+            ],
+            "accion": [
+              "responder",
+              "escalar"
+            ]
           }
         }
       ]
     },
-
     {
       "id": "quiere-comprar",
       "titulo": "Quiere comprar",
@@ -107,13 +136,18 @@
           "cliente": "listo, quiero la membresia virtual, como la pago?",
           "espera": {
             "responde": true,
-            "contiene": ["bejauha.com/planes"],
-            "accion": ["enviar_link", "escalar", "responder"]
+            "contiene": [
+              "bejauha.com/planes"
+            ],
+            "accion": [
+              "enviar_link",
+              "escalar",
+              "responder"
+            ]
           }
         }
       ]
     },
-
     {
       "id": "solo-hola",
       "titulo": "Escribe solo «hola»",
@@ -121,50 +155,81 @@
       "turnos": [
         {
           "cliente": "hola",
-          "espera": { "responde": true, "accion": ["responder"] }
+          "espera": {
+            "responde": true,
+            "accion": [
+              "responder"
+            ]
+          }
         }
       ]
     },
-
     {
       "id": "captura-nombre",
       "titulo": "Captura el nombre con la clave correcta",
       "porque": "El bug del 27-ago: el agente la llamaba Marcela y el contacto quedaba sin nombre. Media venta del producto es la base de datos.",
       "turnos": [
-        { "cliente": "hola! los vi en instagram" },
+        {
+          "cliente": "hola! los vi en instagram"
+        },
         {
           "cliente": "soy Marcela, me interesan las clases virtuales",
-          "espera": { "responde": true, "captura": ["nombre"] }
+          "espera": {
+            "responde": true,
+            "captura": [
+              "nombre"
+            ]
+          }
         }
       ]
     },
-
     {
       "id": "recuerda",
       "titulo": "Recuerda lo que ya se dijo",
-      "porque": "Si arranca de cero en cada mensaje, no es un agente: es un formulario.",
+      "porque": "Si arranca de cero en cada mensaje, no es un agente: es un formulario. OJO: la pregunta NO puede ser algo que el agente guarde como dato del contacto —preguntar «¿cómo me llamo?» lo acertaba leyendo la ficha, no el historial, y la prueba pasaba sin probar nada.",
       "turnos": [
-        { "cliente": "hola, soy Andrea y me interesan las clases presenciales" },
-        { "cliente": "y a que hora son?", "espera": { "responde": true, "contiene": ["8:30"] } },
         {
-          "cliente": "como me llamo?",
-          "espera": { "responde": true, "contiene": ["andrea"] }
+          "cliente": "hola, soy Andrea. me interesan las clases presenciales pero solo puedo los domingos temprano"
+        },
+        {
+          "cliente": "y a que hora son?",
+          "espera": {
+            "responde": true,
+            "contiene": [
+              "8:30"
+            ]
+          }
+        },
+        {
+          "cliente": "que te dije que era lo unico que podia?",
+          "espera": {
+            "responde": true,
+            "contiene": [
+              "domingo"
+            ]
+          }
         }
       ]
     },
-
     {
       "id": "audio",
       "titulo": "Manda un audio",
       "porque": "No se transcribe audio. Debe descartarlo sin gastar una llamada al modelo.",
       "turnos": [
         {
-          "evento": { "message": { "audioMessage": { "seconds": 8 } } },
-          "espera": { "sin_respuesta": true }
+          "evento": {
+            "message": {
+              "audioMessage": {
+                "seconds": 8
+              }
+            }
+          },
+          "espera": {
+            "sin_respuesta": true
+          }
         }
       ]
     },
-
     {
       "id": "grupo",
       "titulo": "Mensaje de un grupo",
@@ -172,12 +237,17 @@
       "turnos": [
         {
           "cliente": "alguien sabe a que hora es la clase?",
-          "evento": { "key": { "remoteJid": "120363000000000000@g.us" } },
-          "espera": { "sin_respuesta": true }
+          "evento": {
+            "key": {
+              "remoteJid": "120363000000000000@g.us"
+            }
+          },
+          "espera": {
+            "sin_respuesta": true
+          }
         }
       ]
     },
-
     {
       "id": "mensaje-propio",
       "titulo": "Mensaje escrito por el propio negocio",
@@ -185,8 +255,35 @@
       "turnos": [
         {
           "cliente": "hola, te comparto la info que me pediste",
-          "evento": { "key": { "fromMe": true } },
-          "espera": { "sin_respuesta": true }
+          "evento": {
+            "key": {
+              "fromMe": true
+            }
+          },
+          "espera": {
+            "sin_respuesta": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-saluda-dos-veces",
+      "titulo": "No saluda en cada mensaje",
+      "porque": "Nadie dice «Holaa» cuatro veces en la misma conversación. Medido el 28-ago: saludaba en 6 de 6 mensajes, porque en modo prueba no tenía historial.",
+      "turnos": [
+        {
+          "cliente": "hola"
+        },
+        {
+          "cliente": "que planes tienen?",
+          "espera": {
+            "responde": true,
+            "no_contiene": [
+              "holaa",
+              "hola!",
+              "hola,"
+            ]
+          }
         }
       ]
     }

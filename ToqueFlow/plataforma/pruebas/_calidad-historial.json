@@ -1,0 +1,38 @@
+[
+ {
+  "fecha": "2026-08-28T16:11",
+  "n": 6,
+  "saludos": 6,
+  "conEmoji": 6,
+  "largos": 0,
+  "media": 35,
+  "conNombre": 4
+ },
+ {
+  "fecha": "2026-08-28T16:13",
+  "n": 6,
+  "saludos": 4,
+  "conEmoji": 6,
+  "largos": 0,
+  "media": 29,
+  "conNombre": 4
+ },
+ {
+  "fecha": "2026-08-28T16:15",
+  "n": 6,
+  "saludos": 5,
+  "conEmoji": 6,
+  "largos": 0,
+  "media": 27,
+  "conNombre": 4
+ },
+ {
+  "fecha": "2026-08-28T16:17",
+  "n": 6,
+  "saludos": 1,
+  "conEmoji": 3,
+  "largos": 0,
+  "media": 29,
+  "conNombre": 2
+ }
+]
