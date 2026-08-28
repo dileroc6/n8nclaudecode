@@ -235,6 +235,116 @@ function ConectarWhatsApp({ instancia, onCambio }) {
 }
 
 
+
+// ── Los campos a capturar, con opciones ──────────────────────────────────────
+// Un campo sin opciones devuelve texto libre, que es lo que hace falta para un
+// nombre. Pero preguntar «¿qué plan te interesa?» sin opciones devuelve «el
+// plan virtual», «virtual» y «la membresía virtual»: tres cadenas para una
+// cosa, y después nadie puede filtrar ni contar — que era el punto de capturar.
+function CamposACapturar({ campos, onChange }) {
+  const set = (i, k, v) => onChange(campos.map((c, j) => j === i ? { ...c, [k]: v } : c));
+  const quitar = (i) => onChange(campos.filter((_, j) => j !== i));
+
+  return (
+    <div className="ag-lista">
+      <div className="ag-lista-head">
+        <label>qué datos tiene que averiguar</label>
+        <button type="button" className="ag-mini"
+                onClick={() => onChange([...campos, { clave: '', etiqueta: '', obligatorio: false }])}>
+          + agregar
+        </button>
+      </div>
+      <p className="adm-hint">
+        La <b>clave</b> es el nombre con el que se guarda el dato — sin ella, el dato se
+        pierde. <code>nombre</code> y <code>correo</code> van a su columna en la base; los
+        demás quedan en la ficha del contacto.
+      </p>
+      {campos.length === 0 && <div className="ag-lista-vacia">Ninguno todavía.</div>}
+
+      {campos.map((c, i) => {
+        const ops = Array.isArray(c.opciones) ? c.opciones : [];
+        return (
+          <div key={i} className="ag-campo">
+            <div className="ag-fila">
+              <input type="text" value={c.clave || ''} placeholder="nombre" style={{ flex: 1 }}
+                     onChange={(e) => set(i, 'clave', e.target.value)} />
+              <input type="text" value={c.etiqueta || ''} placeholder="Su primer nombre" style={{ flex: 2 }}
+                     onChange={(e) => set(i, 'etiqueta', e.target.value)} />
+              <label className="ag-check">
+                <input type="checkbox" checked={!!c.obligatorio} onChange={(e) => set(i, 'obligatorio', e.target.checked)} />
+                <span>clave</span>
+              </label>
+              <button type="button" className="ag-quitar" title="Quitar" onClick={() => quitar(i)}>×</button>
+            </div>
+
+            <div className="ag-campo-ops">
+              <label className="ag-check">
+                <input type="checkbox" checked={ops.length > 0}
+                       onChange={(e) => set(i, 'opciones', e.target.checked ? [''] : undefined)} />
+                <span>tiene opciones fijas</span>
+              </label>
+              {ops.length > 0 && (
+                <React.Fragment>
+                  <textarea rows={Math.min(6, Math.max(2, ops.length))}
+                            value={ops.join('\n')}
+                            placeholder={'Membresía Virtual\nMembresía completa\nTodavía no sabe'}
+                            onChange={(e) => set(i, 'opciones', e.target.value.split('\n'))} />
+                  <p className="adm-hint">
+                    Una por línea. El agente <b>tiene que elegir una de estas</b> o dejarlo
+                    vacío — no puede escribir su propia versión. Así el dato sirve para
+                    filtrar y contar.
+                  </p>
+                </React.Fragment>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+// ── Qué herramientas tiene encendidas este agente ────────────────────────────
+// Solo se ofrecen las liberadas. Ofrecer aquí una que está en construcción
+// sería dejar que alguien la encienda y que el agente la pida a un webhook que
+// no existe: el modelo prometería algo y el flujo se quedaría esperando.
+function HerramientasDelAgente({ puestas, onChange }) {
+  const [cat, setCat] = React.useState(null);
+  React.useEffect(() => {
+    sb.from('catalogo').select('clave,nombre,beneficio,descripcion,liberado')
+      .eq('tipo', 'herramienta').eq('activo', true).order('orden')
+      .then(({ data }) => setCat(data || []));
+  }, []);
+
+  if (!cat) return null;
+  const libres = cat.filter((h) => h.liberado && h.clave !== 'responder-conocimiento');
+  const enObra = cat.filter((h) => !h.liberado);
+  const alternar = (k) => onChange(puestas.includes(k) ? puestas.filter((x) => x !== k) : [...puestas, k]);
+
+  return (
+    <div className="ag-lista">
+      <div className="ag-lista-head"><label>qué más puede hacer</label></div>
+      <p className="adm-hint">
+        Además de responder con su conocimiento, que va siempre. Cada una es algo que
+        el agente puede consultar o hacer <b>dentro de la conversación</b>.
+      </p>
+      {libres.length === 0 && <div className="ag-lista-vacia">Todavía no hay ninguna liberada.</div>}
+      {libres.map((h) => (
+        <label key={h.clave} className={'alta-pieza' + (puestas.includes(h.clave) ? ' is-puesta' : '')}>
+          <input type="checkbox" checked={puestas.includes(h.clave)} onChange={() => alternar(h.clave)} />
+          <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
+        </label>
+      ))}
+      {enObra.length > 0 && (
+        <p className="adm-hint">
+          En construcción y por eso no se ofrecen: {enObra.map((h) => h.nombre).join(' · ')}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Modal: configurar el agente ──────────────────────────────────────────────
 function AgenteModal({ company, config, onClose, onSaved }) {
   // `config` es una fila de agent_runtime, o null si es un agente nuevo.
@@ -252,6 +362,7 @@ function AgenteModal({ company, config, onClose, onSaved }) {
     nunca: aLineas(obj(c.limites).nunca),
     escalar_si: aLineas(obj(c.limites).escalar_si),
     agenda: obj(c.agenda).modo || 'ninguna',
+    herramientas: arr(c.herramientas),
   });
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState('');
@@ -274,6 +385,7 @@ function AgenteModal({ company, config, onClose, onSaved }) {
       enrutamiento: { reglas: f.reglas.filter((x) => (x.si || '').trim()) },
       limites: { nunca: deLineas(f.nunca), escalar_si: deLineas(f.escalar_si) },
       agenda: { ...obj(c.agenda), modo: f.agenda },
+      herramientas: f.herramientas,
       actualizado_at: new Date().toISOString(),
     };
     // Antes era un upsert por company_id. Ya no: la empresa dejó de ser única
@@ -346,18 +458,7 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           </p>
         </div>
 
-        <ListaEditable
-          titulo="qué datos tiene que averiguar"
-          ayuda="La clave es el nombre con el que se guarda el dato; la etiqueta es cómo se lo explicas al agente. Sin clave, el dato se pierde."
-          items={f.campos}
-          vacio={{ clave: '', etiqueta: '', obligatorio: false }}
-          columnas={[
-            { k: 'clave', ph: 'nombre', ancho: 1 },
-            { k: 'etiqueta', ph: 'Su primer nombre', ancho: 2 },
-            { k: 'obligatorio', tipo: 'check', etiqueta: 'clave' },
-          ]}
-          onChange={(v) => set('campos', v)}
-        />
+        <CamposACapturar campos={f.campos} onChange={(v) => set('campos', v)} />
 
         <ListaEditable
           titulo="cuándo dejar de responder y pasar a una persona"
@@ -387,6 +488,8 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           <textarea rows="3" value={f.escalar_si} onChange={(e) => set('escalar_si', e.target.value)}
                     placeholder={'se molesta o repite la misma queja\npide algo que no está escrito'} />
         </div>
+
+        <HerramientasDelAgente puestas={f.herramientas} onChange={(v) => set('herramientas', v)} />
 
         <div className="form-field">
           <label>agenda</label>

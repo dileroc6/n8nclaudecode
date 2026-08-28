@@ -182,8 +182,19 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
                   <div className="emp-cambiar">
                     <button type="button" className="ag-mini" disabled={busy}
-                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'pausado' : 'activo')}>
-                      {encendido ? 'apagar' : 'encender'}
+                            onClick={() => {
+                              // Encender el agente sin ninguno configurado dejaria una
+                              // promesa en el panel del cliente sin nada detras. En vez
+                              // de encenderlo, se lleva a crearlo.
+                              if (!encendido && p.clave === 'agente-atencion' && agentes.length === 0) {
+                                onConfig(company, null);
+                                return;
+                              }
+                              onCambiar(company, comoPieza(p), encendido ? 'pausado' : 'activo');
+                            }}>
+                      {encendido ? 'apagar'
+                        : (p.clave === 'agente-atencion' && agentes.length === 0) ? 'configurar para encender'
+                        : 'encender'}
                     </button>
                     <button type="button" className="ag-mini danger" disabled={busy}
                             onClick={() => onCambiar(company, comoPieza(p), 'no')}>
