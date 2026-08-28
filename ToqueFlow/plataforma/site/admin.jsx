@@ -329,6 +329,7 @@ function AdminApp({ profile }) {
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
   const [catBusy, setCatBusy] = React.useState(false);
+  const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
@@ -469,8 +470,7 @@ function AdminApp({ profile }) {
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
           <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
-          <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Productos</button>
-          <button type="button" className={`admin-tab ${tab === 'agentes' ? 'is-active' : ''}`} onClick={() => setTab('agentes')}>Agentes</button>
+          <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Catálogo</button>
           <button type="button" className={`admin-tab ${tab === 'consumo' ? 'is-active' : ''}`} onClick={() => setTab('consumo')}>Consumo IA</button>
           <div className="admin-tabs-spacer"></div>
           {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('company')}>+ Nueva empresa</button>}
@@ -499,8 +499,9 @@ function AdminApp({ profile }) {
                   <div><b>{fmtDate(c.created_at)}</b><span>creada</span></div>
                 </div>
                 <div className="admin-co-foot">
-                  <a className="admin-co-btn primary" href={'dashboard.html?empresa=' + c.id}>Entrar al panel →</a>
+                  <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Productos →</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>
+                  <button type="button" className="admin-co-btn" onClick={() => { setConsumoCo(c.id); setTab('consumo'); }}>Consumo IA</button>
                 </div>
               </article>
             ))}
@@ -510,11 +511,6 @@ function AdminApp({ profile }) {
         {!loading && tab === 'productos' && (
           <CatalogoTab companies={companies} matriz={matriz} catalogo={catalogo}
                        busy={catBusy} onCambiar={cambiarPieza} />
-        )}
-
-        {!loading && tab === 'agentes' && (
-          <AgentesTab companies={companies} runtime={runtime}
-                      onConfig={setConfigCo} onConocimiento={setSaberCo} />
         )}
 
         {!loading && tab === 'usuarios' && (
@@ -667,10 +663,17 @@ function AdminApp({ profile }) {
 
       {modal === 'company' && <CompanyModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {modal === 'user' && <UserModal companies={companies} onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
+      {fichaCo && <EmpresaModal company={fichaCo} catalogo={catalogo} matriz={matriz}
+                                usuarios={users} consumo={usage} busy={catBusy}
+                                onConfig={(co) => { setFichaCo(null); setConfigCo(co); }}
+                                onConocimiento={(co) => { setFichaCo(null); setSaberCo(co); }}
+                                onCambiar={cambiarPieza}
+                                onVerUsuarios={(co) => { setFichaCo(null); setCompanyFilter(co.id); setTab('usuarios'); }}
+                                onClose={() => setFichaCo(null)} />}
       {configCo && <AgenteModal company={configCo}
                                 config={runtime.find((r) => r.company_id === configCo.id) || null}
                                 onClose={() => setConfigCo(null)}
-                                onSaved={() => { setConfigCo(null); reload(); setToast({ type: 'ok', text: 'Agente guardado.' }); }} />}
+                                onSaved={() => { const co = configCo; setConfigCo(null); reload(); setFichaCo(co); setToast({ type: 'ok', text: 'Agente guardado.' }); }} />}
       {saberCo && <ConocimientoModal company={saberCo} onClose={() => setSaberCo(null)} onChanged={reload} />}
       {sedesOf && <SedesModal company={sedesOf} onClose={() => setSedesOf(null)} onChanged={reload} />}
       {editU && <EditNameModal user={editU} onClose={() => setEditU(null)} onSaved={updateName} />}

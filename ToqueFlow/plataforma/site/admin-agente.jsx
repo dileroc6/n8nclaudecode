@@ -173,8 +173,15 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           <textarea rows="5" value={f.tono} onChange={(e) => set('tono', e.target.value)}
                     placeholder={'Cercano y breve, tuteando. Nada de formalismos.\nEmojis suaves, máximo dos por mensaje.'} />
           <p className="adm-hint">
-            Escríbelo como se lo explicarías a alguien que entra a atender. Lo que
-            mejor funciona son ejemplos: «di “Holaa” y no “Estimado cliente”».
+            <b>Describe la voz, no la mecánica de cada mensaje.</b> Cómo suena, qué
+            palabras sí y cuáles no, si trata de tú o de usted. Lo que mejor funciona
+            son ejemplos: «di “Holaa” y no “Estimado cliente”».
+          </p>
+          <p className="adm-hint ag-ojo">
+            No escribas <i>cada cuánto</i> saludar, cuántos emojis por mensaje ni qué
+            tan largo responder — de eso se encarga el sistema, igual para todos.
+            Poner «saluda con Holaa en cada mensaje» produce un agente que saluda seis
+            veces seguidas: <b>medido, no supuesto.</b>
           </p>
         </div>
 
