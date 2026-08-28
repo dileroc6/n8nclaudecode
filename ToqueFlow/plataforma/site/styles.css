@@ -4222,3 +4222,33 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .emp-agente > div { flex: 1; min-width: 150px; }
 .emp-agente b { display: block; font-size: 13.5px; font-weight: 600; }
 .emp-agente span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--mute); margin-top: 2px; line-height: 1.5; }
+
+/* ── Cada sección es un bloque, no un párrafo más ──────────────────────────
+   Antes la ficha era una columna continua y al bajar no se notaba que se
+   pasaba de una cosa a otra. Ahora cada sección tiene su propio panel. */
+
+.emp-vista { gap: 20px; }
+.emp-seccion {
+  border: 1px solid var(--line); border-radius: 18px; background: var(--card);
+  padding: 20px 22px 22px; border-top: 1px solid var(--line); margin-top: 0;
+}
+.emp-seccion:first-of-type { border-top: 1px solid var(--line); padding-top: 20px; }
+.emp-titulo {
+  padding-bottom: 14px; margin-bottom: 16px !important;
+  border-bottom: 1px solid var(--line);
+}
+/* Dentro de un panel, las tarjetas no repiten el fondo del panel. */
+.emp-seccion .emp-item,
+.emp-seccion .emp-usuario,
+.emp-seccion .emp-resto-fila { background: var(--bg); }
+.emp-seccion .con-cabeza > div,
+.emp-seccion .con-meses { background: var(--bg); }
+.emp-seccion .con-meses { border-color: var(--line); }
+
+/* Las sugerencias siguen fuera de los paneles: no son parte de lo que tiene. */
+.emp-sugerencias { margin-top: 2px; }
+
+/* El tercer estado. «Desactivado» no es «nunca se ha encendido». */
+.emp-estado.e-proximamente { color: #b06a12; background: color-mix(in oklab, #d98324 14%, transparent); }
+.emp-estado.e-desactivado  { color: #8a6d3b; background: color-mix(in oklab, var(--ink) 8%, transparent); }
+.emp-item.is-apagado .emp-luz.off { background: #d98324; box-shadow: 0 0 0 3px color-mix(in oklab, #d98324 18%, transparent); }

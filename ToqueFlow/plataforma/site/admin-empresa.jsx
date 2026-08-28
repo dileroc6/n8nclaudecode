@@ -98,10 +98,13 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
         </h3>
         {apagados.length > 0 && (
           <p className="emp-nota">
-            Lo que aparece <b>sin encender</b> es algo que este cliente ya tiene —
-            lo ve en su panel como «próximamente»— pero que no está funcionando.
-            Siempre hay un motivo: falta configurarlo, falta probarlo, o falta el
-            go-live.
+            Lo de abajo es algo que este cliente <b>ya tiene contratado</b> y no está
+            funcionando. Son dos situaciones distintas y el cliente las ve escritas
+            distinto en su panel:{' '}
+            <b>sin encender</b> es que nunca se ha prendido —falta configurarlo,
+            probarlo o el go-live— y él lee «próximamente».{' '}
+            <b>Desactivado</b> es que estuvo andando y se apagó, y él lee eso mismo.
+            Decirle «próximamente» a algo que se le apagó sería tomarle el pelo.
           </p>
         )}
         {tiene.length === 0 && <div className="ag-lista-vacia">Todavía no tiene nada contratado.</div>}
@@ -118,8 +121,10 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                   {p.veces > 1 && <i className="emp-sedes">{p.veces} sedes</i>}
                   {!p.vendible && <i className="emp-sedes">viene con la plataforma</i>}
                 </span>
-                <span className={'emp-estado e-' + (encendido ? 'activo' : 'apagado')}>
-                  {encendido ? 'encendido' : 'sin encender'}
+                <span className={'emp-estado e-' + p.estado_empresa}>
+                  {encendido ? 'encendido'
+                    : p.estado_empresa === 'desactivado' ? 'desactivado'
+                    : 'sin encender'}
                 </span>
                 <span className="emp-chevron">{esta ? '−' : '+'}</span>
               </button>
@@ -132,7 +137,11 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                     <div><dt>la pieza</dt><dd>
                       <i className={'cat-estado e-' + EMP_MADUREZ[p.estado_pieza][1]}>{EMP_MADUREZ[p.estado_pieza][0]}</i>
                     </dd></div>
-                    <div><dt>en su panel</dt><dd>{encendido ? 'la ve y la usa' : 'la ve como «próximamente»'}</dd></div>
+                    <div><dt>en su panel</dt><dd>
+                      {encendido ? 'la ve y la usa'
+                        : p.estado_empresa === 'desactivado' ? 'la ve como «desactivado»'
+                        : 'la ve como «próximamente»'}
+                    </dd></div>
                     {p.nombres_para_el_cliente && (
                       <div><dt>{p.veces > 1 ? 'tarjetas' : 'tarjeta'}</dt><dd>{p.nombres_para_el_cliente.join(' · ')}</dd></div>
                     )}
@@ -173,7 +182,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
                   <div className="emp-cambiar">
                     <button type="button" className="ag-mini" disabled={busy}
-                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'proximamente' : 'activo')}>
+                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'desactivado' : 'activo')}>
                       {encendido ? 'apagar' : 'encender'}
                     </button>
                     <button type="button" className="ag-mini danger" disabled={busy}
