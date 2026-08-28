@@ -7,7 +7,7 @@
  *
  * Tres estados por celda, y los tres significan algo distinto:
  *   activo      la tiene andando
- *   prometido   aparece en su panel como «próximamente». Es una deuda, no un logro
+ *   proximamente  asi lo ve el cliente en su panel. Es una deuda, no un logro
  *   —           no la tiene
  * ========================================================================== */
 
@@ -26,7 +26,7 @@ const CAT_ESTADO_PIEZA = {
 // El ciclo al pulsar una celda. Se pasa por «prometido» a propósito: es el
 // estado real de casi todo lo que se vende antes de encenderlo, y esconderlo
 // haría que el tablero mienta.
-const CAT_CICLO = { no: 'prometido', prometido: 'activo', activo: 'no' };
+const CAT_CICLO = { no: 'proximamente', proximamente: 'activo', activo: 'no' };
 
 function CatalogoTab({ companies, matriz, catalogo, onCambiar, busy }) {
   const [tipo, setTipo] = React.useState('producto');
@@ -104,11 +104,11 @@ function CatalogoTab({ companies, matriz, catalogo, onCambiar, busy }) {
                               title={
                                 (c.veces > 1 ? 'En ' + c.veces + ' sedes. La casilla las cambia todas. ' : '') + (
                                 e === 'activo' ? 'Andando. Pulsa para quitarla.'
-                                : e === 'prometido' ? 'Prometida en su panel como «próximamente». Pulsa para encenderla.'
+                                : e === 'proximamente' ? 'Anunciada en su panel como «próximamente». Pulsa para encenderla.'
                                 : 'No la tiene. Pulsa para prometerla.')
                               }
                               onClick={() => onCambiar(co, p, CAT_CICLO[e])}>
-                        {e === 'activo' ? '●' : e === 'prometido' ? '◐' : '·'}
+                        {e === 'activo' ? '●' : e === 'proximamente' ? '◐' : '·'}
                         {c.veces > 1 && <i className="cat-veces">{c.veces}</i>}
                       </button>
                     </td>
@@ -122,7 +122,7 @@ function CatalogoTab({ companies, matriz, catalogo, onCambiar, busy }) {
 
       <div className="cat-leyenda">
         <span><b className="m-activo">●</b> andando</span>
-        <span><b className="m-prometido">◐</b> prometido en su panel</span>
+        <span><b className="m-proximamente">◐</b> «próximamente» en su panel</span>
         <span><b className="m-no">·</b> no la tiene</span>
         <span className="cat-leyenda-nota">Pulsa una celda para cambiarla.</span>
       </div>

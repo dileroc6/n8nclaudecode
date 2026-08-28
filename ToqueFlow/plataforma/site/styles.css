@@ -3855,7 +3855,7 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .cat-marca:disabled { opacity: .45; cursor: wait; }
 .cat-marca:focus-visible { outline: 2px solid var(--orange-2); outline-offset: 1px; }
 .m-activo    { color: #1f8a5b; }
-.m-prometido { color: #d98324; }
+.m-proximamente { color: #d98324; }
 .m-no        { color: color-mix(in oklab, var(--ink) 22%, transparent); }
 
 .cat-leyenda {
@@ -3899,13 +3899,13 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 
 .emp-pieza { border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px; background: var(--card); }
-.emp-pieza.is-prometido { opacity: .82; }
+.emp-pieza.is-proximamente { opacity: .82; }
 .emp-pieza-top { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .emp-pieza-top b { font-size: 14.5px; font-weight: 600; }
 .emp-sedes { font-family: var(--mono); font-style: normal; font-size: 10px; color: var(--mute); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
 .emp-estado { margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; }
 .emp-estado.e-activo    { color: #1f8a5b; background: color-mix(in oklab, #1f8a5b 12%, transparent); }
-.emp-estado.e-prometido { color: #b06a12; background: color-mix(in oklab, #d98324 15%, transparent); }
+.emp-estado.e-proximamente { color: #b06a12; background: color-mix(in oklab, #d98324 15%, transparent); }
 .emp-pieza-d { margin: 6px 0 0; font-size: 12.5px; color: var(--mute); line-height: 1.5; }
 
 /* Las pantallas propias del producto. Se ven como puertas, no como botones

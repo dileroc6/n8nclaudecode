@@ -328,6 +328,7 @@ function AdminApp({ profile }) {
   const [saberCo, setSaberCo] = React.useState(null);      // empresa cuyo conocimiento se está editando
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
+  const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
   const [catBusy, setCatBusy] = React.useState(false);
   const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
 
@@ -335,7 +336,7 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt, cat, mx] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx, res] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -346,6 +347,7 @@ function AdminApp({ profile }) {
       sb.from('agent_runtime').select('*'),
       sb.from('catalogo').select('*').eq('activo', true).order('orden'),
       sb.from('empresa_catalogo').select('*'),
+      sb.from('empresa_resumen').select('*'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
@@ -355,6 +357,7 @@ function AdminApp({ profile }) {
     setRuntime(rt.data || []);
     setCatalogo(cat.data || []);
     setMatriz(mx.data || []);
+    setResumen(res.data || []);
     setLoading(false);
   }, []);
 
@@ -493,11 +496,23 @@ function AdminApp({ profile }) {
                   </div>
                   <span className={`flow-status ${c.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{c.status === 'active' ? 'activa' : 'pausada'}</span>
                 </div>
-                <div className="admin-co-stats">
-                  <div><b>{usersByCompany(c.id)}</b><span>usuarios</span></div>
-                  <div><b>{flowsByCompany(c.id)}</b><span>flows creados</span></div>
-                  <div><b>{fmtDate(c.created_at)}</b><span>creada</span></div>
-                </div>
+                {(() => {
+                  // El resumen sale de la vista `empresa_resumen`, que cuenta
+                  // solo productos VENDIBLES: contar el Portal y el Simulador
+                  // haría que todos parezcan tener tres aunque no hayan
+                  // contratado ninguno.
+                  const r = resumen.find((x) => x.company_id === c.id) || {};
+                  return (
+                    <div className="admin-co-stats">
+                      <div><b>{r.usuarios ?? 0}</b><span>usuarios</span></div>
+                      <div>
+                        <b>{r.productos_activos ?? 0}</b>
+                        <span>productos{r.productos_proximamente ? ' · +' + r.productos_proximamente + ' pronto' : ''}</span>
+                      </div>
+                      <div><b>${Number(r.ia_usd ?? 0).toFixed(2)}</b><span>IA acumulada</span></div>
+                    </div>
+                  );
+                })()}
                 <div className="admin-co-foot">
                   <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Productos →</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>

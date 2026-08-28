@@ -44,7 +44,7 @@ function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
 
         <div className="emp-resumen">
           <div><b>{tiene.filter((t) => t.estado_empresa === 'activo').length}</b><span>productos andando</span></div>
-          <div><b>{tiene.filter((t) => t.estado_empresa === 'prometido').length}</b><span>prometidos</span></div>
+          <div><b>{tiene.filter((t) => t.estado_empresa === 'proximamente').length}</b><span>próximamente</span></div>
           <div><b>{nUsuarios}</b><span>usuarios</span></div>
           <div><b>${gasto.toFixed(2)}</b><span>IA acumulada</span></div>
         </div>
@@ -66,7 +66,7 @@ function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
                 <b>{p.nombre}</b>
                 {p.veces > 1 && <i className="emp-sedes">{p.veces} sedes</i>}
                 <span className={'emp-estado e-' + p.estado_empresa}>
-                  {p.estado_empresa === 'activo' ? 'andando' : 'prometido'}
+                  {p.estado_empresa === 'activo' ? 'andando' : 'próximamente'}
                 </span>
               </div>
               <p className="emp-pieza-d">{p.beneficio || p.descripcion}</p>
@@ -84,7 +84,7 @@ function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
               )}
 
               <div className="emp-cambiar">
-                {p.estado_empresa === 'prometido' && (
+                {p.estado_empresa === 'proximamente' && (
                   <button type="button" className="ag-mini" disabled={busy}
                           onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'activo')}>
                     encender
@@ -92,7 +92,7 @@ function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
                 )}
                 {p.estado_empresa === 'activo' && (
                   <button type="button" className="ag-mini" disabled={busy}
-                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'prometido')}>
+                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'proximamente')}>
                     pausar
                   </button>
                 )}
@@ -125,7 +125,7 @@ function EmpresaModal({ company, catalogo, matriz, usuarios, consumo,
                     <span>{p.beneficio || p.descripcion}</span>
                   </div>
                   <button type="button" className="ag-mini" disabled={busy}
-                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'prometido')}>
+                          onClick={() => onCambiar(company, { id: p.catalogo_id, clave: p.clave, nombre: p.nombre, tipo: p.tipo, beneficio: p.beneficio, descripcion: p.descripcion }, 'proximamente')}>
                     activar
                   </button>
                 </div>

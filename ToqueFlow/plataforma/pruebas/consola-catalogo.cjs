@@ -112,7 +112,7 @@ const check = (cond, que, detalle) => {
     }, { Prefer: "return=representation" });
     check(ins.ok, "crea la fila al prometer la pieza", "HTTP " + ins.status + " " + JSON.stringify(ins.data).slice(0, 180));
     let e = await estadoDe();
-    check(e.estado_empresa === "prometido", "la matriz la muestra como prometida", "dice " + e.estado_empresa);
+    check(e.estado_empresa === "proximamente", "la matriz la muestra como anunciada como próximamente", "dice " + e.estado_empresa);
 
     // prometido → activo
     const upd = await rest("PATCH", "flows?id=eq." + (e.flow_ids || [])[0], { status: "activo" });
