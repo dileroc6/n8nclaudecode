@@ -1,0 +1,95 @@
+{
+  "name": "ToqueFlow - Tool Consultar saldo",
+  "nodes": [
+    {
+      "id": "t1",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-consultar-saldo",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      },
+      "notes": "Exige la misma firma que el agente. Una herramienta abierta seria una puerta trasera a los datos del cliente."
+    },
+    {
+      "id": "t2",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// La herramienta recibe siempre lo mismo: de qué instancia viene y a quién\n// atiende. NUNCA recibe el company_id — se deriva adentro de la base, igual\n// que en el agente. Si una herramienta aceptara la empresa del payload,\n// bastaría un error en el agente para leer los datos de otro cliente.\nconst b = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  instance: String(b.instance || ''),\n  telefono: String(b.telefono || '').replace(/\\D/g, ''),\n}}];"
+      }
+    },
+    {
+      "id": "t3",
+      "name": "Consultar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        40,
+        300
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_consultar_saldo($1, $2) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.instance, $json.telefono ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "notes": "Toda la logica esta en la funcion. Este workflow solo la expone: asi la herramienta se puede probar sola con psql, sin n8n de por medio."
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Consultar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}
