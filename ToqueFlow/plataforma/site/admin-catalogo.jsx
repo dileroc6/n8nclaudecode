@@ -27,6 +27,56 @@ const CAT_MADUREZ = {
   en_papel:    ['en el papel', 'papel'],
 };
 
+
+// Las piezas de un producto, agrupadas por lo que son. Herramienta y
+// automatización no son lo mismo y quien vende necesita distinguirlas: una
+// actúa dentro de la conversación, la otra corre sola.
+const PIEZA_GRUPOS = [
+  ['herramienta',    'Herramientas',     'el agente las usa dentro de la conversación'],
+  ['automatizacion', 'Automatizaciones', 'corren solas, sin que nadie escriba'],
+];
+
+function PiezasQueLleva({ siempre, opcionales }) {
+  const todas = [
+    ...siempre.map((x) => ({ ...x, siempre: true })),
+    ...opcionales.map((x) => ({ ...x, siempre: false })),
+  ];
+  if (todas.length === 0) {
+    return (
+      <div className="cat-col">
+        <h5>De qué se compone</h5>
+        <p className="cat-nada">Es una pieza suelta: no lleva otras adentro.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="cat-piezas">
+      {PIEZA_GRUPOS.map(([tipo, titulo, ayuda]) => {
+        const del = todas.filter((x) => x.tipo === tipo);
+        if (!del.length) return null;
+        return (
+          <div key={tipo} className="cat-grupo">
+            <h5>{titulo} <em>{ayuda}</em></h5>
+            {del.map((x) => (
+              <div key={x.clave} className={'cat-pieza-fila' + (x.liberado ? '' : ' is-obra')}>
+                <span className='cat-pieza-punto'>{x.siempre ? '●' : '○'}</span>
+                <div>
+                  <b>{x.nombre}</b>
+                  <i className={'cat-liberado ' + (x.liberado ? 'si' : 'no')}>
+                    {x.liberado ? 'liberada' : 'en construcción'}
+                  </i>
+                  <span>{x.que_hace}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
+      <p className="cat-piezas-pie">● va siempre &nbsp;·&nbsp; ○ se le puede sumar por cliente</p>
+    </div>
+  );
+}
+
 function CatalogoTab({ catalogo }) {
   const [tipo, setTipo] = React.useState('producto');
   const [abierta, setAbierta] = React.useState(null);
@@ -82,35 +132,16 @@ function CatalogoTab({ catalogo }) {
                   <p className="cat-item-d"><b>Qué hace:</b> {p.descripcion}</p>
                   {p.beneficio && <p className="cat-item-d"><b>Cómo se lo explicas al cliente:</b> «{p.beneficio}»</p>}
 
-                  <div className="cat-cols">
-                    <div className="cat-col">
-                      <h5>Qué se le puede configurar</h5>
-                      {tieneParams ? (
-                        <ul>{p.parametros.map((x, i) => <li key={i}>{x}</li>)}</ul>
-                      ) : (
-                        <p className="cat-nada">Nada: se enciende y ya. Igual para todos los clientes.</p>
-                      )}
-                    </div>
-
-                    <div className="cat-col">
-                      <h5>De qué se compone</h5>
-                      {(p.incluye_nombres || []).length > 0 && (
-                        <React.Fragment>
-                          <span className="cat-sub">siempre lleva</span>
-                          <ul>{p.incluye_nombres.map((x, i) => <li key={i}>{x}</li>)}</ul>
-                        </React.Fragment>
-                      )}
-                      {(p.puede_llevar_nombres || []).length > 0 && (
-                        <React.Fragment>
-                          <span className="cat-sub">se le puede sumar</span>
-                          <ul className="cat-opcional">{p.puede_llevar_nombres.map((x, i) => <li key={i}>{x}</li>)}</ul>
-                        </React.Fragment>
-                      )}
-                      {(p.incluye_nombres || []).length === 0 && (p.puede_llevar_nombres || []).length === 0 && (
-                        <p className="cat-nada">Es una pieza suelta: no lleva otras adentro.</p>
-                      )}
-                    </div>
+                  <div className="cat-col cat-params">
+                    <h5>Qué se le puede configurar</h5>
+                    {tieneParams ? (
+                      <ul>{p.parametros.map((x, i) => <li key={i}>{x}</li>)}</ul>
+                    ) : (
+                      <p className="cat-nada">Nada: se enciende y ya. Igual para todos los clientes.</p>
+                    )}
                   </div>
+
+                  <PiezasQueLleva siempre={p.lleva_siempre || []} opcionales={p.puede_sumar || []} />
 
                   {p.workflow && <p className="cat-tech">corre en <code>{p.workflow}</code></p>}
 

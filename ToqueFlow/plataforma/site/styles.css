@@ -4013,3 +4013,48 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 .admin-salir:hover { color: var(--ink); border-color: var(--ink); }
 @media (max-width: 620px) { .admin-salir { display: none; } }
+
+/* ── Consola: conmutador de vista y piezas de un producto ──────────────────── */
+
+.admin-vista { display: inline-flex; gap: 2px; border: 1px solid var(--line); border-radius: 9px; padding: 2px; margin-left: auto; }
+.admin-vista button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 26px; border: none; border-radius: 7px;
+  background: transparent; color: var(--mute); cursor: pointer;
+}
+.admin-vista button:hover { color: var(--ink); }
+.admin-vista button.is-active { background: color-mix(in oklab, var(--ink) 9%, transparent); color: var(--ink); }
+
+/* En lista, cada empresa es una fila: con veinte clientes las tarjetas dejan de
+   servir para comparar y empieza a servir el renglón. */
+.admin-cards.is-lista { grid-template-columns: 1fr; gap: 8px; }
+.admin-cards.is-lista .admin-co-card { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 16px; padding: 12px 16px; }
+.admin-cards.is-lista .admin-co-top { display: contents; }
+.admin-cards.is-lista .admin-co-logo { width: 34px; height: 34px; font-size: 12px; }
+.admin-cards.is-lista .admin-co-meta b { font-size: 14.5px; }
+.admin-cards.is-lista .admin-co-stats { display: flex; gap: 20px; border: none; background: none; padding: 0; margin: 0; }
+.admin-cards.is-lista .admin-co-stats > div { background: none; padding: 0; text-align: right; white-space: nowrap; }
+.admin-cards.is-lista .admin-co-stats b { font-size: 14px; }
+.admin-cards.is-lista .admin-co-stats span { font-size: 10.5px; }
+.admin-cards.is-lista .admin-co-foot { border: none; padding: 0; margin: 0; gap: 6px; }
+.admin-cards.is-lista .admin-co-btn { padding: 5px 11px; font-size: 12px; }
+@media (max-width: 860px) {
+  .admin-cards.is-lista .admin-co-card { grid-template-columns: 1fr; }
+  .admin-cards.is-lista .admin-co-top { display: flex; }
+  .admin-cards.is-lista .admin-co-stats { justify-content: space-between; }
+}
+
+/* Las piezas que compone un producto, agrupadas por lo que son. */
+.cat-params { border: 1px solid var(--line); border-radius: 11px; background: var(--bg); padding: 13px 15px; }
+.cat-piezas { border: 1px solid var(--line); border-radius: 11px; background: var(--bg); padding: 13px 15px; display: flex; flex-direction: column; gap: 14px; }
+.cat-grupo { display: flex; flex-direction: column; gap: 7px; }
+.cat-grupo h5 { margin: 0; font-family: var(--mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mute); font-weight: 500; }
+.cat-grupo h5 em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: .8; margin-left: 7px; }
+.cat-pieza-fila { display: flex; gap: 10px; align-items: flex-start; }
+.cat-pieza-fila.is-obra { opacity: .68; }
+.cat-pieza-punto { font-family: var(--mono); font-size: 11px; color: var(--orange-2); line-height: 1.7; flex: 0 0 auto; }
+.cat-pieza-fila > div { flex: 1; min-width: 0; }
+.cat-pieza-fila b { font-size: 13px; font-weight: 600; margin-right: 8px; }
+.cat-pieza-fila span { display: block; font-size: 11.5px; color: var(--mute); margin-top: 2px; line-height: 1.45; }
+.cat-pieza-fila .cat-liberado { font-style: normal; font-size: 9px; padding: 1px 6px; }
+.cat-piezas-pie { margin: 0; font-family: var(--mono); font-size: 10.5px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 9px; }

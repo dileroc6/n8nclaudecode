@@ -335,6 +335,12 @@ function AdminApp({ profile }) {
   const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
   const [catBusy, setCatBusy] = React.useState(false);
   const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
+  // Tarjetas o lista. Se recuerda entre visitas: con cuatro empresas mandan
+  // las tarjetas; con veinte, la lista. Que lo elija quien mira.
+  const [vistaEmp, setVistaEmp] = React.useState(() => {
+    try { return localStorage.getItem('tf_vista_empresas') || 'tarjetas'; } catch (e) { return 'tarjetas'; }
+  });
+  const cambiarVista = (v) => { setVistaEmp(v); try { localStorage.setItem('tf_vista_empresas', v); } catch (e) {} };
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
@@ -485,10 +491,22 @@ function AdminApp({ profile }) {
         <React.Fragment>
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
-          <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
           <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Productos</button>
+          <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
           <button type="button" className={`admin-tab ${tab === 'consumo' ? 'is-active' : ''}`} onClick={() => setTab('consumo')}>Consumo IA</button>
           <div className="admin-tabs-spacer"></div>
+          {tab === 'empresas' && (
+            <div className="admin-vista">
+              <button type="button" title="Tarjetas" aria-label="Ver en tarjetas"
+                      className={vistaEmp === 'tarjetas' ? 'is-active' : ''} onClick={() => cambiarVista('tarjetas')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              </button>
+              <button type="button" title="Lista" aria-label="Ver en lista"
+                      className={vistaEmp === 'lista' ? 'is-active' : ''} onClick={() => cambiarVista('lista')}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+            </div>
+          )}
           {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('company')}>+ Nueva empresa</button>}
           {tab === 'usuarios' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('user')}>+ Nuevo usuario</button>}
         </div>
@@ -496,7 +514,7 @@ function AdminApp({ profile }) {
         {loading && <div className="admin-empty">Cargando…</div>}
 
         {!loading && tab === 'empresas' && (
-          <div className="admin-cards">
+          <div className={vistaEmp === 'lista' ? 'admin-cards is-lista' : 'admin-cards'}>
             {companies.length === 0 && <div className="admin-empty">Aún no hay empresas. Crea la primera.</div>}
             {companies.map((c) => (
               <article key={c.id} className="admin-co-card">

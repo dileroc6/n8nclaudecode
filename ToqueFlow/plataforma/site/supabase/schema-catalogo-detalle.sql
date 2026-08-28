@@ -151,3 +151,35 @@ comment on view public.catalogo_detalle is
   'Cada pieza con lo que hace, lo que se le configura, de que se compone y cuantos clientes la tienen.';
 
 grant select on public.catalogo_detalle to authenticated;
+
+
+-- ── Actualizacion 28-ago: las piezas separadas por tipo ─────────────────────
+-- Las piezas que compone un producto, separadas por tipo. Antes venían todas
+-- revueltas en una lista y no se distinguía una herramienta —que actúa dentro
+-- de la conversación— de una automatización, que corre sola. Son cosas
+-- distintas y quien vende necesita saber cuál es cuál.
+drop view if exists public.catalogo_detalle;
+create view public.catalogo_detalle
+with (security_invoker = on) as
+select
+  c.*,
+  (select count(distinct f.company_id)::int from public.flows f
+    where f.catalogo_id = c.id and f.status = 'activo')  as clientes_encendido,
+  (select count(distinct f.company_id)::int from public.flows f
+    where f.catalogo_id = c.id and f.status <> 'activo') as clientes_sin_encender,
+  (select coalesce(json_agg(json_build_object(
+            'clave', x.clave, 'nombre', x.nombre, 'tipo', x.tipo,
+            'estado', x.estado, 'liberado', x.liberado,
+            'que_hace', coalesce(x.beneficio, x.descripcion)
+          ) order by x.tipo, x.orden), '[]'::json)
+     from public.catalogo x where x.clave = any(c.incluye) and x.activo)      as lleva_siempre,
+  (select coalesce(json_agg(json_build_object(
+            'clave', x.clave, 'nombre', x.nombre, 'tipo', x.tipo,
+            'estado', x.estado, 'liberado', x.liberado,
+            'que_hace', coalesce(x.beneficio, x.descripcion)
+          ) order by x.tipo, x.orden), '[]'::json)
+     from public.catalogo x where x.clave = any(c.puede_llevar) and x.activo) as puede_sumar
+from public.catalogo c
+where c.activo;
+
+grant select on public.catalogo_detalle to authenticated;
