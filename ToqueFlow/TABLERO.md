@@ -55,7 +55,7 @@ Especificación completa en [estrategia/producto-estandar.md](estrategia/product
 | # | Pieza | Por qué ahí | Quién |
 |---|---|---|---|
 | 17 | ⭐ **Varios agentes por empresa** | Hoy `agent_config` tiene `company_id` como llave primaria: **una empresa = un agente**. Y eso ya se queda corto: FerreteríaYa tiene agentes distintos para Bogotá y Medellín, y cualquier cliente con dos líneas de negocio va a querer dos. La tabla necesita su propia clave y un nombre, y la instancia de WhatsApp pasa a ser de cada agente, no de la empresa | Claude |
-| 18 | **Probar un go-live de verdad** | Nunca se ha hecho uno. Está escrito el procedimiento —cambiar la instancia por la real y encender— pero **no se ha probado contra una instancia de Evolution existente**. Faltan dos cosas antes: confirmar que Evolution puede mandar la cabecera de firma, y decidir el corte con el bot viejo de Bejauha, que hoy correría en paralelo | Diego |
+| 18 | ⭐ **Ensayar el go-live contra `dev-router`** | **Hay dónde probarlo sin tocar a ningún cliente:** Evolution tiene 9 instancias y una es `dev-router`, conectada, «ToqueFlow — Entorno de Pruebas», número 573142990854. Es de ustedes. El ensayo es: apuntar un agente a esa instancia, ponerle la firma al webhook de Evolution, escribirle desde un celular y ver si contesta. **Ojo:** hoy `dev-router` apunta a `wa-router`, así que hay que decidir si se cambia o se usa otra instancia | Diego |
 | 19 | **Sacar las columnas de Bejauha de la tabla compartida** | `contacts` tiene `service_type` con valores fijos de Bejauha (`karma`, `beja`, `uja`, `paquete`), más `clases_restantes` y `fecha_renovacion`. **Son columnas de UN cliente en una tabla que usan todos** — el mismo problema del «si es Bejauha entonces» pero metido en el esquema. Apareció al mapear lo que captura el agente: no se le puede escribir el interés de un cliente nuevo porque la restricción solo acepta los valores de Bejauha | Diego |
 | 20 | **El logo de Bejauha** | El de FerreteríaYa apareció en el repo y ya está arriba. El de Bejauha no existe en ninguna parte: por ahora sale el respaldo con iniciales. Pedírselo al cliente | Diego |
 | 21 | ~~🚨 El agente no habría reconocido a ningún cliente real de Bejauha~~ | ✅ **Arreglado el 28-ago.** Los 46 contactos tienen el teléfono guardado como `+573185478900`; WhatsApp lo entrega sin el «+». Todas las búsquedas comparaban el texto crudo, así que el día del go-live **el agente les habría creado un contacto duplicado a los 46** y cada cliente que volviera habría parecido nuevo, sin nombre ni historial. **No lo vio ninguna prueba porque todas usaban teléfonos inventados, escritos sin «+».** Ahora se compara por dígitos con `tf_telefono()`, con índice. Verificado contra un contacto real |
@@ -108,18 +108,19 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 53 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
-| 54 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
-| 55 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
-| 56 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
-| 57 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
-| 58 | **Verificar cuántos workflows quedan tras la limpieza** | El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después | Claude |
-| 59 | ~~Alerta automática de recursos~~ | ✅ **Funcionando.** Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam | — |
-| 60 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
-| 61 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
-| 62 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
-| 63 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
-| 64 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
+| 53 | **Cuatro instancias de WhatsApp llevan días en «connecting»** | `ferreteriaya`, `ferreteriaya-med`, `FERREB` y `FERREM` nunca terminan de conectar, y `zoe` y `clinica-demo` están cerradas. De nueve instancias solo tres están abiertas: `savia`, `agenciahyc` y `dev-router`. Si FerreteríaYa cree que su WhatsApp está andando, no lo está | Diego |
+| 54 | **El logo y el favicon dan 404 en producción** | Los archivos se perdieron: no están en el repo, ni en el portátil viejo, ni en R2. Roto en el nav y footer de todas las páginas del portal | Diego |
+| 55 | Resembrar `last-good-site.zip` cuando el logo vuelva | El punto de restauración actual no tiene imágenes | Claude |
+| 56 | **Configurar `VASSCO_SHARED_SECRET`** y redesplegar las dos edge functions | La de Vassco deja de responder hasta que se haga | Diego |
+| 57 | **Plan de respaldo del VPS de Evolution** | Cada cliente pone su número, pero Evolution corre en un solo VPS. Un baneo tumba a uno; una caída los tumba a todos. **Decidir antes del cliente cinco** | Diego |
+| 58 | Encender WhatsApp en Bejauha | Sigue apagado desde el incidente de julio. Tu caso de referencia tiene que estar vivo | Diego |
+| 59 | **Verificar cuántos workflows quedan tras la limpieza** | El usuario está borrando los de blogs y otros proyectos. Volver a contar activos e inactivos y medir la RAM de n8n antes y después | Claude |
+| 60 | ~~Alerta automática de recursos~~ | ✅ **Funcionando.** Cron cada 15 min en el VPS, correo desde hola@toqueflow.com a los dos socios. Probada de punta a punta: alerta, recuperación y anti-spam | — |
+| 61 | **Protocolo de cambios del flujo compartido** | Un error en el flujo único rompe a todos a la vez. Tres reglas: probar siempre en el sandbox contra una empresa de prueba, guardar la versión anterior en n8n para revertir en un clic, y activar primero para un solo cliente y esperar un día antes de extenderlo | Diego |
+| 62 | **Manejo de errores aislado por ejecución** | Que la config mala de un cliente no tumbe la ejecución de otro, más un `Error Trigger` que avise | Diego |
+| 63 | **Tomar un snapshot manual del VPS** | Consultado hoy: **no hay ninguno** (viene vacío). Los backups automáticos sí existen —semanales, dos retenidos, restauran en ~30 min— pero un snapshot antes de cada cambio riesgoso cuesta un minuto | Diego |
+| 64 | **Escribir el documento de recuperación** | Una página: qué contenedores, en qué orden, qué variables. Hoy eso está solo en tu cabeza | Diego |
+| 65 | **Probar la restauración una vez** | Antes del cliente cinco. Un respaldo que nunca se probó no es un respaldo | Diego |
 
 ---
 
@@ -183,19 +184,19 @@ Que dar de alta y configurar un cliente se haga **desde el portal, sin correr c�
 
 | # | Acción | Efecto | Riesgo |
 |---|---|---|---|
-| 65 | ~~docker stop zoe-metabase~~ | ✅ **Hecho el 27-ago.** Liberó 1,6 GiB. Reversible con `docker start zoe-metabase` | — |
-| 66 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
-| 67 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
-| 68 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
+| 66 | ~~docker stop zoe-metabase~~ | ✅ **Hecho el 27-ago.** Liberó 1,6 GiB. Reversible con `docker start zoe-metabase` | — |
+| 67 | ~~Desactivar los crons de Zoe~~ | ✅ **Hecho.** Los tres desactivados, sin borrar. Se va el ~70% de las ejecuciones | — |
+| 68 | ~~Habilitar swap de 2 GB~~ | ✅ **Hecho.** Activo, 0 usado | — |
+| 69 | **Decidir qué se hace con los datos de Metabase** | Si Zoe no vuelve, el volumen también se libera | Confirmar antes de borrar nada |
 
 | # | Tarea | Nota |
 |---|---|---|
-| 69 | ~~Medir la memoria real dentro del VPS~~ | ✅ **Hecho.** 3,1 GiB comprometidos de 3,8. El 39% se lo lleva `zoe-metabase`, de un cliente que no pagó |
-| 70 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
-| 71 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
-| 72 | ~~Alerta automática de recursos~~ | ✅ **Escrita.** Ver la sección de infraestructura. Pendiente instalarla en el VPS |
-| 73 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
-| 74 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
+| 70 | ~~Medir la memoria real dentro del VPS~~ | ✅ **Hecho.** 3,1 GiB comprometidos de 3,8. El 39% se lo lleva `zoe-metabase`, de un cliente que no pagó |
+| 71 | **Definir el umbral de upgrade antes de que duela** | Un número escrito: «al cliente N, o cuando la RAM comprometida pase el 75% sostenido, lo que llegue primero». Decidirlo ahora, no cuando un cliente se caiga |
+| 72 | **Cotizar el KVM 2 y meterlo en el margen** | El upgrade es un costo fijo nuevo. Con 9 clientes a $600.000 apenas se nota, pero hay que tenerlo en la cuenta |
+| 73 | ~~Alerta automática de recursos~~ | ✅ **Escrita.** Ver la sección de infraestructura. Pendiente instalarla en el VPS |
+| 74 | **Revisar los límites de concurrencia antes del cliente cinco** | El pool de Postgres del rol `n8n_worker` está en `maxConnections=4`. Con más clientes y campañas simultáneas puede quedar corto |
+| 75 | **Decidir el plan de partición si un VPS no alcanza** | Lo natural: mover Evolution a su propio VPS y dejar n8n y Postgres en el actual. Decidir el corte antes de necesitarlo, no improvisando |
 
 ---
 
@@ -271,15 +272,15 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 
 | # | Tarea | Nota |
 |---|---|---|
-| 75 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
-| 76 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
-| 77 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
-| 78 | ~~Desactivar, no borrar~~ | ✅ **Criterio aplicado.** Todo lo de Zoe quedó pausado sin borrar nada |
-| 79 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
-| 80 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
-| 81 | ~~Medir la RAM antes y después~~ | ✅ **Hecho.** De 777 MB disponibles a 2,3 GB |
-| 82 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
-| 83 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
+| 76 | ~~Revisar qué workflows con cron llaman a IA~~ | ✅ **Hecho.** Sin gasto de IA relevante. El problema es volumen: 288 ejecuciones diarias del OTP de Zoe, 70% del total, para un cliente que no cerró |
+| 77 | ~~Desactivar el cron OTP de Zoe~~ | ✅ **Hecho el 27-ago** |
+| 78 | **Inventariar los 85 y marcar cuáles se apagan** | Decisión por grupo, no uno por uno. Los de prospectos que no cerraron son candidatos claros |
+| 79 | ~~Desactivar, no borrar~~ | ✅ **Criterio aplicado.** Todo lo de Zoe quedó pausado sin borrar nada |
+| 80 | **Archivar los 100+ workflows de plantilla de Hostinger** | Inactivos, no ejecutan, pero n8n los carga. Podría bajar parte de los 731 MB |
+| 81 | **Borrar las 5 copias de `_test_exceljs_tmp`** | Basura de una prueba de mayo. Esas sí se borran |
+| 82 | ~~Medir la RAM antes y después~~ | ✅ **Hecho.** De 777 MB disponibles a 2,3 GB |
+| 83 | **Revisar si el Postgres del VPS sigue haciendo falta** | Evolution **sí** lo necesita para sus sesiones. Los esquemas viejos (`bejauha*`, y los de Savia/Zoe/Luxe) probablemente no. Ojo: liberan **disco**; la RAM que usa Postgres depende de su configuración, no de cuántos datos guarde |
+| 84 | **Ajustar la configuración de Postgres para un VPS de 4 GB** | Si `shared_buffers` quedó en un valor alto por defecto, ahí puede haber más RAM que en los datos |
 
 ---
 
@@ -287,17 +288,17 @@ Se liberaron **1,6 GiB** — algo más que Metabase, porque también soltó cach
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 84 | ~~🚨 El webhook del agente no validaba nada~~ | ✅ **Arreglado el 28-ago.** Cualquiera que conociera la URL de n8n y el nombre de una instancia podía inyectarle mensajes al agente. El día del go-live eso significa que **un tercero hace que el WhatsApp del cliente escriba al número que él elija** —el destinatario sale del payload, no de la base— que es exactamente cómo se gana un baneo. Y el repo es público, así que la URL no era ningún secreto. **El contrato de la arquitectura ya lo decía (`X-Toque-Signature`) y yo no lo seguí al construir el workflow.** Comprobado: sin firma 403, con firma mala 403, con firma buena los 12 escenarios pasan | — |
-| 85 | **Confirmar que Evolution puede mandar cabeceras personalizadas** | Antes del go-live. El webhook ahora exige `X-Toque-Signature`; si Evolution no puede enviarla, el agente no recibiría nada el día que se encienda. Alternativa si no puede: meter el secreto en la ruta del webhook | Diego |
-| 86 | ⭐ **Auditoría de seguridad y de pruebas con las mejores prácticas del mercado** | Una revisión completa, hecha a propósito y no de rebote. **La fuga de las vistas apareció de casualidad, yendo a construir otra cosa** — no la buscó nadie, y eso es lo que hay que corregir. Alcance mínimo: (a) **OWASP Top 10** sobre el portal y las edge functions; (b) **el checklist de producción de Supabase** — RLS en toda tabla, `security_invoker` en toda vista, `search_path` fijo en toda función `SECURITY DEFINER`, políticas sin agujeros, MFA del super admin; (c) revisar que **ningún secreto** viaje al navegador ni esté versionado; (d) probar los límites del multi-tenant **con dos empresas de verdad**, no con una; (e) rate limiting y validación de entrada en los webhooks de n8n y en las edge functions; (f) qué pasa si roban la llave `anon`; (g) cobertura de pruebas: qué parte del sistema **no** tiene ninguna. Sale un informe con hallazgos por gravedad y las correcciones aplicadas | Claude |
-| 87 | ~~🚨 Las vistas del agente se saltaban el RLS~~ | ✅ **Encontrado, comprobado y arreglado el 27-ago.** `agent_config` y `agent_knowledge` tenían el RLS bien: un anónimo pedía sus filas y recibía cero. Pero las **vistas** encima (`agent_runtime`, `agent_knowledge_prompt`) pertenecen a `postgres`, y en Postgres una vista corre con los permisos de su DUEÑO salvo que se diga `security_invoker = on`. Estaban otorgadas a `anon`. **Comprobado contra producción con la llave pública del sitio: entregaban la configuración y el conocimiento completos sin iniciar sesión.** Con un cliente el daño es acotado; con cinco, cualquiera podía leerse los precios y las políticas de los otros cuatro | — |
-| 88 | ~~Prueba de aislamiento desde afuera~~ | ✅ **`pruebas/aislamiento-rls.cjs`.** Recorre las 21 tablas y vistas con la llave pública —la que va en `supabase-config.js` y cualquiera puede leer del sitio— y falla si algo entrega datos sin sesión. **Por qué la fuga no se vio antes: todas las pruebas se habían hecho con el rol de servicio y con la conexión directa a Postgres, que legítimamente ven todo.** El aislamiento hay que probarlo desde donde llegaría un atacante | — |
-| 89 | **Toda vista nueva nace con `security_invoker = on`** | La regla que evita que vuelva a pasar. No depende de acordarse: `aislamiento-rls.cjs` lo comprueba. Falta engancharlo al mismo cron semanal del banco de pruebas (tarea del producto) | Diego |
-| 90 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
-| 91 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
-| 92 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
-| 93 | Skill `/migracion` | SQL numerado e idempotente | Claude |
-| 94 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
+| 85 | ~~🚨 El webhook del agente no validaba nada~~ | ✅ **Arreglado el 28-ago.** Cualquiera que conociera la URL de n8n y el nombre de una instancia podía inyectarle mensajes al agente. El día del go-live eso significa que **un tercero hace que el WhatsApp del cliente escriba al número que él elija** —el destinatario sale del payload, no de la base— que es exactamente cómo se gana un baneo. Y el repo es público, así que la URL no era ningún secreto. **El contrato de la arquitectura ya lo decía (`X-Toque-Signature`) y yo no lo seguí al construir el workflow.** Comprobado: sin firma 403, con firma mala 403, con firma buena los 12 escenarios pasan | — |
+| 86 | ~~Confirmar que Evolution puede mandar cabeceras~~ | ✅ **Confirmado el 28-ago.** Evolution **2.3.7**, y la configuración de webhook de cada instancia **incluye el campo `headers`** — está en `null` porque nadie lo puso, no porque no exista. Se le puede poner la firma. Falta ponerla el día del go-live |
+| 87 | ⭐ **Auditoría de seguridad y de pruebas con las mejores prácticas del mercado** | Una revisión completa, hecha a propósito y no de rebote. **La fuga de las vistas apareció de casualidad, yendo a construir otra cosa** — no la buscó nadie, y eso es lo que hay que corregir. Alcance mínimo: (a) **OWASP Top 10** sobre el portal y las edge functions; (b) **el checklist de producción de Supabase** — RLS en toda tabla, `security_invoker` en toda vista, `search_path` fijo en toda función `SECURITY DEFINER`, políticas sin agujeros, MFA del super admin; (c) revisar que **ningún secreto** viaje al navegador ni esté versionado; (d) probar los límites del multi-tenant **con dos empresas de verdad**, no con una; (e) rate limiting y validación de entrada en los webhooks de n8n y en las edge functions; (f) qué pasa si roban la llave `anon`; (g) cobertura de pruebas: qué parte del sistema **no** tiene ninguna. Sale un informe con hallazgos por gravedad y las correcciones aplicadas | Claude |
+| 88 | ~~🚨 Las vistas del agente se saltaban el RLS~~ | ✅ **Encontrado, comprobado y arreglado el 27-ago.** `agent_config` y `agent_knowledge` tenían el RLS bien: un anónimo pedía sus filas y recibía cero. Pero las **vistas** encima (`agent_runtime`, `agent_knowledge_prompt`) pertenecen a `postgres`, y en Postgres una vista corre con los permisos de su DUEÑO salvo que se diga `security_invoker = on`. Estaban otorgadas a `anon`. **Comprobado contra producción con la llave pública del sitio: entregaban la configuración y el conocimiento completos sin iniciar sesión.** Con un cliente el daño es acotado; con cinco, cualquiera podía leerse los precios y las políticas de los otros cuatro | — |
+| 89 | ~~Prueba de aislamiento desde afuera~~ | ✅ **`pruebas/aislamiento-rls.cjs`.** Recorre las 21 tablas y vistas con la llave pública —la que va en `supabase-config.js` y cualquiera puede leer del sitio— y falla si algo entrega datos sin sesión. **Por qué la fuga no se vio antes: todas las pruebas se habían hecho con el rol de servicio y con la conexión directa a Postgres, que legítimamente ven todo.** El aislamiento hay que probarlo desde donde llegaría un atacante | — |
+| 90 | **Toda vista nueva nace con `security_invoker = on`** | La regla que evita que vuelva a pasar. No depende de acordarse: `aislamiento-rls.cjs` lo comprueba. Falta engancharlo al mismo cron semanal del banco de pruebas (tarea del producto) | Diego |
+| 91 | ~~Regenerar el token de Hostinger~~ | ✅ **Hecho y verificado:** HTTP 200 contra la API. ⚠️ El MCP de Hostinger arrancó con el token viejo — **hay que reiniciar Claude Code** para que lo tome | — |
+| 92 | Limpiar el historial de git | Opcional. Exige `push --force` | Diego |
+| 93 | Skill `/nuevo-flow` | Encoda el contrato y el modo prueba obligatorio | Claude |
+| 94 | Skill `/migracion` | SQL numerado e idempotente | Claude |
+| 95 | Instalar Python | Opcional, un solo script de Bejauha | Diego |
 
 ---
 
@@ -326,9 +327,9 @@ Zoe nunca cerró, pero seguía consumiendo infraestructura por tres vías distin
 
 | # | Tarea | Nota | Quién |
 |---|---|---|---|
-| 95 | **Pasar el repositorio de GitHub a privado** | Hoy `dileroc6/n8nclaudecode` es **público**. Ahí está: que solo Bejauha paga y cuánto, que Zoe rechazó los $5.500.000 y que se le va a recotizar $1.200.000, que SM Grand está en negociación, la estructura de precios y el piso, el reparto 50/50 y los datos tributarios de Vassco. **Ventana de riesgo:** Ferney manda propuestas esta semana; si un prospecto busca «ToqueFlow» encuentra el precio de respaldo y que es el único caliente. Settings → General → Danger Zone → Change visibility. 30 segundos, no rompe nada. *Aplazado por decisión del 27-ago* | Diego |
-| 96 | **Dar acceso del repo a Ferney** | Es socio al 50% y el repo es el negocio: la plataforma, la estrategia y el tablero que le asigna tareas. Settings → Collaborators. Ojo: va a leer el diagnóstico de ventas, que lo toca directamente — mejor contárselo antes | Diego |
-| 97 | **Gestor de contraseñas compartido** | Más importante que el acceso al repo. `credentials.env`, el token de Hostinger, la llave de n8n y la contraseña del correo **viven solo en la máquina de Diego**. Si le pasa algo, Ferney no puede desplegar el sitio, ni dar de alta un cliente, ni entrar a Supabase: el negocio se detiene. Bitwarden gratis resuelve. 15 minutos | Ambos |
+| 96 | **Pasar el repositorio de GitHub a privado** | Hoy `dileroc6/n8nclaudecode` es **público**. Ahí está: que solo Bejauha paga y cuánto, que Zoe rechazó los $5.500.000 y que se le va a recotizar $1.200.000, que SM Grand está en negociación, la estructura de precios y el piso, el reparto 50/50 y los datos tributarios de Vassco. **Ventana de riesgo:** Ferney manda propuestas esta semana; si un prospecto busca «ToqueFlow» encuentra el precio de respaldo y que es el único caliente. Settings → General → Danger Zone → Change visibility. 30 segundos, no rompe nada. *Aplazado por decisión del 27-ago* | Diego |
+| 97 | **Dar acceso del repo a Ferney** | Es socio al 50% y el repo es el negocio: la plataforma, la estrategia y el tablero que le asigna tareas. Settings → Collaborators. Ojo: va a leer el diagnóstico de ventas, que lo toca directamente — mejor contárselo antes | Diego |
+| 98 | **Gestor de contraseñas compartido** | Más importante que el acceso al repo. `credentials.env`, el token de Hostinger, la llave de n8n y la contraseña del correo **viven solo en la máquina de Diego**. Si le pasa algo, Ferney no puede desplegar el sitio, ni dar de alta un cliente, ni entrar a Supabase: el negocio se detiene. Bitwarden gratis resuelve. 15 minutos | Ambos |
 
 ---
 

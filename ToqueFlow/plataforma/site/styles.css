@@ -4176,3 +4176,41 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .con-barra i { display: block; width: 100%; background: var(--orange-grad); border-radius: 6px 6px 0 0; }
 .con-mes b { font-family: var(--mono); font-size: 12px; }
 .con-mes span { font-family: var(--mono); font-size: 10px; color: var(--mute); }
+
+/* ── Consola: las secciones se ven como secciones ──────────────────────────
+   Antes el título era una línea de texto pequeño en minúsculas y todo corría
+   junto: nadie distinguía dónde acababa una sección y empezaba la siguiente. */
+
+.emp-vista > .emp-seccion,
+.emp-vista > div > .emp-seccion { position: relative; }
+.emp-seccion { padding-top: 26px; margin-top: 4px; border-top: 1px solid var(--line); }
+.emp-seccion:first-of-type { border-top: none; padding-top: 0; }
+
+.emp-titulo {
+  display: flex !important; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  font-family: var(--display, var(--sans)) !important; font-size: 18px !important;
+  font-weight: 600 !important; letter-spacing: -.01em !important;
+  text-transform: none !important; color: var(--ink) !important; margin-bottom: 12px !important;
+}
+.emp-titulo em {
+  font-family: var(--mono); font-size: 11.5px; font-style: normal;
+  color: var(--mute); font-weight: 400; letter-spacing: 0;
+}
+
+/* Elegir un mes: la pregunta «¿por qué subió en agosto?» no se responde con el
+   acumulado. */
+.con-mes {
+  border: 1px solid transparent; background: transparent; cursor: pointer;
+  border-radius: 10px; padding: 6px 4px; font-family: var(--sans);
+  transition: border-color .12s ease, background .12s ease;
+}
+.con-mes:hover { border-color: var(--line); }
+.con-mes.is-elegido { border-color: var(--orange-2); background: color-mix(in oklab, var(--orange-2) 7%, transparent); }
+.con-mes.is-elegido b { color: var(--orange-2); }
+.con-todos {
+  flex: 0 0 auto; align-self: stretch; border: 1px dashed var(--line); background: transparent;
+  border-radius: 10px; padding: 0 12px; cursor: pointer; color: var(--mute);
+  font-family: var(--mono); font-size: 10.5px; line-height: 1.4;
+}
+.con-todos:hover { color: var(--ink); border-color: var(--ink); }
+.con-cual { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--mute); }

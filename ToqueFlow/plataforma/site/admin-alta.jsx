@@ -57,7 +57,6 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
   const ofrecibles = catalogo
     .filter((c) => c.liberado && c.vendible && c.tipo !== 'herramienta')
     .sort((a, b) => a.orden - b.orden);
-  const herramientas = catalogo.filter((c) => c.liberado && c.tipo === 'herramienta' && c.clave !== 'responder-conocimiento');
 
   const eligioAgente = !!f.piezas['agente-atencion'];
   const pasosVisibles = eligioAgente ? ALTA_PASOS : ALTA_PASOS.filter((p) => p !== 'El agente');
@@ -127,7 +126,7 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
           enrutamiento: { reglas: f.escalar.trim() ? [{ si: f.escalar.trim(), accion: 'notificar_humano', destino: 'equipo' }] : [] },
           limites: { nunca: f.nunca.split('\n').map((x) => x.trim()).filter(Boolean), escalar_si: ['se molesta o repite la misma queja'] },
           agenda: { modo: 'ninguna' },
-          herramientas: herramientas.filter((h) => f.piezas[h.clave]).map((h) => h.clave),
+          herramientas: catalogo.filter((c) => c.tipo === 'herramienta' && f.piezas[c.clave]).map((c) => c.clave),
         });
         if (e3) throw new Error('La empresa quedó pero el agente no: ' + e3.message);
       }
@@ -199,27 +198,37 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
               no se ofrece aquí a propósito: prometerlo es la forma más fácil de quedar mal.
               El Portal y el Simulador van incluidos y no se preguntan.
             </p>
-            {ofrecibles.map((c) => (
-              <label key={c.clave} className={'alta-pieza' + (f.piezas[c.clave] ? ' is-puesta' : '')}>
-                <input type="checkbox" checked={!!f.piezas[c.clave]} onChange={() => togglePieza(c.clave)} />
-                <div>
-                  <b>{c.nombre}</b>
-                  <span>{c.beneficio || c.descripcion}</span>
-                </div>
-              </label>
-            ))}
-
-            {eligioAgente && herramientas.length > 0 && (
-              <React.Fragment>
-                <p className="alta-sub">Y dentro del agente, ¿algo de esto?</p>
-                {herramientas.map((h) => (
-                  <label key={h.clave} className={'alta-pieza alta-sub-pieza' + (f.piezas[h.clave] ? ' is-puesta' : '')}>
-                    <input type="checkbox" checked={!!f.piezas[h.clave]} onChange={() => togglePieza(h.clave)} />
-                    <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
+            {ofrecibles.map((c) => {
+              // Lo que este producto puede llevar adentro, ya liberado. Sale
+              // DEBAJO de su casilla y solo cuando se marca: preguntarlo antes
+              // de que elijan el producto no tiene sentido, y ponerlo al final
+              // de la lista lo desconecta de lo que se está eligiendo.
+              const opcionales = (c.puede_sumar || []).filter((x) => x.liberado);
+              const puesto = !!f.piezas[c.clave];
+              return (
+                <div key={c.clave} className="alta-grupo">
+                  <label className={'alta-pieza' + (puesto ? ' is-puesta' : '')}>
+                    <input type="checkbox" checked={puesto} onChange={() => togglePieza(c.clave)} />
+                    <div>
+                      <b>{c.nombre}</b>
+                      <span>{c.beneficio || c.descripcion}</span>
+                    </div>
                   </label>
-                ))}
-              </React.Fragment>
-            )}
+
+                  {puesto && opcionales.length > 0 && (
+                    <div className="alta-opciones">
+                      <p className="alta-sub">¿Le sumamos alguna de estas?</p>
+                      {opcionales.map((x) => (
+                        <label key={x.clave} className={'alta-pieza alta-sub-pieza' + (f.piezas[x.clave] ? ' is-puesta' : '')}>
+                          <input type="checkbox" checked={!!f.piezas[x.clave]} onChange={() => togglePieza(x.clave)} />
+                          <div><b>{x.nombre}</b><span>{x.que_hace}</span></div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </React.Fragment>
         )}
 

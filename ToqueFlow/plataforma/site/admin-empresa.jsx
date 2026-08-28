@@ -39,6 +39,8 @@ const COP_POR_USD = 4200;
 function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet, consumoPlan, runtime, resumen,
                         onConfig, onConocimiento, onCambiar, onVolver, busy }) {
   const [abierto, setAbierto] = React.useState(null);
+  // null = todos los meses. Se elige uno pulsando su barra.
+  const [mesElegido, setMesElegido] = React.useState(null);
   const [mostrarResto, setMostrarResto] = React.useState(false);
 
   const mias = matriz.filter((m) => m.company_id === company.id);
@@ -86,7 +88,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
       {/* ── Sus productos ─────────────────────────────────────────────── */}
       <section className="emp-seccion">
-        <h3>
+        <h3 className="emp-titulo">
           Lo que tiene contratado
           <em>{encendidos.length} andando{apagados.length ? ' · ' + apagados.length + ' sin encender' : ''}</em>
         </h3>
@@ -202,7 +204,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
         const plan = consumoPlan.find((x) => x.company_id === company.id) || {};
         if (!mio.length) return (
           <section className="emp-seccion">
-            <h3>Consumo de IA</h3>
+            <h3 className="emp-titulo">Consumo de IA</h3>
             <div className="ag-lista-vacia">Todavía no ha consumido nada. Nada que cobrar y nada de qué preocuparse.</div>
           </section>
         );
@@ -212,9 +214,11 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
         const mensualidad = Number(plan.mensualidad_cop || 0);
         const pctPlan = mensualidad > 0 ? (mes * COP_POR_USD / mensualidad) * 100 : null;
 
-        // Por producto, sumando los meses: primero, dónde se va la plata.
+        // Por producto. Si hay un mes elegido, solo ese: la pregunta «¿por
+        // qué subió en agosto?» no se puede responder con el acumulado.
+        const delMes = mesElegido ? mio.filter((x) => x.mes === mesElegido) : mio;
         const porProducto = {};
-        for (const x of mio) {
+        for (const x of delMes) {
           const k = x.producto;
           if (!porProducto[k]) porProducto[k] = { producto: k, llamadas: 0, usd: 0, unit: 0 };
           porProducto[k].llamadas += x.llamadas;
@@ -232,7 +236,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
         return (
           <section className="emp-seccion">
-            <h3>Consumo de IA <em>lo que cuesta atender a este cliente</em></h3>
+            <h3 className="emp-titulo">Consumo de IA <em>lo que cuesta atender a este cliente</em></h3>
 
             <div className="con-cabeza">
               <div className="con-dato">
@@ -277,14 +281,25 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
             <div className="con-meses">
               {porMes.map((m) => (
-                <div key={m.mes} className="con-mes">
+                <button key={m.mes} type="button"
+                        className={'con-mes' + (mesElegido === m.mes ? ' is-elegido' : '')}
+                        title={'Ver solo ' + empMes(m.mes)}
+                        onClick={() => setMesElegido(mesElegido === m.mes ? null : m.mes)}>
                   <div className="con-barra"><i style={{ height: Math.max(3, (m.usd / tope) * 100) + '%' }} /></div>
                   <b>${m.usd.toFixed(2)}</b>
                   <span>{empMes(m.mes)}</span>
-                </div>
+                </button>
               ))}
+              {mesElegido && (
+                <button type="button" className="con-todos" onClick={() => setMesElegido(null)}>
+                  ver<br />todos
+                </button>
+              )}
             </div>
 
+            <p className="con-cual">
+              {mesElegido ? 'Solo ' + empMes(mesElegido) : 'Todos los meses'} · por producto
+            </p>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead><tr><th>Producto</th><th>Llamadas</th><th>Costo</th><th>Por llamada</th></tr></thead>
@@ -311,7 +326,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
       {/* ── Sus usuarios ──────────────────────────────────────────────── */}
       <section className="emp-seccion">
-        <h3>Sus usuarios</h3>
+        <h3 className="emp-titulo">Sus usuarios <em>{misUsuarios.length} con acceso al portal</em></h3>
         {misUsuarios.length === 0 && <div className="ag-lista-vacia">Sin usuarios todavía.</div>}
         {misUsuarios.map((u) => (
           <div key={u.id} className="emp-usuario">
