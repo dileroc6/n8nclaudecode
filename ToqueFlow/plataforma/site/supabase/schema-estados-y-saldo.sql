@@ -27,10 +27,12 @@
 
 
 -- ── 1. El tercer estado ──────────────────────────────────────────────────────
--- `flows.status` es texto libre, así que no hay que migrar nada: se empieza a
--- usar el valor nuevo y las filas viejas siguen valiendo.
+-- Resulta que `flows.status` YA tenía el valor que hacía falta: su restricción
+-- acepta activo, pausado y próximamente. Yo asumí que era texto libre e intenté
+-- escribir «desactivado», que la base rechazó — con razón. Se usa `pausado`, que
+-- además es la palabra que el panel del cliente ya entiende.
 comment on column public.flows.status is
-  'activo | proximamente (contratado, nunca encendido) | desactivado (estuvo andando y se apago). Es lo que ve el cliente en su panel, asi que decirle "proximamente" a algo que se le apago seria tomarle el pelo.';
+  'activo | proximamente (contratado, nunca encendido) | pausado (estuvo andando y se apago). Es lo que ve el cliente en su panel, asi que decirle "proximamente" a algo que se le apago seria tomarle el pelo.';
 
 drop view if exists public.empresa_catalogo;
 create view public.empresa_catalogo
@@ -50,7 +52,7 @@ select
   case
     when coalesce(f.veces, 0) = 0 then 'no'
     when f.alguno_activo          then 'activo'
-    when f.alguno_desactivado     then 'desactivado'
+    when f.alguno_pausado         then 'pausado'
     else                               'proximamente'
   end as estado_empresa
 from public.companies co
@@ -60,7 +62,7 @@ left join lateral (
          array_agg(fl.id)                           as ids,
          array_agg(fl.name order by fl.name)        as nombres,
          bool_or(fl.status = 'activo')              as alguno_activo,
-         bool_or(fl.status = 'desactivado')         as alguno_desactivado
+         bool_or(fl.status = 'pausado')             as alguno_pausado
   from public.flows fl
   where fl.company_id = co.id and fl.catalogo_id = ca.id
 ) f on true
@@ -107,20 +109,12 @@ insert into public.catalogo (clave, tipo, nombre, descripcion, beneficio, estado
   ('recargar-saldo', 'herramienta', 'Recargar el saldo',
    'Sumarle unidades a alguien cuando compra otro paquete. Va de la mano con las dos anteriores: consultar, descontar y recargar son la misma capacidad partida en tres. Requiere confirmación de una persona por diseño: un agente que recarga solo es un agente que regala.',
    'Cuando compra otro paquete, sus clases se suman sin que nadie las anote.',
-   'en_papel', false, false, false, 'tool-recargar-saldo', 126),
-
-  ('registrar-cliente', 'herramienta', 'Registrar a quien escribe',
-   'Crear la ficha de alguien que todavía no está en la base, con los datos que dio en la conversación. El agente ya guarda lo que captura, pero esto lo vuelve explícito: sirve cuando el negocio quiere que quede registrado aunque no compre.',
-   'Quien te escribe queda en tu base aunque no compre ese día.',
-   'en_papel', false, false, false, 'tool-registrar-cliente', 127)
+   'en_papel', false, false, false, 'tool-recargar-saldo', 126)
 on conflict (clave) do update set
   nombre = excluded.nombre, descripcion = excluded.descripcion, beneficio = excluded.beneficio,
   estado = excluded.estado, liberado = excluded.liberado, workflow = excluded.workflow, orden = excluded.orden;
 
--- La familia entera cuelga del agente.
-update public.catalogo set puede_llevar = array[
-  'consultar-saldo', 'registrar-consumo', 'recargar-saldo', 'registrar-cliente',
-  'estado-pedido', 'confirmar-pago',
-  'ver-disponibilidad', 'agendar-cita', 'registrar-reclamo',
-  'recordatorio-cita', 'reactivacion'
-] where clave = 'agente-atencion';
+-- La lista de lo que puede llevar el agente la fija schema-matricular.sql,
+-- que corre despues. Tenerla aqui tambien hacia que los dos archivos se
+-- pisaran: al volver a correr este, revivia una pieza ya retirada.
+

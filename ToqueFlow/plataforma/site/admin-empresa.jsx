@@ -123,7 +123,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                 </span>
                 <span className={'emp-estado e-' + p.estado_empresa}>
                   {encendido ? 'encendido'
-                    : p.estado_empresa === 'desactivado' ? 'desactivado'
+                    : p.estado_empresa === 'pausado' ? 'pausado'
                     : 'sin encender'}
                 </span>
                 <span className="emp-chevron">{esta ? '−' : '+'}</span>
@@ -139,7 +139,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                     </dd></div>
                     <div><dt>en su panel</dt><dd>
                       {encendido ? 'la ve y la usa'
-                        : p.estado_empresa === 'desactivado' ? 'la ve como «desactivado»'
+                        : p.estado_empresa === 'pausado' ? 'la ve como «pausado»'
                         : 'la ve como «próximamente»'}
                     </dd></div>
                     {p.nombres_para_el_cliente && (
@@ -182,7 +182,7 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
 
                   <div className="emp-cambiar">
                     <button type="button" className="ag-mini" disabled={busy}
-                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'desactivado' : 'activo')}>
+                            onClick={() => onCambiar(company, comoPieza(p), encendido ? 'pausado' : 'activo')}>
                       {encendido ? 'apagar' : 'encender'}
                     </button>
                     <button type="button" className="ag-mini danger" disabled={busy}

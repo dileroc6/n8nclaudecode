@@ -440,14 +440,14 @@ function AdminApp({ profile }) {
     if (nuevo === 'no') {
       if (ids.length) ({ error } = await sb.from('flows').delete().in('id', ids));
     } else if (ids.length) {
-      ({ error } = await sb.from('flows').update({ status: nuevo === 'activo' ? 'activo' : nuevo === 'desactivado' ? 'desactivado' : 'próximamente' }).in('id', ids));
+      ({ error } = await sb.from('flows').update({ status: nuevo === 'activo' ? 'activo' : nuevo === 'desactivado' ? 'pausado' : 'próximamente' }).in('id', ids));
     } else {
       ({ error } = await sb.from('flows').insert({
         company_id: co.id, catalogo_id: pieza.id,
         name: pieza.nombre, description: pieza.beneficio || pieza.descripcion,
         // 'proximamente' = contratado y nunca encendido. 'desactivado' =
         // estuvo andando y se apago. El cliente ve escrito lo que es.
-        status: nuevo === 'activo' ? 'activo' : nuevo === 'desactivado' ? 'desactivado' : 'próximamente',
+        status: nuevo === 'activo' ? 'activo' : nuevo === 'desactivado' ? 'pausado' : 'próximamente',
         type: pieza.tipo, kind: pieza.clave,
       }));
     }
