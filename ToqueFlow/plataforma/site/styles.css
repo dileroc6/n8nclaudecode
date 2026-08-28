@@ -2979,6 +2979,9 @@ h1 .hl, h2 .hl { font-weight: inherit; }
 .dash-profile-btn:hover { border-color: var(--light-ink); }
 .dash-avatar {
   width: 34px; height: 34px; border-radius: 50%;
+  /* line-height 1 y overflow: sin esto la altura de linea del cuerpo (1.6)
+     empuja las iniciales fuera del circulo en los tamanos pequenos. */
+  line-height: 1; overflow: hidden;
   background: var(--orange-grad); color: #fff;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 600; letter-spacing: -.01em;
@@ -4028,8 +4031,8 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 /* En lista, cada empresa es una fila: con veinte clientes las tarjetas dejan de
    servir para comparar y empieza a servir el renglón. */
 .admin-cards.is-lista { grid-template-columns: 1fr; gap: 8px; }
-.admin-cards.is-lista .admin-co-card { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 16px; padding: 12px 16px; }
-.admin-cards.is-lista .admin-co-top { display: contents; }
+.admin-cards.is-lista .admin-co-card { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: center; gap: 18px; padding: 12px 16px; }
+.admin-cards.is-lista .admin-co-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .admin-cards.is-lista .admin-co-logo { width: 34px; height: 34px; font-size: 12px; }
 .admin-cards.is-lista .admin-co-meta b { font-size: 14.5px; }
 .admin-cards.is-lista .admin-co-stats { display: flex; gap: 20px; border: none; background: none; padding: 0; margin: 0; }
@@ -4116,3 +4119,60 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
   .alta-campo { flex-wrap: wrap; }
   .alta-campo input[type="text"] { flex: 1 1 100%; }
 }
+
+/* El logo y el nombre son un solo objetivo: es lo primero que se pulsa. */
+.admin-co-id {
+  display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0;
+  background: transparent; border: none; padding: 0; cursor: pointer;
+  font-family: var(--sans); text-align: left; color: var(--ink);
+}
+.admin-co-id b { font-size: 15px; font-weight: 600; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-co-id:hover b { color: var(--orange-2); }
+.admin-co-id:focus-visible { outline: 2px solid var(--orange-2); outline-offset: 3px; border-radius: 8px; }
+
+/* El estado de un producto contratado. «Sin encender» no es «no lo tiene». */
+.emp-seccion h3 em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: .85; font-family: var(--mono); }
+.emp-nota {
+  margin: 0; font-size: 12.5px; color: var(--mute); line-height: 1.55;
+  border-left: 2px solid var(--line); padding-left: 11px; max-width: 74ch;
+}
+.emp-nota b { color: var(--ink); }
+
+/* Las sugerencias tienen que verse. Antes eran un enlace diminuto al lado de un
+   título y nadie notaba que ahí había una lista. */
+.emp-sugerencias {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  border: 1px dashed var(--line); border-radius: 14px; padding: 15px 18px;
+  background: transparent; cursor: pointer; font-family: var(--sans); text-align: left;
+}
+.emp-sugerencias:hover { border-color: var(--orange-2); }
+.emp-sugerencias.is-abierta { border-style: solid; border-color: var(--orange-2); }
+.emp-sugerencias b { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
+.emp-sugerencias em { display: block; font-style: normal; font-size: 12.5px; color: var(--mute); margin-top: 3px; }
+.emp-sugerencias i {
+  font-style: normal; font-family: var(--mono); font-size: 19px; color: var(--mute);
+  width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; line-height: 1;
+}
+
+/* ── Consola: el consumo de IA de un cliente ───────────────────────────────
+   Un total no sirve para decidir. Lo que sirve: si va subiendo, por dónde se
+   va, y qué porcentaje de lo que paga se está comiendo. */
+
+.con-cabeza { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.con-dato { background: var(--card); padding: 15px 16px; }
+.con-dato b { display: block; font-family: var(--mono); font-size: 23px; line-height: 1.1; }
+.con-dato b.alerta { color: #c0392b; }
+.con-dato b.sindato { color: var(--mute); }
+.con-dato span { display: block; font-size: 11.5px; color: var(--mute); margin-top: 3px; }
+.con-dato i { display: block; font-style: normal; font-family: var(--mono); font-size: 10.5px; margin-top: 6px; }
+.con-dato i.sube  { color: #c0392b; }
+.con-dato i.baja  { color: #1f8a5b; }
+.con-dato i.igual { color: var(--mute); }
+
+.con-meses { display: flex; gap: 10px; align-items: flex-end; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow-x: auto; }
+.con-mes { flex: 1; min-width: 54px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.con-barra { width: 100%; height: 64px; display: flex; align-items: flex-end; background: color-mix(in oklab, var(--ink) 5%, transparent); border-radius: 6px; overflow: hidden; }
+.con-barra i { display: block; width: 100%; background: var(--orange-grad); border-radius: 6px 6px 0 0; }
+.con-mes b { font-family: var(--mono); font-size: 12px; }
+.con-mes span { font-family: var(--mono); font-size: 10px; color: var(--mute); }

@@ -329,6 +329,8 @@ function AdminApp({ profile }) {
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
   const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
+  const [consumoDet, setConsumoDet] = React.useState([]);  // consumo por producto y mes
+  const [consumoPlan, setConsumoPlan] = React.useState([]);// consumo contra lo que paga
   const [catBusy, setCatBusy] = React.useState(false);
   const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
   const [dandoAlta, setDandoAlta] = React.useState(false);
@@ -345,7 +347,7 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt, cat, mx, res] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -357,6 +359,8 @@ function AdminApp({ profile }) {
       sb.from('catalogo_detalle').select('*').order('orden'),
       sb.from('empresa_catalogo').select('*'),
       sb.from('empresa_resumen').select('*'),
+      sb.from('consumo_detalle').select('*'),
+      sb.from('consumo_vs_plan').select('*'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
@@ -367,6 +371,8 @@ function AdminApp({ profile }) {
     setCatalogo(cat.data || []);
     setMatriz(mx.data || []);
     setResumen(res.data || []);
+    setConsumoDet(cd.data || []);
+    setConsumoPlan(cp.data || []);
     setLoading(false);
   }, []);
 
@@ -486,6 +492,7 @@ function AdminApp({ profile }) {
         ) : fichaCo ? (
           <EmpresaVista company={fichaCo} catalogo={catalogo} matriz={matriz}
                         usuarios={users} consumo={usage} runtime={runtime} resumen={resumen}
+                        consumoDet={consumoDet} consumoPlan={consumoPlan}
                         busy={catBusy}
                         onConfig={setConfigCo} onConocimiento={setSaberCo}
                         onCambiar={cambiarPieza}
@@ -522,12 +529,14 @@ function AdminApp({ profile }) {
             {companies.map((c) => (
               <article key={c.id} className="admin-co-card">
                 <div className="admin-co-top">
-                  {c.logo_url
-                    ? <img className="admin-co-logo" src={c.logo_url} alt={c.name} />
-                    : <span className="admin-co-logo admin-co-logo-fallback">{initials(c.name)}</span>}
-                  <div className="admin-co-meta">
+                  {/* El logo y el nombre son una sola cosa y entran juntos: es
+                      lo primero que uno pulsa cuando busca a un cliente. */}
+                  <button type="button" className="admin-co-id" onClick={() => setFichaCo(c)}>
+                    {c.logo_url
+                      ? <img className="admin-co-logo" src={c.logo_url} alt={c.name} />
+                      : <span className="admin-co-logo admin-co-logo-fallback">{initials(c.name)}</span>}
                     <b>{c.name}</b>
-                  </div>
+                  </button>
                   <span className={`flow-status ${c.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{c.status === 'active' ? 'activa' : 'pausada'}</span>
                 </div>
                 {(() => {

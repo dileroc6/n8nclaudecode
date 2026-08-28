@@ -30,13 +30,26 @@ const EMP_MADUREZ = {
   en_papel:    ['en el papel', 'papel'],
 };
 
-function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, runtime, resumen,
+const EMP_MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const empMes = (d) => { const x = new Date(d + 'T00:00:00'); return EMP_MES[x.getMonth()] + ' ' + String(x.getFullYear()).slice(2); };
+// A 4.200 pesos por dólar. Es una referencia para dimensionar, no contabilidad:
+// sirve para ver si la IA se está comiendo el margen, no para facturar.
+const COP_POR_USD = 4200;
+
+function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet, consumoPlan, runtime, resumen,
                         onConfig, onConocimiento, onCambiar, onVolver, busy }) {
   const [abierto, setAbierto] = React.useState(null);
   const [mostrarResto, setMostrarResto] = React.useState(false);
 
   const mias = matriz.filter((m) => m.company_id === company.id);
-  const tiene   = mias.filter((m) => m.estado_empresa !== 'no').sort((a, b) => a.orden - b.orden);
+  // Los encendidos arriba: es lo que está pasando ahora. Los apagados debajo,
+  // porque son cosas que el cliente TIENE y no están andando — eso siempre
+  // tiene un motivo y alguien debería saber cuál.
+  const tiene = mias.filter((m) => m.estado_empresa !== 'no')
+    .sort((a, b) => (a.estado_empresa === b.estado_empresa ? a.orden - b.orden
+                     : a.estado_empresa === 'activo' ? -1 : 1));
+  const encendidos = tiene.filter((m) => m.estado_empresa === 'activo');
+  const apagados   = tiene.filter((m) => m.estado_empresa !== 'activo');
   const noTiene = mias.filter((m) => m.estado_empresa === 'no' && m.tipo !== 'herramienta' && m.vendible)
                       .sort((a, b) => a.orden - b.orden);
 
@@ -73,8 +86,19 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, runtime, r
 
       {/* ── Sus productos ─────────────────────────────────────────────── */}
       <section className="emp-seccion">
-        <h3>Sus productos</h3>
-        {tiene.length === 0 && <div className="ag-lista-vacia">Todavía no tiene nada. Actívale algo abajo.</div>}
+        <h3>
+          Lo que tiene contratado
+          <em>{encendidos.length} andando{apagados.length ? ' · ' + apagados.length + ' sin encender' : ''}</em>
+        </h3>
+        {apagados.length > 0 && (
+          <p className="emp-nota">
+            Lo que aparece <b>sin encender</b> es algo que este cliente ya tiene —
+            lo ve en su panel como «próximamente»— pero que no está funcionando.
+            Siempre hay un motivo: falta configurarlo, falta probarlo, o falta el
+            go-live.
+          </p>
+        )}
+        {tiene.length === 0 && <div className="ag-lista-vacia">Todavía no tiene nada contratado.</div>}
 
         {tiene.map((p) => {
           const esta = abierto === p.catalogo_id;
@@ -145,12 +169,14 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, runtime, r
 
       {/* ── Lo que se le podría vender ────────────────────────────────── */}
       <section className="emp-seccion">
-        <h3>
-          Se le podría activar
-          <button type="button" className="ag-mini" onClick={() => setMostrarResto(!mostrarResto)}>
-            {mostrarResto ? 'ocultar' : 'ver ' + noTiene.length}
-          </button>
-        </h3>
+        <button type="button" className={'emp-sugerencias' + (mostrarResto ? ' is-abierta' : '')}
+                onClick={() => setMostrarResto(!mostrarResto)}>
+          <span>
+            <b>Lo que le podrías vender</b>
+            <em>{noTiene.length} piezas del catálogo que este cliente todavía no tiene</em>
+          </span>
+          <i>{mostrarResto ? '−' : '+'}</i>
+        </button>
         {mostrarResto && (
           <div className="emp-resto">
             {noTiene.map((p) => (
@@ -169,6 +195,119 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, runtime, r
           </div>
         )}
       </section>
+
+      {/* ── Su consumo de IA ──────────────────────────────────────────── */}
+      {(() => {
+        const mio = consumoDet.filter((x) => x.company_id === company.id);
+        const plan = consumoPlan.find((x) => x.company_id === company.id) || {};
+        if (!mio.length) return (
+          <section className="emp-seccion">
+            <h3>Consumo de IA</h3>
+            <div className="ag-lista-vacia">Todavía no ha consumido nada. Nada que cobrar y nada de qué preocuparse.</div>
+          </section>
+        );
+
+        const mes = Number(plan.usd_mes || 0), anterior = Number(plan.usd_mes_anterior || 0);
+        const delta = anterior > 0 ? Math.round(((mes - anterior) / anterior) * 100) : null;
+        const mensualidad = Number(plan.mensualidad_cop || 0);
+        const pctPlan = mensualidad > 0 ? (mes * COP_POR_USD / mensualidad) * 100 : null;
+
+        // Por producto, sumando los meses: primero, dónde se va la plata.
+        const porProducto = {};
+        for (const x of mio) {
+          const k = x.producto;
+          if (!porProducto[k]) porProducto[k] = { producto: k, llamadas: 0, usd: 0, unit: 0 };
+          porProducto[k].llamadas += x.llamadas;
+          porProducto[k].usd += Number(x.usd);
+          porProducto[k].unit = Number(x.usd_por_llamada);
+        }
+        const productos = Object.values(porProducto).sort((a, b) => b.usd - a.usd);
+
+        const meses = [...new Set(mio.map((x) => x.mes))].sort().slice(-6);
+        const porMes = meses.map((m) => ({
+          mes: m,
+          usd: mio.filter((x) => x.mes === m).reduce((a, x) => a + Number(x.usd), 0),
+        }));
+        const tope = Math.max(...porMes.map((x) => x.usd), 0.0001);
+
+        return (
+          <section className="emp-seccion">
+            <h3>Consumo de IA <em>lo que cuesta atender a este cliente</em></h3>
+
+            <div className="con-cabeza">
+              <div className="con-dato">
+                <b>${mes.toFixed(2)}</b><span>este mes</span>
+                {delta !== null && (
+                  <i className={delta > 15 ? 'sube' : delta < -15 ? 'baja' : 'igual'}>
+                    {delta > 0 ? '+' : ''}{delta}% contra el mes pasado
+                  </i>
+                )}
+              </div>
+
+              <div className="con-dato">
+                <b>${Number(plan.usd_total || 0).toFixed(2)}</b><span>desde el principio</span>
+                {plan.primer_consumo && (
+                  <i className="igual">desde {empMes(String(plan.primer_consumo).slice(0, 10))}</i>
+                )}
+              </div>
+
+              {/* La pregunta que de verdad importa: cuánto de lo que paga se
+                  está yendo en IA. Sin la mensualidad cargada no se puede
+                  calcular, y la pantalla lo dice en vez de inventar un número. */}
+              <div className="con-dato">
+                {pctPlan !== null ? (
+                  <React.Fragment>
+                    <b className={pctPlan > 25 ? 'alerta' : ''}>{pctPlan.toFixed(1)}%</b>
+                    <span>de lo que paga</span>
+                    <i className={pctPlan > 25 ? 'sube' : 'igual'}>
+                      {pctPlan > 25
+                        ? 'se está comiendo el margen'
+                        : 'sobre ' + mensualidad.toLocaleString('es-CO') + ' COP/mes'}
+                    </i>
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>
+                    <b className="sindato">—</b>
+                    <span>de lo que paga</span>
+                    <i className="igual">no sabemos cuánto paga</i>
+                  </React.Fragment>
+                )}
+              </div>
+            </div>
+
+            <div className="con-meses">
+              {porMes.map((m) => (
+                <div key={m.mes} className="con-mes">
+                  <div className="con-barra"><i style={{ height: Math.max(3, (m.usd / tope) * 100) + '%' }} /></div>
+                  <b>${m.usd.toFixed(2)}</b>
+                  <span>{empMes(m.mes)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr><th>Producto</th><th>Llamadas</th><th>Costo</th><th>Por llamada</th></tr></thead>
+                <tbody>
+                  {productos.map((p) => (
+                    <tr key={p.producto}>
+                      <td><b>{p.producto}</b></td>
+                      <td className="admin-dim">{p.llamadas.toLocaleString('es-CO')}</td>
+                      <td>${p.usd.toFixed(2)}</td>
+                      <td className="admin-dim">${p.unit.toFixed(6)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="emp-nota">
+              El <b>costo por llamada</b> es el que avisa de un prompt que engordó sin que
+              nadie se diera cuenta: el total puede subir por volumen, este no.
+            </p>
+          </section>
+        );
+      })()}
 
       {/* ── Sus usuarios ──────────────────────────────────────────────── */}
       <section className="emp-seccion">
