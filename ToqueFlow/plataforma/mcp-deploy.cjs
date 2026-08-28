@@ -11,7 +11,40 @@ if (!fs.existsSync(ARCHIVE)) { console.error('archive not found:', ARCHIVE); pro
 
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '.mcp.json'), 'utf8'));
 const s = cfg.mcpServers.hostinger;
-const env = { ...process.env, ...s.env };
+
+// El .mcp.json guarda placeholders del tipo ${HOSTINGER_API_TOKEN}, y nadie los
+// expande: se pasaban literales al servidor, que respondía 401 Unauthenticated
+// justo antes de subir el zip. El token de verdad vive en
+// .claude/settings.local.json (gitignoreado), que es el mismo sitio del que lo
+// toma el MCP cuando arranca Claude Code.
+function resolverSecretos(vars) {
+  const locales = {};
+  const settings = path.join(__dirname, '..', '..', '.claude', 'settings.local.json');
+  if (fs.existsSync(settings)) {
+    const buscar = (o) => {
+      if (!o || typeof o !== 'object') return;
+      for (const [k, v] of Object.entries(o)) {
+        if (typeof v === 'string') { if (!(k in locales)) locales[k] = v; }
+        else buscar(v);
+      }
+    };
+    try { buscar(JSON.parse(fs.readFileSync(settings, 'utf8'))); } catch (e) {}
+  }
+  const salida = {};
+  for (const [k, v] of Object.entries(vars || {})) {
+    const m = typeof v === 'string' && v.match(/^\$\{([A-Z_0-9]+)\}$/);
+    const nombre = m ? m[1] : null;
+    const resuelto = nombre ? (process.env[nombre] || locales[nombre]) : v;
+    if (nombre && !resuelto) {
+      console.error('[deploy] falta ' + nombre + ': ni en el entorno ni en .claude/settings.local.json');
+      process.exit(2);
+    }
+    salida[k] = resuelto;
+  }
+  return salida;
+}
+
+const env = { ...process.env, ...resolverSecretos(s.env) };
 const child = spawn(s.command, s.args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
 
 let buf = '';

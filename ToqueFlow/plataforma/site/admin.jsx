@@ -323,23 +323,30 @@ function AdminApp({ profile }) {
   const [sedesOf, setSedesOf] = React.useState(null); // company para el modal de sedes
   const [companyFilter, setCompanyFilter] = React.useState('todas');
   const [consumoCo, setConsumoCo] = React.useState('todas');
+  const [runtime, setRuntime] = React.useState([]);        // agent_runtime, una fila por empresa CON agente
+  const [configCo, setConfigCo] = React.useState(null);    // empresa cuyo agente se está configurando
+  const [saberCo, setSaberCo] = React.useState(null);      // empresa cuyo conocimiento se está editando
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl] = await Promise.all([
+    const [c, u, s, ai, fl, rt] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
       sb.from('ai_usage').select('*'),
       sb.from('flows').select('id, company_id'),
+      // Una fila por empresa que YA tiene agente. Las que no, no salen: se
+      // cruzan en JS contra `companies` para poder ofrecer configurarlo.
+      sb.from('agent_runtime').select('*'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
     setSedes(s.data || []);
     setUsage(ai.data || []);
     setFlows(fl.data || []);
+    setRuntime(rt.data || []);
     setLoading(false);
   }, []);
 
@@ -427,6 +434,7 @@ function AdminApp({ profile }) {
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
           <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
+          <button type="button" className={`admin-tab ${tab === 'agentes' ? 'is-active' : ''}`} onClick={() => setTab('agentes')}>Agentes</button>
           <button type="button" className={`admin-tab ${tab === 'consumo' ? 'is-active' : ''}`} onClick={() => setTab('consumo')}>Consumo IA</button>
           <div className="admin-tabs-spacer"></div>
           {tab === 'empresas' && <button type="button" className="btn btn-primary admin-add" onClick={() => setModal('company')}>+ Nueva empresa</button>}
@@ -461,6 +469,11 @@ function AdminApp({ profile }) {
               </article>
             ))}
           </div>
+        )}
+
+        {!loading && tab === 'agentes' && (
+          <AgentesTab companies={companies} runtime={runtime}
+                      onConfig={setConfigCo} onConocimiento={setSaberCo} />
         )}
 
         {!loading && tab === 'usuarios' && (
@@ -613,6 +626,11 @@ function AdminApp({ profile }) {
 
       {modal === 'company' && <CompanyModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {modal === 'user' && <UserModal companies={companies} onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
+      {configCo && <AgenteModal company={configCo}
+                                config={runtime.find((r) => r.company_id === configCo.id) || null}
+                                onClose={() => setConfigCo(null)}
+                                onSaved={() => { setConfigCo(null); reload(); setToast({ type: 'ok', text: 'Agente guardado.' }); }} />}
+      {saberCo && <ConocimientoModal company={saberCo} onClose={() => setSaberCo(null)} onChanged={reload} />}
       {sedesOf && <SedesModal company={sedesOf} onClose={() => setSedesOf(null)} onChanged={reload} />}
       {editU && <EditNameModal user={editU} onClose={() => setEditU(null)} onSaved={updateName} />}
       {delU && <ConfirmModal title="Eliminar usuario" danger confirmLabel="Eliminar" message={'¿Eliminar a ' + delU.email + '? Se borra su cuenta de forma permanente.'} onClose={() => setDelU(null)} onConfirm={() => doDelete(delU)} />}

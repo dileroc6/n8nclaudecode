@@ -3700,3 +3700,100 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
   .admin-tabs-spacer { display: none; }
   .admin-add { width: 100%; justify-content: center; }
 }
+
+/* ── Consola: pestaña Agentes ───────────────────────────────────────────────
+   El medidor de conocimiento y los formularios de configuración. Reusa las
+   variables de tema (--ink, --mute, --line, --card) para que funcione igual en
+   claro y en oscuro sin duplicar paletas. */
+
+.ag-form { max-height: 68vh; overflow-y: auto; padding-right: 4px; }
+.ag-form textarea {
+  width: 100%; font-family: var(--sans); font-size: 13.5px; line-height: 1.55;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); color: var(--ink); resize: vertical;
+}
+.ag-form textarea:focus { outline: none; border-color: var(--orange-2); }
+
+.ag-encendido {
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  background: color-mix(in oklab, var(--orange-2) 5%, transparent);
+}
+.ag-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; }
+.ag-check input { width: 16px; height: 16px; accent-color: var(--orange-2); cursor: pointer; }
+
+/* El medidor. El color dice el estado sin tener que leer el texto. */
+.ag-medidor { border: 1px solid var(--line); border-radius: 12px; padding: 13px 15px; background: var(--card); }
+.ag-medidor-top { display: flex; align-items: baseline; gap: 6px; font-size: 15px; }
+.ag-medidor-top b { font-size: 19px; font-family: var(--mono); }
+.ag-medidor-top span { color: var(--mute); font-size: 13px; }
+.ag-medidor-pct { margin-left: auto; font-family: var(--mono); font-size: 13px; }
+.ag-medidor-barra {
+  height: 7px; border-radius: 99px; margin: 9px 0 8px;
+  background: color-mix(in oklab, var(--ink) 10%, transparent); overflow: hidden;
+}
+.ag-medidor-barra i { display: block; height: 100%; border-radius: 99px; background: var(--orange-grad); transition: width .3s ease; }
+.ag-medidor-nota { margin: 0; font-size: 12.5px; color: var(--mute); line-height: 1.5; }
+.ag-medidor.is-cerca    .ag-medidor-barra i { background: #e08a1e; }
+.ag-medidor.is-excedido .ag-medidor-barra i { background: #c0392b; }
+.ag-medidor.is-excedido .ag-medidor-pct     { color: #c0392b; font-weight: 600; }
+.ag-medidor.is-vacio    .ag-medidor-nota    { color: #c0392b; }
+
+/* Listas editables: campos a capturar, reglas de enrutamiento. */
+.ag-lista { border-top: 1px solid var(--line); padding-top: 14px; }
+.ag-lista-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.ag-lista-head label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+  text-transform: lowercase; color: var(--mute);
+}
+.ag-lista-vacia { padding: 14px; text-align: center; color: var(--mute); font-size: 13px; line-height: 1.55; }
+.ag-fila { display: flex; gap: 7px; align-items: center; margin-bottom: 7px; }
+.ag-fila input[type="text"], .ag-fila select {
+  flex: 1; min-width: 0; padding: 8px 10px; font-size: 13px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink);
+}
+.ag-fila input:focus, .ag-fila select:focus { outline: none; border-color: var(--orange-2); }
+.ag-quitar {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; line-height: 1;
+  border: 1px solid var(--line); background: transparent; color: var(--mute);
+  font-size: 17px; cursor: pointer;
+}
+.ag-quitar:hover { color: #c0392b; border-color: #c0392b; }
+.ag-mini {
+  border: 1px solid var(--line); background: transparent; color: var(--mute);
+  font-family: var(--mono); font-size: 11px; padding: 4px 9px; border-radius: 7px; cursor: pointer;
+}
+.ag-mini:hover { color: var(--ink); border-color: var(--ink); }
+.ag-mini.danger:hover { color: #c0392b; border-color: #c0392b; }
+
+/* Documentos de conocimiento. */
+.ag-doc { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--card); }
+.ag-doc.is-off { opacity: .5; }
+.ag-doc-top { display: flex; align-items: baseline; gap: 9px; }
+.ag-doc-top b { font-size: 14px; }
+.ag-doc-bytes { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--mute); }
+.ag-doc-tipo {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--mute); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px;
+}
+.ag-doc-prev { margin: 6px 0 9px; font-size: 12.5px; color: var(--mute); line-height: 1.5; }
+.ag-doc-acc { display: flex; gap: 6px; }
+.ag-doc-full {
+  margin: 10px 0 0; padding: 11px; max-height: 260px; overflow: auto;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink);
+}
+.ag-nuevo { border-top: 1px solid var(--line); padding-top: 15px; }
+
+/* Avisos en las tarjetas de la pestaña. */
+.ag-card-vacia { margin: 12px 0; font-size: 13px; color: var(--mute); line-height: 1.55; }
+.ag-aviso { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; padding: 8px 11px; border-radius: 9px; }
+.ag-aviso.excedido { color: #c0392b; background: color-mix(in oklab, #c0392b 9%, transparent); }
+.ag-aviso.cerca    { color: #b5760f; background: color-mix(in oklab, #e08a1e 12%, transparent); }
+.ag-aviso.vacio    { color: #c0392b; background: color-mix(in oklab, #c0392b 9%, transparent); }
+
+@media (max-width: 560px) {
+  .ag-fila { flex-wrap: wrap; }
+  .ag-fila input[type="text"], .ag-fila select { flex: 1 1 100%; }
+  .ag-form { max-height: 76vh; }
+}
