@@ -81,18 +81,25 @@ function fundir(base, extra) {
 
   for (let i = 0; i < aCorrer.length; i++) {
     const esc = aCorrer[i];
-    const tel = telefonoDe(i);
+    // Un escenario puede fijar su telefono para correr contra un contacto REAL.
+    // Los demas usan uno generado, que no existe en la base.
+    const tel = esc.telefono || telefonoDe(i);
+    const esReal = !!esc.telefono;
     const fallos = [];
 
     // Cada escenario arranca de cero: sin contacto y sin historial.
-    await c.query("delete from public.test_messages where company_id=$1 and telefono=$2", [EMPRESA, tel]);
-    await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and phone=$2)", [EMPRESA, tel]);
-    await c.query("delete from public.contacts where company_id=$1 and phone=$2", [EMPRESA, tel]);
+    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
+    if (!esReal) {
+      // Solo se borra lo inventado. Un contacto real es de un cliente de
+      // verdad y borrarlo por correr una prueba seria imperdonable.
+      await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
+      await c.query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
+    }
 
     for (let t = 0; t < esc.turnos.length; t++) {
       const turno = esc.turnos[t];
       const antes = (await c.query(
-        "select count(*)::int n from public.test_messages where company_id=$1 and telefono=$2", [EMPRESA, tel])).rows[0].n;
+        "select count(*)::int n from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel])).rows[0].n;
 
       const base = {
         instance: INSTANCIA, test: true,
@@ -115,7 +122,7 @@ function fundir(base, extra) {
       await esperar(1500);
 
       const msgs = (await c.query(
-        "select author, body from public.test_messages where company_id=$1 and telefono=$2 order by created_at", [EMPRESA, tel])).rows;
+        "select author, body from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2) order by created_at", [EMPRESA, tel])).rows;
       const nuevos = msgs.length - antes;
       const respuesta = (msgs.filter(m => m.author === "bot").pop() || {}).body || "";
       const esp = turno.espera || {};
@@ -144,7 +151,7 @@ function fundir(base, extra) {
 
       if (esp.captura) {
         const ct = (await c.query(
-          "select full_name, metadata from public.contacts where company_id=$1 and phone=$2", [EMPRESA, tel])).rows[0] || {};
+          "select full_name, metadata from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel])).rows[0] || {};
         for (const clave of esp.captura) {
           const ok = clave === "nombre" ? !!ct.full_name : !!(ct.metadata || {})[clave];
           if (!ok) fallos.push("turno " + (t + 1) + ": no guardó «" + clave + "»");
@@ -192,10 +199,19 @@ function fundir(base, extra) {
   // Se limpia todo: son teléfonos falsos y no tienen por qué quedar en la base
   // real del cliente. El consumo SÍ queda: probar cuesta plata de verdad.
   for (let i = 0; i < aCorrer.length; i++) {
+    if (aCorrer[i].telefono) continue;   // los reales no se tocan
     const tel = telefonoDe(i);
-    await c.query("delete from public.test_messages where company_id=$1 and telefono=$2", [EMPRESA, tel]);
-    await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and phone=$2)", [EMPRESA, tel]);
-    await c.query("delete from public.contacts where company_id=$1 and phone=$2", [EMPRESA, tel]);
+    // Aquí ya se saltaron los reales con el `continue` de arriba: todo lo que
+    // llega a esta línea es un teléfono inventado por la prueba.
+    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
+    await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
+    await c.query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
+  }
+
+  // De los reales solo se borran los mensajes de prueba: el contacto es de un
+  // cliente de verdad y borrarlo por correr una prueba sería imperdonable.
+  for (const esc of aCorrer.filter((e) => e.telefono)) {
+    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, esc.telefono]);
   }
   if (estadoPrevio && !estadoPrevio.activo)
     await c.query("update public.agent_config set activo=false where company_id=$1", [EMPRESA]);
