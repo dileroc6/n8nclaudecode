@@ -102,6 +102,13 @@ function Deploy-Zip($zip) {
 }
 
 # =====================================================================
+# El navegador guarda los .jsx y el .css con ganas: sin una version en la
+# referencia, se despliega un arreglo y el usuario sigue viendo lo de ayer.
+# La version es un hash del contenido, asi que solo cambia lo que cambio.
+Write-Host "-> Sellando versiones..."
+& node (Join-Path $root "sellar-version.cjs")
+if ($LASTEXITCODE -ne 0) { throw "sellar-version.cjs fallo" }
+
 $buildZip = Join-Path $backups "$stamp-site.zip"
 $count = Build-SiteZip $buildZip
 $sizeMB = [math]::Round((Get-Item $buildZip).Length/1MB, 2)
