@@ -83,8 +83,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "REEMPLAZAR",
-          "name": "Supabase — ToqueFlow"
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
         }
       },
       "notes": "Una consulta y no siete. Devuelve null si la instancia no existe o el agente esta apagado."
@@ -166,10 +166,6 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "x-api-key",
-              "value": "={{ $env.ANTHROPIC_API_KEY }}"
-            },
-            {
               "name": "anthropic-version",
               "value": "2023-06-01"
             },
@@ -184,11 +180,20 @@
         "jsonBody": "={{ JSON.stringify($json.cuerpo) }}",
         "options": {
           "timeout": 30000
-        }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
       },
       "retryOnFail": true,
       "maxTries": 2,
-      "waitBetweenTries": 2000
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REEMPLAZAR",
+          "name": "Toque - Anthropic (x-api-key)"
+        }
+      },
+      "notes": "La credencial es de tipo Header Auth con name=x-api-key. Se prefiere httpHeaderAuth y no el tipo anthropicApi para que anthropic-version quede explicito aqui y no dependa de lo que inyecte la credencial."
     },
     {
       "id": "a8",
@@ -221,8 +226,8 @@
       },
       "credentials": {
         "postgres": {
-          "id": "REEMPLAZAR",
-          "name": "Supabase — ToqueFlow"
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
         }
       },
       "notes": "Contacto, conversacion y consumo en UNA transaccion. Un solo jsonb: el texto del cliente lleva comas y el nodo de n8n separa parametros por coma."
