@@ -326,12 +326,15 @@ function AdminApp({ profile }) {
   const [runtime, setRuntime] = React.useState([]);        // agent_runtime, una fila por empresa CON agente
   const [configCo, setConfigCo] = React.useState(null);    // empresa cuyo agente se está configurando
   const [saberCo, setSaberCo] = React.useState(null);      // empresa cuyo conocimiento se está editando
+  const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
+  const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
+  const [catBusy, setCatBusy] = React.useState(false);
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -340,6 +343,8 @@ function AdminApp({ profile }) {
       // Una fila por empresa que YA tiene agente. Las que no, no salen: se
       // cruzan en JS contra `companies` para poder ofrecer configurarlo.
       sb.from('agent_runtime').select('*'),
+      sb.from('catalogo').select('*').eq('activo', true).order('orden'),
+      sb.from('empresa_catalogo').select('*'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
@@ -347,6 +352,8 @@ function AdminApp({ profile }) {
     setUsage(ai.data || []);
     setFlows(fl.data || []);
     setRuntime(rt.data || []);
+    setCatalogo(cat.data || []);
+    setMatriz(mx.data || []);
     setLoading(false);
   }, []);
 
@@ -400,6 +407,34 @@ function AdminApp({ profile }) {
     await sb.from('companies').update({ status }).eq('id', c.id);
   };
 
+  // Una celda de la matriz es, por debajo, una fila de `flows`. Cambiarla es
+  // crearla, moverle el estado o quitarla. El nombre visible se copia del
+  // catálogo pero después se puede personalizar por cliente.
+  const cambiarPieza = async (co, pieza, nuevo) => {
+    setCatBusy(true);
+    const fila = matriz.find((m) => m.company_id === co.id && m.catalogo_id === pieza.id);
+    let error = null;
+    // Una empresa puede tener la misma pieza en varias sedes (FerreteríaYa
+    // imprime pedidos en Bogotá y en Medellín), así que la celda actúa sobre
+    // todas a la vez. Media pieza encendida sería peor que ninguna.
+    const ids = (fila && fila.flow_ids) || [];
+    if (nuevo === 'no') {
+      if (ids.length) ({ error } = await sb.from('flows').delete().in('id', ids));
+    } else if (ids.length) {
+      ({ error } = await sb.from('flows').update({ status: nuevo === 'activo' ? 'activo' : 'próximamente' }).in('id', ids));
+    } else {
+      ({ error } = await sb.from('flows').insert({
+        company_id: co.id, catalogo_id: pieza.id,
+        name: pieza.nombre, description: pieza.beneficio || pieza.descripcion,
+        status: nuevo === 'activo' ? 'activo' : 'próximamente',
+        type: pieza.tipo, kind: pieza.clave,
+      }));
+    }
+    setCatBusy(false);
+    if (error) { setToast({ type: 'error', text: 'No se pudo: ' + error.message }); return; }
+    reload();
+  };
+
   const shownUsers = companyFilter === 'todas'
     ? users
     : companyFilter === 'sin'
@@ -434,6 +469,7 @@ function AdminApp({ profile }) {
         <div className="admin-tabs">
           <button type="button" className={`admin-tab ${tab === 'empresas' ? 'is-active' : ''}`} onClick={() => setTab('empresas')}>Empresas</button>
           <button type="button" className={`admin-tab ${tab === 'usuarios' ? 'is-active' : ''}`} onClick={() => setTab('usuarios')}>Usuarios</button>
+          <button type="button" className={`admin-tab ${tab === 'productos' ? 'is-active' : ''}`} onClick={() => setTab('productos')}>Productos</button>
           <button type="button" className={`admin-tab ${tab === 'agentes' ? 'is-active' : ''}`} onClick={() => setTab('agentes')}>Agentes</button>
           <button type="button" className={`admin-tab ${tab === 'consumo' ? 'is-active' : ''}`} onClick={() => setTab('consumo')}>Consumo IA</button>
           <div className="admin-tabs-spacer"></div>
@@ -469,6 +505,11 @@ function AdminApp({ profile }) {
               </article>
             ))}
           </div>
+        )}
+
+        {!loading && tab === 'productos' && (
+          <CatalogoTab companies={companies} matriz={matriz} catalogo={catalogo}
+                       busy={catBusy} onCambiar={cambiarPieza} />
         )}
 
         {!loading && tab === 'agentes' && (

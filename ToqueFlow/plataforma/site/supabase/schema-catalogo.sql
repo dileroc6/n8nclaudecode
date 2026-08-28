@@ -272,30 +272,43 @@ drop view if exists public.empresa_catalogo;
 create view public.empresa_catalogo
 with (security_invoker = on) as
 select
-  co.id           as company_id,
-  co.name         as empresa,
-  c.id            as catalogo_id,
+  co.id    as company_id,
+  co.name  as empresa,
+  c.id     as catalogo_id,
   c.clave,
   c.tipo,
   c.nombre,
   c.descripcion,
   c.beneficio,
-  c.estado        as estado_pieza,
+  c.estado as estado_pieza,
   c.visible_cliente,
   c.orden,
-  f.id            as flow_id,
-  f.name          as nombre_para_el_cliente,
-  -- Tres estados posibles para una empresa: la tiene andando, la tiene
-  -- prometida, o no la tiene.
+  coalesce(f.veces, 0)          as veces,
+  coalesce(f.ids, '{}'::uuid[]) as flow_ids,
+  f.nombres                     as nombres_para_el_cliente,
+  -- Ojo con la condición: un `count(*)` sin `group by` dentro de un `lateral`
+  -- SIEMPRE devuelve una fila, con cero. Nunca null. Comprobarlo con `is null`
+  -- hacía que las 88 celdas salieran encendidas y la pantalla mostrara a todos
+  -- los clientes con todo el catálogo.
   case
-    when f.id is null            then 'no'
-    when f.status = 'activo'     then 'activo'
-    else                              'prometido'
+    when coalesce(f.veces, 0) = 0 then 'no'
+    when f.alguno_activo          then 'activo'
+    else                               'prometido'
   end as estado_empresa
 from public.companies co
 cross join public.catalogo c
-left join public.flows f
-       on f.company_id = co.id and f.catalogo_id = c.id
+-- `lateral` y no un join simple: una empresa puede tener la MISMA pieza varias
+-- veces —FerreteríaYa imprime pedidos de Rappi en Bogotá y en Medellín— y con
+-- un join normal esa empresa aparecía dos veces en la misma casilla. La celda
+-- es una por empresa y pieza; adentro puede haber varias sedes.
+left join lateral (
+  select count(*)::int                          as veces,
+         array_agg(fl.id)                       as ids,
+         array_agg(fl.name order by fl.name)    as nombres,
+         bool_or(fl.status = 'activo')          as alguno_activo
+  from public.flows fl
+  where fl.company_id = co.id and fl.catalogo_id = c.id
+) f on true
 where c.activo;
 
 comment on view public.empresa_catalogo is
