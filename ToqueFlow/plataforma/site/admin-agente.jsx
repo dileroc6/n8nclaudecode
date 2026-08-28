@@ -95,6 +95,146 @@ function ListaEditable({ titulo, ayuda, items, columnas, vacio, onChange }) {
   );
 }
 
+// ── Conectar el WhatsApp: el QR ─────────────────────────────────────────────
+// Encender un agente no valía de nada si detrás no había un WhatsApp conectado.
+// Aquí se crea la instancia en Evolution, se muestra el código QR y se espera a
+// que el negocio lo escanee. El webhook con la firma se deja puesto DESDE LA
+// CREACIÓN: dejarlo para después es como se olvida y se termina con una
+// instancia abierta que nadie protege.
+const WA_ESTADOS = {
+  open:       ['conectado',    'ok'],
+  connecting: ['conectando',   'medio'],
+  close:      ['desconectado', 'papel'],
+};
+
+function ConectarWhatsApp({ instancia, onCambio }) {
+  const [estado, setEstado] = React.useState(null);
+  const [qr, setQr] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState('');
+  const [esperando, setEsperando] = React.useState(false);
+
+  const llamar = React.useCallback(async (accion) => {
+    const ses = await sb.auth.getSession();
+    const r = await fetch((window.TF_N8N || 'https://n8n.srv1398596.hstgr.cloud') + '/webhook/admin-evolution', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion, instancia,
+        token: ses.data.session.access_token,
+        webhook: (window.TF_N8N || 'https://n8n.srv1398596.hstgr.cloud') + '/webhook/toque-agente',
+      }),
+    });
+    return await r.json().catch(() => ({ ok: false, motivo: 'respuesta ilegible' }));
+  }, [instancia]);
+
+  const mirar = React.useCallback(async () => {
+    if (!instancia) return;
+    const r = await llamar('estado');
+    setEstado(r.ok ? (r.estado || 'no existe') : 'no existe');
+    if (r.ok && r.estado === 'open') { setQr(null); setEsperando(false); if (onCambio) onCambio('open'); }
+  }, [instancia, llamar, onCambio]);
+
+  React.useEffect(() => { mirar(); }, [mirar]);
+
+  // Mientras hay un QR en pantalla se pregunta cada 4 segundos si ya escanearon.
+  // Un QR de WhatsApp caduca en menos de un minuto, así que también se avisa.
+  React.useEffect(() => {
+    if (!esperando) return;
+    const t = setInterval(mirar, 4000);
+    return () => clearInterval(t);
+  }, [esperando, mirar]);
+
+  const crear = async () => {
+    setBusy(true); setErr(''); setQr(null);
+    const r = await llamar('crear');
+    if (!r.ok) { setErr('No se pudo crear: ' + (r.motivo || 'error')); setBusy(false); return; }
+    if (r.qr) { setQr(r.qr); setEsperando(true); }
+    else {
+      // Si ya existía, se pide el código aparte.
+      const c = await llamar('conectar');
+      if (c.qr) { setQr(c.qr); setEsperando(true); }
+      else setErr('Evolution no devolvió código. Puede que la instancia ya esté conectada.');
+    }
+    setBusy(false);
+    mirar();
+  };
+
+  const reconectar = async () => {
+    setBusy(true); setErr(''); setQr(null);
+    const r = await llamar('conectar');
+    if (r.qr) { setQr(r.qr); setEsperando(true); } else setErr('No devolvió código: ' + (r.motivo || 'ya podría estar conectada'));
+    setBusy(false);
+  };
+
+  if (!instancia) {
+    return (
+      <div className="wa-caja">
+        <p className="adm-hint">Ponle un nombre a la instancia arriba y guarda; después se conecta el WhatsApp.</p>
+      </div>
+    );
+  }
+
+  const et = WA_ESTADOS[estado] || ['sin crear', 'papel'];
+
+  return (
+    <div className="wa-caja">
+      <div className="wa-cabeza">
+        <div>
+          <b>WhatsApp</b>
+          <span>{instancia}</span>
+        </div>
+        <i className={'cat-estado e-' + et[1]}>{et[0]}</i>
+      </div>
+
+      {estado === 'open' && (
+        <p className="wa-ok">
+          Conectado y escuchando. Los mensajes que le lleguen a este número entran al agente.
+        </p>
+      )}
+
+      {qr && (
+        <div className="wa-qr">
+          <img src={qr.startsWith('data:') ? qr : 'data:image/png;base64,' + qr} alt="Código QR de WhatsApp" />
+          <div>
+            <b>Escanéalo desde el celular del negocio</b>
+            <ol>
+              <li>WhatsApp → Configuración → Dispositivos vinculados</li>
+              <li>Vincular un dispositivo</li>
+              <li>Apunta a este código</li>
+            </ol>
+            <p className="adm-hint">
+              El código caduca en menos de un minuto. Si se vence, pulsa «pedir otro».
+              Esta pantalla se entera sola cuando conecte.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {err && <div className="login-notice error">{err}</div>}
+
+      <div className="wa-botones">
+        {estado === 'no existe' || estado === null ? (
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={crear}>
+            {busy ? 'Creando…' : 'Crear y conectar'}
+          </button>
+        ) : estado !== 'open' ? (
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={reconectar}>
+            {busy ? 'Pidiendo…' : qr ? 'Pedir otro código' : 'Conectar'}
+          </button>
+        ) : null}
+        <button type="button" className="ag-mini" onClick={mirar}>revisar estado</button>
+      </div>
+
+      <p className="adm-hint">
+        Al crearla queda apuntando al agente <b>con su firma</b>, para que nadie más
+        pueda mandarle mensajes falsos. No hay que configurar nada más en Evolution.
+      </p>
+    </div>
+  );
+}
+
+
 // ── Modal: configurar el agente ──────────────────────────────────────────────
 function AgenteModal({ company, config, onClose, onSaved }) {
   // `config` es una fila de agent_runtime, o null si es un agente nuevo.
@@ -176,11 +316,13 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           <input type="text" value={f.whatsapp_instance} placeholder="bejauha-sandbox"
                  onChange={(e) => set('whatsapp_instance', e.target.value)} />
           <p className="adm-hint">
-            Es la llave que traduce «llegó un WhatsApp» a «es de esta empresa».
+            Es la llave que traduce «llegó un WhatsApp» a «es de este agente».
             <b> Mientras apunte a una instancia que no existe, ningún WhatsApp real le llega</b> —
             eso lo hace el interruptor más seguro para probar.
           </p>
         </div>
+
+        <ConectarWhatsApp instancia={f.whatsapp_instance.trim()} />
 
         <div className="form-field">
           <label>cómo se llama el negocio</label>

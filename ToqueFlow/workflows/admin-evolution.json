@@ -1,0 +1,288 @@
+{
+  "name": "ToqueFlow - Admin Evolution (QR y conexion)",
+  "nodes": [
+    {
+      "id": "e1",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -500,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-evolution",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "notes": "Sin firma propia a proposito: la autorizacion es el token de Supabase de quien llama, que se verifica en el nodo siguiente. Un secreto compartido aqui tendria que vivir en el navegador."
+    },
+    {
+      "id": "e2",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -280,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Se comprueba con Supabase que el token sea de alguien que existe y que sea\n// super admin. NO se confía en nada que venga del navegador salvo el token:\n// el rol se pregunta, no se acepta.\nconst b = $input.first().json.body || $input.first().json;\nreturn [{ json: {\n  accion:   String(b.accion || ''),\n  instancia: String(b.instancia || '').trim(),\n  token:    String(b.token || ''),\n  webhook:  String(b.webhook || ''),\n  firma:    String(b.firma || ''),\n}}];"
+      }
+    },
+    {
+      "id": "e3",
+      "name": "Quien pide",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -60,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://pyoauvbwqxuuzamnjwfd.supabase.co/rest/v1/profiles?select=role,status",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5b2F1dmJ3cXh1dXphbW5qd2ZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzIzNzMsImV4cCI6MjA5NzEwODM3M30.m_JKm9QzwaQ6rkEeUB-KO4bMucFBTGyEodYKBBi8jak"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.token }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 12000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Se le pregunta a Supabase quien es el dueno del token. NO se filtra por id a proposito: el RLS hace que solo devuelva SU propio perfil, asi que es imposible preguntar por otro. La llave anonima no es secreta — va en el codigo del sitio."
+    },
+    {
+      "id": "e4",
+      "name": "Decidir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// El perfil llega de Supabase. Si no es super admin, se corta aquí.\nconst p = $input.first().json;\nconst e = $('Extraer').first().json;\nconst perfil = Array.isArray(p) ? p[0] : p;\n\nif (!perfil || perfil.role !== 'super_admin' || perfil.status !== 'active') {\n  return [{ json: { ok: false, motivo: 'no autorizado' } }];\n}\n// El nombre de la instancia se limpia: es lo que va en una URL de Evolution y\n// no puede traer nada raro.\nconst inst = e.instancia.toLowerCase().replace(/[^a-z0-9-]/g, '');\nif (!inst) return [{ json: { ok: false, motivo: 'falta el nombre de la instancia' } }];\n\nreturn [{ json: { ok: true, accion: e.accion, instancia: inst, webhook: e.webhook, firma: e.firma } }];"
+      }
+    },
+    {
+      "id": "e5",
+      "name": "¿Autorizado?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        380,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e6",
+      "name": "Armar llamada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// Cada acción es una llamada distinta a Evolution. Se arma aquí para que el\n// nodo HTTP sea uno solo y no cuatro casi iguales.\nconst d = $input.first().json;\nconst base = $env.EVOLUTION_API_URL;\nconst inst = d.instancia;\n\nlet metodo = 'GET', url = '', cuerpo = null;\n\nif (d.accion === 'crear') {\n  // integration BAILEYS es la conexión por código QR, que es la que usa un\n  // negocio con su número de siempre.\n  metodo = 'POST';\n  url = base + '/instance/create';\n  cuerpo = {\n    instanceName: inst,\n    integration: 'WHATSAPP-BAILEYS',\n    qrcode: true,\n    // El webhook queda puesto DESDE EL PRIMER MOMENTO, con la firma. Dejarlo\n    // para después es como se olvida y se termina con una instancia abierta\n    // que nadie protege.\n    webhook: {\n      url: d.webhook,\n      byEvents: false,\n      base64: false,\n      headers: { 'X-Toque-Signature': d.firma, 'Content-Type': 'application/json' },\n      events: ['MESSAGES_UPSERT'],\n    },\n  };\n} else if (d.accion === 'conectar') {\n  url = base + '/instance/connect/' + inst;\n} else if (d.accion === 'estado') {\n  url = base + '/instance/connectionState/' + inst;\n} else if (d.accion === 'desconectar') {\n  metodo = 'DELETE';\n  url = base + '/instance/logout/' + inst;\n} else if (d.accion === 'webhook') {\n  metodo = 'POST';\n  url = base + '/webhook/set/' + inst;\n  cuerpo = {\n    webhook: {\n      enabled: true, url: d.webhook, byEvents: false, base64: false,\n      headers: { 'X-Toque-Signature': d.firma, 'Content-Type': 'application/json' },\n      events: ['MESSAGES_UPSERT'],\n    },\n  };\n}\n\nreturn [{ json: { metodo, url, cuerpo, instancia: inst, accion: d.accion } }];"
+      }
+    },
+    {
+      "id": "e7",
+      "name": "Evolution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        200
+      ],
+      "parameters": {
+        "method": "={{ $json.metodo }}",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": "={{ $json.cuerpo !== null }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.cuerpo || {}) }}",
+        "options": {
+          "timeout": 25000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e8",
+      "name": "Responder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst d = $('Decidir').first().json;\n\n// Evolution devuelve el QR de formas distintas segun la version y la accion.\n// Se normaliza para que la consola no tenga que saberlo.\nconst qr = r.base64 || (r.qrcode && (r.qrcode.base64 || r.qrcode.code)) || null;\nconst estado = r.state || (r.instance && r.instance.state) || r.connectionStatus || null;\n\nreturn [{ json: {\n  ok: true,\n  accion: d.accion,\n  instancia: d.instancia,\n  qr: qr,\n  estado: estado,\n  crudo: r,\n}}];"
+      }
+    },
+    {
+      "id": "e9",
+      "name": "No autorizado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        420
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { ok: false, motivo: $input.first().json.motivo || 'no autorizado' } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Quien pide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quien pide": {
+      "main": [
+        [
+          {
+            "node": "Decidir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir": {
+      "main": [
+        [
+          {
+            "node": "¿Autorizado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Autorizado?": {
+      "main": [
+        [
+          {
+            "node": "Armar llamada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No autorizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar llamada": {
+      "main": [
+        [
+          {
+            "node": "Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

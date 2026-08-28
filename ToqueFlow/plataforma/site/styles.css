@@ -4252,3 +4252,24 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .emp-estado.e-proximamente { color: #b06a12; background: color-mix(in oklab, #d98324 14%, transparent); }
 .emp-estado.e-desactivado  { color: #8a6d3b; background: color-mix(in oklab, var(--ink) 8%, transparent); }
 .emp-item.is-apagado .emp-luz.off { background: #d98324; box-shadow: 0 0 0 3px color-mix(in oklab, #d98324 18%, transparent); }
+
+/* ── Conectar el WhatsApp: el código QR ────────────────────────────────────
+   Encender un agente no vale de nada si detrás no hay un WhatsApp conectado. */
+
+.wa-caja { border: 1px solid var(--line); border-radius: 14px; padding: 15px 17px; background: var(--bg); display: flex; flex-direction: column; gap: 12px; }
+.wa-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wa-cabeza b { display: block; font-size: 14.5px; font-weight: 600; }
+.wa-cabeza span { display: block; font-family: var(--mono); font-size: 11px; color: var(--mute); margin-top: 2px; }
+.wa-ok { margin: 0; font-size: 13px; color: #1f8a5b; line-height: 1.5; }
+
+.wa-qr { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.wa-qr img { width: 190px; height: 190px; flex: 0 0 auto; image-rendering: pixelated; }
+.wa-qr > div { flex: 1; min-width: 190px; }
+.wa-qr b { display: block; font-size: 13.5px; color: var(--light-ink); margin-bottom: 8px; }
+.wa-qr ol { margin: 0 0 10px; padding-left: 18px; }
+.wa-qr li { font-size: 12.5px; color: var(--light-mute); line-height: 1.65; }
+.wa-qr .adm-hint { color: var(--light-mute); }
+
+.wa-botones { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+@media (max-width: 520px) { .wa-qr img { width: 100%; height: auto; max-width: 240px; } }
