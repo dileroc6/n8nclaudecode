@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toque Atiende — el flujo completo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#eef2f3;--surface:#fff;--sunk:#e4ebed;--ink:#0a2230;--soft:#4a626e;--mute:#7a8b93;
+  --line:#cfdade;--line2:#e2e9eb;--accent:#d84a1c;--accent2:#a81f22;--elige:#1a6fa8;--auto:#1a7a52;
+  --sans:"Manrope",system-ui,sans-serif;--disp:"Sora",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#071a24;--surface:#0e2b39;--sunk:#0a2230;--ink:#e9f1f3;--soft:#a7bec8;--mute:#6f8894;
+  --line:#1d4356;--line2:#153546;--accent:#f4713c;--accent2:#e0483f;--elige:#5aa9d8;--auto:#3fae7d;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:52px 24px 90px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(30px,5vw,44px);line-height:1.08;letter-spacing:-.02em;margin:0 0 6px}
+.sub-h1{font-family:var(--mono);font-size:13px;color:var(--mute);margin:0 0 18px}
+.lede{font-size:17px;color:var(--soft);max-width:64ch;margin:0}
+h2{font-family:var(--disp);font-weight:600;font-size:23px;margin:0 0 4px;letter-spacing:-.01em}
+.sec{margin-top:58px}
+.sub{color:var(--soft);font-size:14.5px;max-width:70ch;margin:0 0 24px}
+
+/* leyenda de colores */
+.claves{display:flex;gap:18px;flex-wrap:wrap;margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px}
+.clave{display:flex;align-items:center;gap:8px;color:var(--soft)}
+.pastilla{width:13px;height:13px;border-radius:3px;flex:0 0 auto}
+.p-comun{background:var(--accent)}
+.p-elige{background:var(--elige)}
+.p-auto{background:var(--auto)}
+
+/* el carril */
+.carril{display:grid;grid-template-columns:150px 1fr;gap:0}
+.etapa-tit{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:16px 14px 16px 0;border-right:1px solid var(--line);text-align:right}
+.etapa-cuerpo{padding:12px 0 12px 22px;position:relative}
+.etapa-cuerpo::before{content:"";position:absolute;left:-5px;top:22px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--ground)}
+.etapa.op .etapa-cuerpo::before{background:var(--elige)}
+.caja{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 17px}
+.caja.comun{border-left:3px solid var(--accent)}
+.caja.elige{border-left:3px solid var(--elige)}
+.caja b{font-family:var(--disp);font-size:15.5px;font-weight:600;display:block;margin-bottom:3px}
+.caja p{margin:0;font-size:13.5px;color:var(--soft);line-height:1.55}
+.caja .meta{font-family:var(--mono);font-size:11px;color:var(--mute);display:block;margin-top:8px}
+
+.opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:8px;margin-top:10px}
+.op-caja{background:var(--sunk);border:1px solid var(--line2);border-radius:4px;padding:10px 12px}
+.op-caja b{font-size:12.5px;font-weight:600;display:block;font-family:var(--sans)}
+.op-caja span{font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+
+/* automatizaciones: carriles aparte */
+.autos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.auto-caja{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--auto);border-radius:4px;padding:15px 17px}
+.auto-caja b{font-family:var(--disp);font-size:15px;font-weight:600;display:block;margin-bottom:2px}
+.auto-caja .disp{font-family:var(--mono);font-size:11px;color:var(--auto);display:block;margin-bottom:6px}
+.auto-caja p{margin:0;font-size:13px;color:var(--soft);line-height:1.5}
+
+.nota{margin-top:30px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;background:var(--surface);padding:18px 21px}
+.nota h3{font-family:var(--disp);font-size:16.5px;font-weight:600;margin:0 0 8px}
+.nota p{margin:0 0 11px;font-size:14.5px;color:var(--soft);max-width:70ch;line-height:1.6}
+.nota p:last-child{margin-bottom:0}
+.nota strong{color:var(--ink);font-weight:600}
+.nota.rojo{border-left-color:var(--accent2)}
+.nota.rojo h3{color:var(--accent2)}
+
+.resp{background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:22px 24px;margin-top:26px}
+.resp .q{font-family:var(--disp);font-size:19px;font-weight:600;margin:0 0 12px;color:var(--accent)}
+.resp p{margin:0 0 10px;font-size:14.5px;color:var(--soft);max-width:70ch}
+.resp p:last-child{margin-bottom:0}
+.resp strong{color:var(--ink);font-weight:600}
+code{font-family:var(--mono);font-size:.9em;background:color-mix(in oklab,var(--ink) 8%,transparent);padding:1px 5px;border-radius:4px}
+
+@media(max-width:640px){
+  .wrap{padding:36px 16px 70px}
+  .carril{grid-template-columns:1fr}
+  .etapa-tit{text-align:left;border-right:none;border-bottom:1px solid var(--line);padding:14px 0 6px}
+  .etapa-cuerpo{padding-left:0}
+  .etapa-cuerpo::before{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">El producto estándar</p>
+<h1>Toque Atiende</h1>
+<p class="sub-h1">nombre propuesto · hoy se llama «Agente de Atención»</p>
+<p class="lede">
+  Todo lo que pasa cuando alguien le escribe a un cliente por WhatsApp. Qué parte
+  es igual para todos, qué parte se elige, y dónde vive cada cosa.
+</p>
+
+<div class="claves">
+  <span class="clave"><i class="pastilla p-comun"></i> Común — un solo workflow, idéntico para todos</span>
+  <span class="clave"><i class="pastilla p-elige"></i> Elegible — herramientas, cada una en su sub-flujo</span>
+  <span class="clave"><i class="pastilla p-auto"></i> Automatizaciones — flujos aparte, con su propio disparador</span>
+</div>
+
+<!-- ══ EL RECORRIDO ══════════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>El recorrido de un mensaje</h2>
+  <p class="sub">De arriba abajo, en orden. Lo naranja es un solo workflow de n8n; lo azul se llama desde adentro y vive aparte.</p>
+
+  <div class="carril">
+    <div class="etapa-tit">Entra</div>
+    <div class="etapa-cuerpo">
+      <div class="caja comun">
+        <b>Llega y se filtra</b>
+        <p>Verifica la firma y descarta lo que no merece atención: audios, grupos, lo que el propio negocio escribió. Sin gastar un peso.</p>
+        <span class="meta">común · nodos «Entrada» y «Extraer»</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carril">
+    <div class="etapa-tit">Se ubica</div>
+    <div class="etapa-cuerpo">
+      <div class="caja comun">
+        <b>¿De quién es y qué sabe?</b>
+        <p>Una consulta traduce la instancia de WhatsApp en una empresa y devuelve todo: si está encendido, cómo habla, qué sabe, quién escribe y qué se dijeron antes.</p>
+        <span class="meta">común · una función en la base</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carril">
+    <div class="etapa-tit">Piensa</div>
+    <div class="etapa-cuerpo">
+      <div class="caja comun">
+        <b>Arma el prompt y pregunta al modelo</b>
+        <p>Mismo código para todos. Lo que cambia es el contenido que la base le devolvió: la identidad, los límites y el conocimiento de <em>ese</em> cliente.</p>
+        <span class="meta">común · la configuración es por cliente, el código no</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carril etapa op">
+    <div class="etapa-tit">Puede pedir ayuda</div>
+    <div class="etapa-cuerpo">
+      <div class="caja elige">
+        <b>¿Necesita una herramienta?</b>
+        <p>
+          Aquí es donde entra lo elegible. El modelo pide una herramienta <strong>por su nombre</strong>;
+          el flujo común ejecuta el sub-flujo que se llama así y le devuelve el resultado.
+          <strong>El agente no sabe qué hace por dentro</strong> — y esa ignorancia es lo que lo
+          mantiene compartible.
+        </p>
+        <div class="opciones">
+          <div class="op-caja"><b>Consultar saldo</b><span>quien venda paquetes</span></div>
+          <div class="op-caja"><b>Estado del pedido</b><span>quien tenga inventario</span></div>
+          <div class="op-caja"><b>Confirmar pago</b><span>quien cobre por transferencia</span></div>
+          <div class="op-caja"><b>Ver disponibilidad</b><span>quien tenga agenda</span></div>
+          <div class="op-caja"><b>Agendar la cita</b><span>quien tenga agenda</span></div>
+          <div class="op-caja"><b>Registrar un reclamo</b><span>quien tenga posventa</span></div>
+        </div>
+        <span class="meta">elegible · un sub-flujo POR HERRAMIENTA, no por cliente</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carril">
+    <div class="etapa-tit">Guarda</div>
+    <div class="etapa-cuerpo">
+      <div class="caja comun">
+        <b>Contacto, conversación y consumo</b>
+        <p>En una sola transacción: o queda todo o no queda nada. Un fallo a la mitad dejaría al agente leyendo, la próxima vez, un historial que miente.</p>
+        <span class="meta">común · una función en la base</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="carril">
+    <div class="etapa-tit">Responde</div>
+    <div class="etapa-cuerpo">
+      <div class="caja comun">
+        <b>Sale por WhatsApp — o al sandbox</b>
+        <p>Si es modo prueba, el flujo corre igual pero la salida se desvía al simulador. Y si hay que escalar, avisa a una persona.</p>
+        <span class="meta">común</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LA RESPUESTA ══════════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>¿Van en el mismo flujo?</h2>
+  <div class="resp">
+    <p class="q">Las herramientas sí. Las automatizaciones no.</p>
+    <p>
+      <strong>Las herramientas viven en sub-flujos aparte, pero están dentro del mismo recorrido:</strong>
+      el mensaje entra, el agente decide que necesita una, la llama, recibe el resultado y sigue.
+      Son parte de la conversación.
+    </p>
+    <p>
+      <strong>Las automatizaciones no pasan por el agente en absoluto.</strong> Tienen su propio
+      disparador —un reloj, un pago que entra, un botón en el portal— y su propio flujo. Se tocan con
+      el agente solo en un sitio: <strong>la misma base de datos</strong>. Por eso una campaña puede usar
+      los contactos que el agente capturó, sin que ninguno de los dos sepa del otro.
+    </p>
+  </div>
+</section>
+
+<!-- ══ AUTOMATIZACIONES ══════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>Las automatizaciones, cada una por su lado</h2>
+  <p class="sub">Ninguna entra por el WhatsApp del cliente. Cada una arranca sola y escribe en la misma base.</p>
+
+  <div class="autos">
+    <div class="auto-caja">
+      <b>Campañas</b>
+      <span class="disp">arranca: alguien pulsa «enviar» en el portal</span>
+      <p>Segmenta, manda por lotes y guarda el resultado. Con candado explícito: sin confirmar, no sale nada.</p>
+    </div>
+    <div class="auto-caja">
+      <b>Aviso de pago fallido</b>
+      <span class="disp">arranca: la pasarela avisa que un cobro no pasó</span>
+      <p>Le escribe al cliente final sin que nadie revise nada. El negocio no pierde la venta por no darse cuenta.</p>
+    </div>
+    <div class="auto-caja">
+      <b>Recordatorio de cita</b>
+      <span class="disp">arranca: un reloj, cada hora</span>
+      <p>Busca las citas de mañana sin recordatorio enviado y avisa. Depende de que exista la agenda.</p>
+    </div>
+    <div class="auto-caja">
+      <b>Reactivación</b>
+      <span class="disp">arranca: un reloj, cada semana</span>
+      <p>Busca quién lleva tiempo sin volver y le escribe. Usa los mismos contactos que llenó el agente.</p>
+    </div>
+    <div class="auto-caja">
+      <b>Reporte semanal</b>
+      <span class="disp">arranca: un reloj, los lunes</span>
+      <p>Resume la semana y se la manda al dueño. Lee lo que el agente y las campañas dejaron escrito.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══ REGLAS ════════════════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>Las tres reglas que sostienen esto</h2>
+
+  <div class="nota">
+    <h3>Un sub-flujo es por capacidad, no por cliente</h3>
+    <p>
+      <code>ver_disponibilidad</code> es <strong>uno solo</strong> y lo usan todos los clientes que
+      tengan agenda. <code>consultar_saldo</code> también es uno solo — pasa que hoy solo Bejauha lo
+      usa, no porque sea «suyo», sino porque nadie más vende clases por paquete.
+    </p>
+    <p>
+      Si mañana entra un gimnasio que también vende paquetes, <strong>no se construye nada:</strong>
+      se le enciende la pieza que ya existe.
+    </p>
+  </div>
+
+  <div class="nota">
+    <h3>Lo que cambia entre clientes son datos, no código</h3>
+    <p>
+      El tono, los límites, qué datos capturar, a quién escalar y qué herramientas tiene encendidas
+      viven en <strong>una fila de base de datos</strong>. Cliente nuevo = fila nueva. Esa es toda la
+      razón por la que implementar puede bajar de 45–90 horas a 11–14.
+    </p>
+  </div>
+
+  <div class="nota rojo">
+    <h3>Nunca un «si es Bejauha entonces…» dentro del flujo común</h3>
+    <p>
+      Es lo más rápido el primer día y lo que mata el producto el sexto. Cada rama multiplica los
+      caminos, y a partir de ahí ningún cambio es seguro porque cualquiera puede romper a alguien.
+    </p>
+    <p>
+      El costo de romper esta regla es asimétrico: <strong>si se rompe el flujo común, los nueve
+      clientes se quedan mudos a la vez.</strong> Si se rompe una herramienta, quien la use pierde
+      esa pregunta puntual y escala a un humano. Todo lo demás sigue andando.
+    </p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
