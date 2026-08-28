@@ -56,7 +56,11 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                       .sort((a, b) => a.orden - b.orden);
 
   const r  = resumen.find((x) => x.company_id === company.id) || {};
-  const ag = runtime.find((x) => x.company_id === company.id);
+  // Todos los agentes de esta empresa, no «el» agente. Una empresa puede
+  // tener uno por sede o por línea de negocio.
+  const agentes = runtime.filter((x) => x.company_id === company.id)
+                         .sort((a, b) => String(a.agente).localeCompare(String(b.agente)));
+  const ag = agentes[0];
   const misUsuarios = usuarios.filter((u) => u.company_id === company.id);
 
   // Las piezas se pasan al cambiar de estado con la forma que espera el
@@ -132,23 +136,38 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                     {p.nombres_para_el_cliente && (
                       <div><dt>{p.veces > 1 ? 'tarjetas' : 'tarjeta'}</dt><dd>{p.nombres_para_el_cliente.join(' · ')}</dd></div>
                     )}
-                    {p.clave === 'agente-atencion' && ag && (
-                      <React.Fragment>
-                        <div><dt>instancia</dt><dd>{ag.whatsapp_instance || '—'}</dd></div>
-                        <div><dt>conocimiento</dt><dd>{ag.conocimiento_fuentes} documentos · {Math.round(ag.conocimiento_bytes / 1024 * 10) / 10} KB</dd></div>
-                        <div><dt>el agente</dt><dd>{ag.activo ? 'respondiendo' : 'apagado'}</dd></div>
-                      </React.Fragment>
+                    {p.clave === 'agente-atencion' && (
+                      <div><dt>agentes</dt><dd>{agentes.length || 'ninguno todavía'}</dd></div>
                     )}
                   </dl>
 
-                  {(EMP_CONFIGURABLES[p.clave] || []).length > 0 && (
-                    <div className="emp-acciones">
-                      {EMP_CONFIGURABLES[p.clave].map(([que, etiqueta, ayuda]) => (
-                        <button key={que} type="button" className="emp-accion"
-                                onClick={() => (que === 'agente' ? onConfig(company) : onConocimiento(company))}>
-                          <b>{etiqueta}</b><span>{ayuda}</span>
-                        </button>
+                  {p.clave === 'agente-atencion' && (
+                    <div className="emp-agentes">
+                      {agentes.map((a) => (
+                        <div key={a.agent_id} className="emp-agente">
+                          <span className={'emp-luz ' + (a.activo ? 'on' : 'off')}></span>
+                          <div>
+                            <b>{a.agente}</b>
+                            <span>
+                              {a.whatsapp_instance || 'sin instancia'} ·{' '}
+                              {a.conocimiento_fuentes} documentos ·{' '}
+                              {Math.round(a.conocimiento_bytes / 1024 * 10) / 10} KB ·{' '}
+                              {a.activo ? 'respondiendo' : 'apagado'}
+                            </span>
+                          </div>
+                          <button type="button" className="ag-mini" onClick={() => onConfig(company, a)}>configurar</button>
+                          <button type="button" className="ag-mini" onClick={() => onConocimiento(company, a)}>conocimiento</button>
+                        </div>
                       ))}
+                      <button type="button" className="ag-mini" onClick={() => onConfig(company, null)}>
+                        + otro agente
+                      </button>
+                      {agentes.length > 1 && (
+                        <p className="emp-nota">
+                          Cada agente tiene su propio número de WhatsApp y su propio tono.
+                          El conocimiento se comparte salvo lo que se cargue solo para uno.
+                        </p>
+                      )}
                     </div>
                   )}
 

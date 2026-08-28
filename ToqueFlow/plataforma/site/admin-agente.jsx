@@ -97,8 +97,12 @@ function ListaEditable({ titulo, ayuda, items, columnas, vacio, onChange }) {
 
 // ── Modal: configurar el agente ──────────────────────────────────────────────
 function AgenteModal({ company, config, onClose, onSaved }) {
+  // `config` es una fila de agent_runtime, o null si es un agente nuevo.
   const c = config || {};
   const [f, setF] = React.useState({
+    // Un nombre para distinguirlo de los otros agentes de la misma empresa.
+    // Sin esto, dos agentes se ven idénticos y nadie sabe cuál está tocando.
+    nombre: c.agente || company.name,
     activo: !!c.activo,
     whatsapp_instance: c.whatsapp_instance || '',
     negocio: obj(c.identidad).negocio || company.name,
@@ -122,6 +126,7 @@ function AgenteModal({ company, config, onClose, onSaved }) {
     setBusy(true); setErr('');
     const fila = {
       company_id: company.id,
+      nombre: f.nombre.trim() || company.name,
       activo: f.activo,
       whatsapp_instance: f.whatsapp_instance.trim() || null,
       identidad: { negocio: f.negocio.trim() || company.name, tono: f.tono.trim() },
@@ -131,14 +136,18 @@ function AgenteModal({ company, config, onClose, onSaved }) {
       agenda: { ...obj(c.agenda), modo: f.agenda },
       actualizado_at: new Date().toISOString(),
     };
-    const { error } = await sb.from('agent_config').upsert(fila, { onConflict: 'company_id' });
+    // Antes era un upsert por company_id. Ya no: la empresa dejó de ser única
+    // en esta tabla, así que se actualiza ESTE agente o se crea uno nuevo.
+    const { error } = config && config.agent_id
+      ? await sb.from('agent_config').update(fila).eq('id', config.agent_id)
+      : await sb.from('agent_config').insert(fila);
     setBusy(false);
     if (error) { setErr(error.message); return; }
     onSaved();
   };
 
   return (
-    <Modal title={'Agente de ' + company.name} onClose={onClose}>
+    <Modal title={config ? 'Agente: ' + (config.agente || company.name) : 'Nuevo agente de ' + company.name} onClose={onClose}>
       <form className="adm-form ag-form" onSubmit={guardar}>
 
         <div className="ag-encendido">
@@ -149,6 +158,16 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           <p className="adm-hint">
             Apagado, el agente no responde nada y no cuesta nada. Enciéndelo cuando el
             sandbox se vea bien — no antes.
+          </p>
+        </div>
+
+        <div className="form-field">
+          <label>nombre del agente</label>
+          <input type="text" value={f.nombre} placeholder="Nico Bogotá"
+                 onChange={(e) => set('nombre', e.target.value)} />
+          <p className="adm-hint">
+            Solo para distinguirlo aquí. Si esta empresa tiene un agente por sede
+            o por línea de negocio, ponle el nombre que use el equipo.
           </p>
         </div>
 

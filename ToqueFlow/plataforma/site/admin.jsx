@@ -324,7 +324,7 @@ function AdminApp({ profile }) {
   const [companyFilter, setCompanyFilter] = React.useState('todas');
   const [consumoCo, setConsumoCo] = React.useState('todas');
   const [runtime, setRuntime] = React.useState([]);        // agent_runtime, una fila por empresa CON agente
-  const [configCo, setConfigCo] = React.useState(null);    // empresa cuyo agente se está configurando
+  const [configCo, setConfigCo] = React.useState(null);    // { empresa, agente } que se está configurando
   const [saberCo, setSaberCo] = React.useState(null);      // empresa cuyo conocimiento se está editando
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
@@ -494,7 +494,8 @@ function AdminApp({ profile }) {
                         usuarios={users} consumo={usage} runtime={runtime} resumen={resumen}
                         consumoDet={consumoDet} consumoPlan={consumoPlan}
                         busy={catBusy}
-                        onConfig={setConfigCo} onConocimiento={setSaberCo}
+                        onConfig={(co, ag) => setConfigCo({ co, ag })}
+                        onConocimiento={(co, ag) => setSaberCo({ co, ag })}
                         onCambiar={cambiarPieza}
                         onVolver={() => setFichaCo(null)} />
         ) : (
@@ -722,11 +723,11 @@ function AdminApp({ profile }) {
 
       {modal === 'company' && <CompanyModal onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
       {modal === 'user' && <UserModal companies={companies} onClose={() => setModal(null)} onSaved={() => { setModal(null); reload(); }} />}
-      {configCo && <AgenteModal company={configCo}
-                                config={runtime.find((r) => r.company_id === configCo.id) || null}
+      {configCo && <AgenteModal company={configCo.co}
+                                config={configCo.ag || null}
                                 onClose={() => setConfigCo(null)}
-                                onSaved={() => { const co = configCo; setConfigCo(null); reload(); setFichaCo(co); setToast({ type: 'ok', text: 'Agente guardado.' }); }} />}
-      {saberCo && <ConocimientoModal company={saberCo} onClose={() => setSaberCo(null)} onChanged={reload} />}
+                                onSaved={() => { const co = configCo.co; setConfigCo(null); reload(); setFichaCo(co); setToast({ type: 'ok', text: 'Agente guardado.' }); }} />}
+      {saberCo && <ConocimientoModal company={saberCo.co} agente={saberCo.ag || null} onClose={() => setSaberCo(null)} onChanged={reload} />}
       {sedesOf && <SedesModal company={sedesOf} onClose={() => setSedesOf(null)} onChanged={reload} />}
       {editU && <EditNameModal user={editU} onClose={() => setEditU(null)} onSaved={updateName} />}
       {delU && <ConfirmModal title="Eliminar usuario" danger confirmLabel="Eliminar" message={'¿Eliminar a ' + delU.email + '? Se borra su cuenta de forma permanente.'} onClose={() => setDelU(null)} onConfirm={() => doDelete(delU)} />}

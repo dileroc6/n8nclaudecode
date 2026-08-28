@@ -132,15 +132,19 @@ const check = (cond, que, detalle) => {
       agenda: { modo: "ninguna" },
       actualizado_at: new Date().toISOString(),
     };
-    const up = await rest("POST", "agent_config?on_conflict=company_id", fila,
-      { Prefer: "resolution=merge-duplicates,return=representation" });
+    const up = await rest("POST", "agent_config", fila,
+      { Prefer: "return=representation" });
     check(up.ok, "guarda la configuración del agente", "HTTP " + up.status + " " + JSON.stringify(up.data).slice(0, 200));
 
     // Volver a guardar: el formulario hace upsert cada vez que se pulsa Guardar.
     // Aquí es donde reventaba el trigger de `actualizado_at`.
+    // Antes esto era un upsert. Ya no: la empresa dejo de ser unica en
+    // agent_config porque puede tener VARIOS agentes, asi que el segundo
+    // guardado actualiza el agente creado en vez de chocar con el.
+    const agenteId = (Array.isArray(up.data) ? up.data[0] : up.data).id;
     fila.identidad.tono = "Cercano, breve y con emojis suaves.";
-    const up2 = await rest("POST", "agent_config?on_conflict=company_id", fila,
-      { Prefer: "resolution=merge-duplicates,return=representation" });
+    const up2 = await rest("PATCH", "agent_config?id=eq." + agenteId,
+      { identidad: fila.identidad }, { Prefer: "return=representation" });
     check(up2.ok, "vuelve a guardar sobre lo ya guardado (el UPDATE no revienta)",
           "HTTP " + up2.status + " " + JSON.stringify(up2.data).slice(0, 200));
 

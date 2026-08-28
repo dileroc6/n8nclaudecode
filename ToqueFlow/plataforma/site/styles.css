@@ -4214,3 +4214,11 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 .con-todos:hover { color: var(--ink); border-color: var(--ink); }
 .con-cual { margin: 0; font-family: var(--mono); font-size: 11px; color: var(--mute); }
+
+/* Los agentes de una empresa. Una empresa puede tener varios: uno por sede o
+   por línea de negocio, cada uno con su número y su tono. */
+.emp-agentes { display: flex; flex-direction: column; gap: 8px; }
+.emp-agente { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg); flex-wrap: wrap; }
+.emp-agente > div { flex: 1; min-width: 150px; }
+.emp-agente b { display: block; font-size: 13.5px; font-weight: 600; }
+.emp-agente span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--mute); margin-top: 2px; line-height: 1.5; }
