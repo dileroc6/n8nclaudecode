@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El lego de ToqueFlow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#eef2f3; --surface:#fff; --sunk:#e4ebed; --ink:#0a2230; --soft:#4a626e;
+  --mute:#7a8b93; --line:#cfdade; --line2:#e2e9eb; --accent:#d84a1c; --accent2:#a81f22;
+  --ok:#1a7a52; --warn:#b06a12; --paper:#8496a0;
+  --sans:"Manrope",system-ui,sans-serif; --disp:"Sora",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#071a24; --surface:#0e2b39; --sunk:#0a2230; --ink:#e9f1f3; --soft:#a7bec8;
+    --mute:#6f8894; --line:#1d4356; --line2:#153546; --accent:#f4713c; --accent2:#e0483f;
+    --ok:#3fae7d; --warn:#e0a03f; --paper:#6f8894;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding:52px 24px 90px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(28px,5vw,42px);line-height:1.1;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+.lede{font-size:17px;color:var(--soft);max-width:62ch;margin:0}
+.stamp{font-family:var(--mono);font-size:11.5px;color:var(--mute);margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+
+h2{font-family:var(--disp);font-weight:600;font-size:24px;letter-spacing:-.01em;margin:0 0 4px;text-wrap:balance}
+.sec{margin-top:60px}
+.sub{color:var(--soft);font-size:14.5px;max-width:68ch;margin:0 0 26px}
+
+/* ── Vista A: el viaje de un mensaje ───────────────────────────────── */
+.viaje{display:flex;flex-direction:column;gap:0}
+.paso{display:flex;gap:16px;align-items:stretch}
+.canal{flex:0 0 34px;display:flex;flex-direction:column;align-items:center}
+.punto{width:11px;height:11px;border-radius:50%;background:var(--accent);margin-top:20px;flex:0 0 auto}
+.punto.hueco{background:var(--surface);border:2px solid var(--line)}
+.hilo{width:2px;flex:1;background:var(--line);min-height:14px}
+.paso:last-child .hilo{display:none}
+.caja{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 17px;margin-bottom:10px}
+.caja b{font-family:var(--disp);font-size:15.5px;font-weight:600;display:block;margin-bottom:3px}
+.caja p{margin:0;font-size:13.5px;color:var(--soft);line-height:1.55}
+.caja .donde{font-family:var(--mono);font-size:11px;color:var(--mute);display:block;margin-top:7px}
+.caja.compartida{border-color:var(--accent);border-width:1.5px}
+.caja.compartida b::after{content:"compartido por todos";font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-left:9px;font-weight:400;vertical-align:middle}
+.rama{margin-left:50px;border-left:2px dashed var(--line);padding-left:18px;margin-bottom:10px}
+.rama-tit{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.subflujos{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.sub-caja{background:var(--sunk);border:1px solid var(--line2);border-radius:4px;padding:9px 12px}
+.sub-caja b{font-size:13px;font-weight:600;display:block}
+.sub-caja span{font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+
+/* ── Vista B: la matriz ────────────────────────────────────────────── */
+.matriz-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
+thead th{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);font-weight:500;text-align:center;padding:14px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th:first-child{text-align:left;padding-left:18px;min-width:250px}
+tbody td{padding:11px 10px;text-align:center;border-bottom:1px solid var(--line2)}
+tbody td:first-child{text-align:left;padding-left:18px;color:var(--ink)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.grupo td{background:var(--sunk);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding:9px 18px;text-align:left}
+.pieza-n{font-weight:600;display:block;line-height:1.35}
+.pieza-d{font-size:12px;color:var(--mute);display:block;line-height:1.4}
+.marca{font-size:15px;line-height:1;font-family:var(--mono)}
+.m-on{color:var(--ok)}
+.m-pronto{color:var(--warn)}
+.m-no{color:var(--line)}
+.leyenda{display:flex;gap:22px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--mute);margin-top:14px}
+.leyenda span b{font-family:var(--mono);font-weight:500}
+
+/* ── Bloques de texto ──────────────────────────────────────────────── */
+.nota{margin-top:28px;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;background:var(--surface);padding:18px 20px}
+.nota h3{font-family:var(--disp);font-size:16px;font-weight:600;margin:0 0 8px}
+.nota p{margin:0 0 10px;font-size:14.5px;color:var(--soft);max-width:70ch}
+.nota p:last-child{margin-bottom:0}
+.nota strong{color:var(--ink);font-weight:600}
+.malo{border-left-color:var(--accent2)}
+.malo h3{color:var(--accent2)}
+@media(max-width:620px){.wrap{padding:36px 16px 70px}.rama{margin-left:20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="eyebrow">Arquitectura de producto</p>
+<h1>El lego de ToqueFlow</h1>
+<p class="lede">Cómo viaja un mensaje, qué parte es de todos y qué parte es de un cliente. Y quién tiene encendido qué.</p>
+<p class="stamp">28 de agosto de 2026</p>
+
+<!-- ══ VISTA A ══════════════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>Cómo viaja un mensaje</h2>
+  <p class="sub">Todo lo naranja es <strong>uno solo, igual para los nueve clientes</strong>. Lo que cambia entre un cliente y otro no es el camino: es lo que la base de datos le responde por el camino.</p>
+
+  <div class="viaje">
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja">
+        <b>Llega un WhatsApp</b>
+        <p>Evolution reenvía todo lo que pasa en la línea del cliente.</p>
+        <span class="donde">Evolution API · una instancia por cliente</span>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja compartida">
+        <b>Puerta</b>
+        <p>Verifica la firma y descarta lo que no merece atención: audios, grupos, mensajes que el propio negocio escribió. Sin gastar un peso.</p>
+        <span class="donde">n8n · nodos «Entrada» y «Extraer»</span>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja compartida">
+        <b>¿De quién es este mensaje?</b>
+        <p>Una sola consulta traduce la instancia de WhatsApp en una empresa, y devuelve todo de una vez: si el agente está encendido, cómo habla, qué sabe, quién escribe y qué se dijeron antes.</p>
+        <span class="donde">Supabase · tf_agente_contexto()</span>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja compartida">
+        <b>Pensar</b>
+        <p>Arma el prompt con la identidad y el conocimiento de <em>ese</em> cliente y se lo pasa al modelo. El flujo es el mismo; el contenido, no.</p>
+        <span class="donde">n8n · «Armar el prompt» + Claude</span>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto hueco"></div><div class="hilo"></div></div>
+      <div class="caja">
+        <b>¿Necesita una herramienta?</b>
+        <p>Aquí es donde entra el lego. El modelo pide una herramienta por su nombre; el flujo ejecuta el sub-flujo que se llama así y le devuelve el resultado. <strong>El agente no sabe qué hace por dentro.</strong></p>
+        <span class="donde">todavía no construido — es la pieza que falta</span>
+      </div>
+    </div>
+
+    <div class="rama">
+      <p class="rama-tit">sub-flujos · cada uno en su propio workflow</p>
+      <div class="subflujos">
+        <div class="sub-caja"><b>consultar_saldo</b><span>solo Bejauha</span></div>
+        <div class="sub-caja"><b>estado_pedido</b><span>solo FerreteríaYa</span></div>
+        <div class="sub-caja"><b>ver_disponibilidad</b><span>quien tenga agenda</span></div>
+        <div class="sub-caja"><b>agendar_cita</b><span>quien tenga agenda</span></div>
+        <div class="sub-caja"><b>confirmar_pago</b><span>quien cobre por transferencia</span></div>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja compartida">
+        <b>Guardar</b>
+        <p>Contacto, conversación y consumo en una sola transacción: o queda todo o no queda nada.</p>
+        <span class="donde">Supabase · tf_agente_registrar()</span>
+      </div>
+    </div>
+
+    <div class="paso">
+      <div class="canal"><div class="punto"></div></div>
+      <div class="caja compartida">
+        <b>Responder</b>
+        <p>Sale por WhatsApp — o al sandbox, si es modo prueba. Y si hay que escalar, avisa a una persona.</p>
+        <span class="donde">Evolution · o la tabla test_messages</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="nota malo">
+    <h3>Dónde está el peligro</h3>
+    <p><strong>Todo lo naranja es un solo workflow.</strong> Un error ahí deja mudos a los nueve clientes a la vez. Por eso no admite condicionales por cliente: un «si es Bejauha entonces…» es rápido el primer día y mata el producto el sexto.</p>
+    <p>Lo que sea de un solo cliente <strong>va en su propio sub-flujo</strong>. Si <code>consultar_saldo</code> se rompe, Bejauha pierde esa pregunta puntual y escala a un humano. Los otros ocho ni se enteran.</p>
+  </div>
+</section>
+
+<!-- ══ VISTA B ══════════════════════════════════════════════════════ -->
+<section class="sec">
+  <h2>Quién tiene encendido qué</h2>
+  <p class="sub">La misma información que debería verse en la consola de administración. Hoy no se ve así: cada cliente tiene una lista escrita a mano en la tabla <code>flows</code>, no un catálogo del que se activan piezas.</p>
+
+  <div class="matriz-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Pieza</th>
+          <th>Bejauha</th>
+          <th>Ferretería&nbsp;Ya</th>
+          <th>Savia</th>
+          <th>SM&nbsp;Grand</th>
+          <th>Vassco</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="grupo"><td colspan="6">Productos — lo que se vende y se factura</td></tr>
+        <tr>
+          <td><span class="pieza-n">Agente de Atención</span><span class="pieza-d">el producto estándar</span></td>
+          <td><span class="marca m-pronto">◐</span></td><td><span class="marca m-pronto">◐</span></td>
+          <td><span class="marca m-pronto">◐</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Portal</span><span class="pieza-d">contactos, campañas, sandbox, consumo</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-on">●</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Impresión de pedidos</span><span class="pieza-d">Rappi al local, sin transcribir</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-on">●</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Retenciones contables</span><span class="pieza-d">caída hasta configurar su secreto</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-pronto">◐</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">KPI de ocupación</span><span class="pieza-d">tablero del hotel</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+
+        <tr class="grupo"><td colspan="6">Herramientas — lo que el agente hace dentro de una conversación</td></tr>
+        <tr>
+          <td><span class="pieza-n">Responder con conocimiento</span><span class="pieza-d">va siempre incluida</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Consultar saldo</span><span class="pieza-d">existe en el sistema viejo</span></td>
+          <td><span class="marca m-pronto">◐</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Estado del pedido</span><span class="pieza-d">contra Siigo; hoy solo por Telegram</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-pronto">◐</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Confirmar pago</span><span class="pieza-d">flujo aparte; sirve a cualquiera</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-pronto">◐</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Ver disponibilidad y agendar</span><span class="pieza-d">el brazo que le falta al agente</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+
+        <tr class="grupo"><td colspan="6">Automatizaciones — corren solas, sin conversación</td></tr>
+        <tr>
+          <td><span class="pieza-n">Campañas</span><span class="pieza-d">segmentar, programar, medir</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Aviso de pago fallido</span><span class="pieza-d">el cliente se entera solo</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Reactivación</span><span class="pieza-d">a quien lleva tiempo sin volver</span></td>
+          <td><span class="marca m-on">●</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Recordatorio de cita</span><span class="pieza-d">el no-show duele en el bolsillo</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+        <tr>
+          <td><span class="pieza-n">Anuncios Google y Meta</span><span class="pieza-d">gestión de pauta</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-on">●</span></td>
+          <td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td><td><span class="marca m-no">·</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="leyenda">
+    <span><b class="m-on">●</b> &nbsp;funcionando</span>
+    <span><b class="m-pronto">◐</b> &nbsp;a medias o «próximamente»</span>
+    <span><b class="m-no">·</b> &nbsp;no lo tiene</span>
+  </div>
+
+  <div class="nota">
+    <h3>Lo que esta tabla deja ver</h3>
+    <p><strong>Casi todo está en una sola columna.</strong> Bejauha tiene seis piezas encendidas; los demás, una o dos. Eso no es un problema técnico: es el retrato de tener un cliente pagando.</p>
+    <p><strong>Tres clientes tienen el agente «próximamente».</strong> Bejauha, FerreteríaYa y Savia ya lo tienen prometido en su portal. El día que la llave de Anthropic esté y se cambie la instancia, tres se encienden — no uno.</p>
+    <p><strong>Ninguna fila de herramientas está en verde salvo la básica.</strong> El mecanismo del lego todavía no existe: es lo que decide si esto aguanta al cliente cinco.</p>
+  </div>
+</section>
+
+<!-- ══ QUÉ FALTA EN LA CONSOLA ══════════════════════════════════════ -->
+<section class="sec">
+  <h2>Qué hay que cambiar para que la consola muestre esto</h2>
+  <p class="sub">Hoy la tabla <code>flows</code> guarda una lista escrita a mano por cliente. Trece filas, cada una tecleada. Para ver «todos los productos, cuáles tiene activos» falta un paso.</p>
+
+  <div class="viaje">
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja">
+        <b>Un catálogo maestro</b>
+        <p>Una tabla con las piezas estándar: nombre, si es producto, herramienta o automatización, y qué hace. Se escribe una vez, no una por cliente.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <div class="canal"><div class="punto"></div><div class="hilo"></div></div>
+      <div class="caja">
+        <b><code>flows</code> apunta al catálogo</b>
+        <p>Cada fila de un cliente deja de ser texto suelto y pasa a decir «esta empresa tiene <em>esta</em> pieza, en <em>este</em> estado». El nombre visible se puede seguir personalizando.</p>
+      </div>
+    </div>
+    <div class="paso">
+      <div class="canal"><div class="punto"></div></div>
+      <div class="caja">
+        <b>La consola cruza las dos</b>
+        <p>Muestra el catálogo completo por cliente con un interruptor por pieza. Activar un producto deja de ser teclear una fila y pasa a ser marcar una casilla.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="nota">
+    <h3>Un producto puede llevar varias piezas</h3>
+    <p>El <strong>Agente de Atención</strong> se vende como uno solo, pero por dentro puede llevar la herramienta «agendar» y la automatización «recordatorio». Un plan más caro es el mismo agente con esas dos encendidas.</p>
+    <p>Por eso el catálogo no es un árbol sino una <strong>composición</strong>: la misma automatización de recordatorios sirve al agente y también se puede vender suelta. Lo que se factura es el producto; las piezas son de qué está hecho.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
