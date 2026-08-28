@@ -93,7 +93,7 @@ comment on column public.flows.catalogo_id is
 insert into public.catalogo (clave, tipo, nombre, descripcion, beneficio, estado, visible_cliente, workflow, incluye, orden) values
 
   -- ── PRODUCTOS ──
-  ('agente-atencion', 'producto', 'Agente de Atención',
+  ('agente-atencion', 'producto', 'Toque Atiende',
    'El producto estándar. Un solo workflow para todos los clientes; la diferencia vive en agent_config.',
    'Contesta tu WhatsApp con la información de tu negocio, toma los datos de quien escribe y te pasa la conversación cuando hace falta una persona.',
    'funcionando', true, null, array['responder-conocimiento'], 10),
