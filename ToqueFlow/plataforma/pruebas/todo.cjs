@@ -49,6 +49,7 @@ const ORDEN = {
     "consola-alta",
     "cliente-contactos",
     "cliente-campos",
+    "cargador-conocimiento",
   ],
 };
 

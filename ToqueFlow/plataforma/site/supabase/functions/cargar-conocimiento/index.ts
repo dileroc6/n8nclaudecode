@@ -34,19 +34,46 @@ const SH = { apikey: SERVICE, Authorization: "Bearer " + SERVICE, "Content-Type"
 
 // ── Límites: acotan costo y respetan el techo del producto estándar ──────────
 const MAX_PAGINAS   = 6;
-const MAX_BYTES_URL = 120_000;   // por página descargada
-const MAX_BYTES_DOC = 40_000;    // el techo del producto estándar (ver schema-agente.sql)
-const TIMEOUT_MS    = 12_000;
 
-// Rutas que suelen tener lo que importa. Se buscan en los enlaces del sitio.
-const RUTAS_UTILES = /(servicio|precio|tarifa|plan|tratamiento|contacto|ubicacion|horario|faq|pregunta|nosotros|quienes)/i;
+// El recorte va sobre el TEXTO, no sobre el HTML. Estaba al revés y costaba
+// caro: una web moderna es 95% marcado, así que cortar el HTML a 120 KB de
+// luxesmile.co dejaba 1.289 caracteres de texto en vez de 7.775 — se perdía
+// justo la mitad donde suelen estar los precios. Ahora se baja bastante más,
+// se limpia, y se recorta lo que quedó.
+const MAX_BYTES_HTML = 1_500_000; // lo que se descarga, para acotar memoria
+const MAX_TEXTO_PAG  = 30_000;    // texto útil por página, ya limpio
+const MAX_BYTES_DOC  = 40_000;    // el techo del producto estándar (ver schema-agente.sql)
+const TIMEOUT_MS     = 12_000;
+
+// Rutas que suelen tener lo que importa. La lista original solo servía para una
+// clínica: en savia-wear.com —una tienda— no casó ni un enlace, así que se
+// cargaba solo la portada. Si es un módulo estándar tiene que servirle a todos
+// los sectores, y eso vale también para adivinar rutas.
+const RUTAS_UTILES = new RegExp([
+  // lo que vende
+  "servicio", "producto", "tienda", "shop", "catalogo", "coleccion", "menu", "carta",
+  "tratamiento", "curso", "clase", "paquete", "membresia", "plan", "habitacion", "suite",
+  // lo que cuesta
+  "precio", "tarifa", "promocion", "oferta",
+  // cómo se compra
+  "agenda", "cita", "reserva", "booking",
+  // dónde y cuándo
+  "contacto", "ubicacion", "sede", "horario",
+  // quiénes son
+  "nosotros", "quienes", "about", "faq", "pregunta",
+].join("|"), "i");
 
 function textoDesdeHtml(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
-    .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+    // El <footer> NO se quita, aunque traiga ruido de navegación: es donde vive
+    // el teléfono, la dirección y el horario en la mayoría de los sitios.
+    // Quitándolo, el documento salía sin «Ubicación y contacto» — comprobado en
+    // los tres sitios de cliente que se prueban. El prompt ya le dice al modelo
+    // que ignore menús y pies de página, así que el ruido cuesta menos que
+    // perder el número al que la gente llama.
     .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<\/(p|div|li|h[1-6]|tr|section)>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -74,6 +101,16 @@ function enlacesInternos(html: string, base: URL): string[] {
   return [...vistos];
 }
 
+// Un dominio puede resolver con `www` y no sin él, o al revés. Pasó con un
+// cliente entero: `www.zoetantricspa.com` no resuelve (ENOTFOUND) y
+// `zoetantricspa.com` responde 200. Sin esto, el cargador le decía al negocio
+// que su sitio no existe.
+function variantes(u: URL): string[] {
+  const otra = new URL(u.toString());
+  otra.hostname = u.hostname.startsWith("www.") ? u.hostname.slice(4) : "www." + u.hostname;
+  return [u.toString(), otra.toString()];
+}
+
 async function bajar(url: string): Promise<string> {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), TIMEOUT_MS);
@@ -85,8 +122,8 @@ async function bajar(url: string): Promise<string> {
     if (!r.ok) return "";
     const ct = r.headers.get("content-type") || "";
     if (!/text\/html/i.test(ct)) return "";
-    const html = (await r.text()).slice(0, MAX_BYTES_URL);
-    return textoDesdeHtml(html);
+    const html = (await r.text()).slice(0, MAX_BYTES_HTML);
+    return textoDesdeHtml(html).slice(0, MAX_TEXTO_PAG);
   } catch (_) {
     return "";
   } finally {
@@ -184,12 +221,37 @@ Deno.serve(async (req: Request) => {
     try { base = new URL(body.url); } catch (_) { return json({ error: "Falta la URL o el texto." }, 400); }
     if (!/^https?:$/.test(base.protocol)) return json({ error: "La URL debe ser http o https." }, 400);
 
-    const portadaHtml = await fetch(base.toString(), { headers: { "User-Agent": "ToqueFlow/1.0" } })
-      .then((r) => r.ok ? r.text() : "").catch(() => "");
-    if (!portadaHtml) return json({ error: "No se pudo acceder al sitio. Revisa la URL." }, 422);
+    // Se prueban las dos variantes del dominio y se guarda POR QUÉ falló cada
+    // una. Un "no se pudo acceder" a secas no le sirve a nadie: el negocio no
+    // sabe si escribió mal la URL, si su sitio está caído o si tarda demasiado.
+    let portadaHtml = "";
+    const intentos: string[] = [];
+    for (const u of variantes(base)) {
+      const ctl = new AbortController();
+      const reloj = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+      try {
+        const r = await fetch(u, { signal: ctl.signal, headers: { "User-Agent": "ToqueFlow/1.0 (+https://toqueflow.com)" }, redirect: "follow" });
+        if (!r.ok) { intentos.push(u + " respondió " + r.status); continue; }
+        portadaHtml = (await r.text()).slice(0, MAX_BYTES_HTML);
+        base = new URL(r.url || u);  // si hubo redirección, se sigue desde ahí
+        break;
+      } catch (e) {
+        const causa = (e as any)?.name === "AbortError" ? "no respondió en " + (TIMEOUT_MS / 1000) + " segundos"
+                    : ((e as any)?.cause?.code || (e as any)?.message || "no se pudo conectar");
+        intentos.push(u + ": " + causa);
+      } finally { clearTimeout(reloj); }
+    }
+
+    if (!portadaHtml) {
+      return json({
+        error: "No se pudo entrar al sitio. " + intentos.join(" · ") +
+               ". Revisa la dirección, o copia la información del negocio y pégala en el campo de texto.",
+        intentos,
+      }, 422);
+    }
 
     paginas = [base.toString(), ...enlacesInternos(portadaHtml, base)].slice(0, MAX_PAGINAS);
-    const partes: string[] = [textoDesdeHtml(portadaHtml.slice(0, MAX_BYTES_URL))];
+    const partes: string[] = [textoDesdeHtml(portadaHtml).slice(0, MAX_TEXTO_PAG)];
     for (const u of paginas.slice(1)) {
       const t = await bajar(u);
       if (t.length > 200) partes.push("\n\n--- " + u + " ---\n" + t);
