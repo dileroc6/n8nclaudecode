@@ -152,6 +152,39 @@ const check = (cond, que, detalle) => {
           ajenas.length + " filas ajenas");
 
     await svc("DELETE", "/auth/v1/admin/users/" + cliId);
+
+    // ── Qué es Toque Atiende ─────────────────────────────────────────────────
+    // La definicion del producto, tal como la dio Diego. Se comprueba porque ya
+    // se rompio sola: dos archivos SQL escribian el mismo dato y el que se corria
+    // despues borraba «escalar a una persona» sin que nadie lo tocara.
+    console.log("\n── El producto estandar ──");
+    const ESTANDAR = ['responder-conocimiento', 'escalar-a-humano', 'consultar-cliente', 'actualizar-cliente'];
+    const prod = (await svc("GET", "/rest/v1/catalogo?select=incluye,puede_llevar&clave=eq.agente-atencion")).data[0] || {};
+    const falta = ESTANDAR.filter((k) => !(prod.incluye || []).includes(k));
+    check(falta.length === 0, "Toque Atiende lleva SIEMPRE las cuatro piezas estandar",
+          "le falta: " + falta.join(", "));
+
+    const coladas = ESTANDAR.filter((k) => (prod.puede_llevar || []).includes(k));
+    check(coladas.length === 0, "y ninguna de ellas se ofrece ademas como opcional",
+          "se ofrecen: " + coladas.join(", "));
+
+    // Que ninguna suponga un sector: o le sirve a cualquiera, o no es estandar.
+    const supone = (await svc("GET", "/rest/v1/catalogo?select=clave,nombre&clave=in.(" + (prod.incluye || []).join(",") + ")")).data || [];
+    const sectorial = supone.filter((p) => /saldo|clase|paquete|cita|pedido|pago/i.test(p.clave + " " + p.nombre));
+    check(sectorial.length === 0, "y ninguna supone un sector",
+          sectorial.map((p) => p.nombre).join(", "));
+
+    // ── Un dato, un archivo ──────────────────────────────────────────────────
+    // El error de fondo, no el caso: dos migraciones escribiendo lo mismo. La
+    // segunda pisa a la primera y el sintoma aparece dias despues, en una
+    // pantalla, sin que nadie haya tocado nada.
+    const DIR = path.join(__dirname, "..", "site", "supabase");
+    const escriben = fs.readdirSync(DIR).filter((f) => f.endsWith(".sql")).filter((f) => {
+      const s = fs.readFileSync(path.join(DIR, f), "utf8");
+      return s.split("\n").some((l) => !l.trim().startsWith("--") && /set\s+incluye\s*=/.test(l));
+    });
+    check(escriben.length <= 1, "un solo archivo SQL escribe que lleva Toque Atiende",
+          "lo escriben " + escriben.length + ": " + escriben.join(", "));
   } finally {
     await svc("DELETE", "/auth/v1/admin/users/" + uid);
   }

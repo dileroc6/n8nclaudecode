@@ -215,6 +215,20 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
                     </div>
                   </label>
 
+                  {/* Lo que el producto ya trae. Se muestra sin casilla: es lo
+                      que el cliente esta comprando, no una decision pendiente. */}
+                  {puesto && (c.lleva_siempre || []).length > 0 && (
+                    <div className="alta-opciones">
+                      <p className="alta-sub">Esto viene incluido:</p>
+                      {c.lleva_siempre.map((x) => (
+                        <div key={x.clave} className="alta-pieza alta-sub-pieza is-fija">
+                          <span className="pieza-marca">●</span>
+                          <div><b>{x.nombre}</b><span>{x.que_hace}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {puesto && opcionales.length > 0 && (
                     <div className="alta-opciones">
                       <p className="alta-sub">¿Le sumamos alguna de estas?</p>

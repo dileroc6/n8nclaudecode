@@ -1,0 +1,543 @@
+<title>Toque Atiende por dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg:        #ffffff;
+    --bg-2:      #f4f4f2;
+    --ink:       #0a2230;
+    --mute:      rgba(10,34,48,.62);
+    --line:      rgba(10,34,48,.14);
+    --card:      rgba(10,34,48,.028);
+    --accent:    #d94316;
+    --accent-2:  #c1272d;
+    --wash:      rgba(241,90,36,.07);
+    --ok:        #17795a;
+    --mid:       #a06105;
+    --pend:      rgba(10,34,48,.45);
+    --chip:      rgba(10,34,48,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:       #0a2230;
+      --bg-2:     #0f2a3a;
+      --ink:      #e9ecee;
+      --mute:     rgba(233,236,238,.62);
+      --line:     rgba(233,236,238,.16);
+      --card:     rgba(255,255,255,.04);
+      --accent:   #ff8a56;
+      --accent-2: #ff6a4d;
+      --wash:     rgba(255,138,86,.09);
+      --ok:       #5cc79b;
+      --mid:      #e2ad4f;
+      --pend:     rgba(233,236,238,.45);
+      --chip:     rgba(255,255,255,.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:       #0a2230;
+    --bg-2:     #0f2a3a;
+    --ink:      #e9ecee;
+    --mute:     rgba(233,236,238,.62);
+    --line:     rgba(233,236,238,.16);
+    --card:     rgba(255,255,255,.04);
+    --accent:   #ff8a56;
+    --accent-2: #ff6a4d;
+    --wash:     rgba(255,138,86,.09);
+    --ok:       #5cc79b;
+    --mid:      #e2ad4f;
+    --pend:     rgba(233,236,238,.45);
+    --chip:     rgba(255,255,255,.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Sora", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(30px, 5vw, 46px);
+    font-weight: 600;
+    letter-spacing: -.022em;
+    line-height: 1.1;
+    text-wrap: balance;
+    margin: 10px 0 0;
+  }
+
+  h2 {
+    font-size: clamp(21px, 3vw, 26px);
+    font-weight: 600;
+    letter-spacing: -.015em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -.005em;
+    margin: 0;
+  }
+
+  p { margin: 0; max-width: 66ch; }
+  .lede { font-size: 17px; color: var(--mute); margin-top: 16px; }
+  .note { font-size: 14px; color: var(--mute); }
+
+  header { border-bottom: 1px solid var(--line); padding-bottom: 32px; }
+
+  section { display: flex; flex-direction: column; gap: 22px; }
+
+  .sec-head { display: flex; flex-direction: column; gap: 8px; }
+
+  figure {
+    margin: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px 20px 16px;
+    overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; min-width: 600px; height: auto; }
+  figcaption {
+    font-size: 13px;
+    color: var(--mute);
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    max-width: 72ch;
+  }
+
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+
+  .pieza {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 16px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .pieza .clave {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    color: var(--mute);
+  }
+  .pieza p { font-size: 13.5px; color: var(--mute); line-height: 1.5; }
+
+  .familia {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .familia > .cabeza {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+  }
+  .familia > .cabeza h3 { font-size: 14.5px; }
+  .familia > .cabeza span { font-size: 13px; color: var(--mute); }
+
+  .fila {
+    display: grid;
+    grid-template-columns: minmax(150px, 200px) 1fr auto;
+    gap: 16px;
+    align-items: start;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .fila:last-child { border-bottom: 0; }
+  .fila .nombre { display: flex; flex-direction: column; gap: 3px; }
+  .fila .nombre strong { font-size: 14px; font-weight: 600; }
+  .fila .nombre code {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--mute);
+  }
+  .fila .que { font-size: 13.5px; color: var(--mute); line-height: 1.5; }
+
+  .estado {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--chip);
+    border: 1px solid var(--line);
+    color: var(--pend);
+  }
+  .estado.ok   { color: var(--ok);  border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+  .estado.half { color: var(--mid); border-color: color-mix(in srgb, var(--mid) 45%, transparent); }
+
+  .leyenda { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--mute); }
+  .leyenda span { display: inline-flex; align-items: center; gap: 8px; }
+
+  .aviso {
+    border-left: 3px solid var(--accent-2);
+    background: var(--wash);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .aviso h3 { font-size: 14px; }
+  .aviso p { font-size: 13.5px; color: var(--mute); }
+  .aviso code, .inline-code {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 12px;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 22px;
+    font-size: 12.5px;
+    color: var(--mute);
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 640px) {
+    .fila { grid-template-columns: 1fr; gap: 8px; }
+    .fila .estado { justify-self: start; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Producto estándar · el mismo flujo para todos</p>
+    <h1>Toque Atiende, caja por caja</h1>
+    <p class="lede">Lo que recibe cualquier cliente el día uno, y lo que se le enciende encima según lo que haga su negocio. Un solo workflow atiende a todos: lo que cambia entre un spa y una ferretería vive en la configuración, no en el flujo.</p>
+  </header>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">1 · El recorrido de un mensaje</p>
+      <h2>Qué pasa entre que alguien escribe y que le contestan</h2>
+      <p class="note">Esto corre igual para todos los clientes, con herramientas encendidas o sin ninguna.</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 820 770" role="img" aria-label="Recorrido de un mensaje de WhatsApp: llega, se identifica la empresa por la instancia, se arma el contexto en una consulta, el agente piensa, opcionalmente llama una herramienta y vuelve, y sale por uno de tres caminos: pasar a una persona, contestar por WhatsApp o quedar en el sandbox. Al final se guarda el turno completo en una transacción.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+
+        <g font-family="Sora, system-ui, sans-serif" fill="currentColor">
+
+          <!-- 1. entrada -->
+          <rect x="180" y="24" width="240" height="52" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="300" y="47" text-anchor="middle" font-size="13.5" font-weight="600">Llega un WhatsApp</text>
+          <text x="300" y="64" text-anchor="middle" font-size="10.5" opacity=".62">Evolution dice de qué línea viene</text>
+
+          <line x1="300" y1="76" x2="300" y2="110" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <text x="310" y="97" font-size="10" opacity=".62">¿es una persona escribiendo?</text>
+
+          <!-- 2. de quien es -->
+          <rect x="180" y="112" width="240" height="52" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="300" y="135" text-anchor="middle" font-size="13.5" font-weight="600">¿De quién es esta línea?</text>
+          <text x="300" y="152" text-anchor="middle" font-size="10.5" opacity=".62">la instancia traduce a empresa</text>
+
+          <!-- salida muerta -->
+          <line x1="178" y1="138" x2="154" y2="138" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="4 3" marker-end="url(#ar)"></line>
+          <rect x="2" y="112" width="150" height="52" rx="8" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-dasharray="4 3"></rect>
+          <text x="77" y="134" text-anchor="middle" font-size="12" font-weight="600" opacity=".55">No pasa nada</text>
+          <text x="77" y="150" text-anchor="middle" font-size="9.5" opacity=".45">línea desconocida o agente apagado</text>
+
+          <line x1="300" y1="164" x2="300" y2="194" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+
+          <!-- 3. contexto -->
+          <rect x="180" y="196" width="240" height="114" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="300" y="219" text-anchor="middle" font-size="13.5" font-weight="600">El contexto, en una consulta</text>
+          <text x="196" y="240" font-size="10.5" opacity=".68">· cómo habla el negocio y qué sabe</text>
+          <text x="196" y="257" font-size="10.5" opacity=".68">· la ficha de quien escribe, con su saldo</text>
+          <text x="196" y="274" font-size="10.5" opacity=".68">· lo que ya se dijeron antes</text>
+          <text x="196" y="291" font-size="10.5" opacity=".68">· qué herramientas tiene encendidas</text>
+          <text x="300" y="305" text-anchor="middle" font-size="9" opacity=".42" font-family="JetBrains Mono, monospace">tf_agente_contexto</text>
+
+          <line x1="300" y1="310" x2="300" y2="346" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <text x="310" y="332" font-size="10" opacity=".62">un solo prompt</text>
+
+          <!-- 4. el agente -->
+          <rect x="180" y="348" width="240" height="64" rx="8" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"></rect>
+          <text x="300" y="375" text-anchor="middle" font-size="14" font-weight="600">El agente piensa</text>
+          <text x="300" y="393" text-anchor="middle" font-size="10.5" opacity=".68">Haiku 4.5 · lo estable va cacheado 1 h</text>
+
+          <!-- ida y vuelta a la herramienta -->
+          <line x1="422" y1="368" x2="526" y2="368" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <text x="474" y="361" text-anchor="middle" font-size="9.5" opacity=".62">¿pide una herramienta?</text>
+          <line x1="526" y1="398" x2="422" y2="398" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <text x="474" y="414" text-anchor="middle" font-size="9.5" opacity=".62">vuelve con el resultado</text>
+
+          <rect x="530" y="342" width="268" height="80" rx="8" fill="none" stroke="var(--accent)" stroke-opacity=".75" stroke-dasharray="5 4"></rect>
+          <text x="664" y="367" text-anchor="middle" font-size="13" font-weight="600">Ejecutar la herramienta</text>
+          <text x="664" y="385" text-anchor="middle" font-size="10.5" opacity=".68">workflow aparte, webhook con firma</text>
+          <text x="664" y="401" text-anchor="middle" font-size="10.5" opacity=".68">este camino solo existe si la encendió</text>
+
+          <!-- reparto a las salidas -->
+          <line x1="300" y1="412" x2="300" y2="452" stroke="currentColor" stroke-opacity=".5"></line>
+          <line x1="145" y1="452" x2="645" y2="452" stroke="currentColor" stroke-opacity=".5"></line>
+          <line x1="145" y1="452" x2="145" y2="498" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <line x1="395" y1="452" x2="395" y2="498" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+          <line x1="645" y1="452" x2="645" y2="498" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+
+          <rect x="40" y="500" width="210" height="82" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="145" y="527" text-anchor="middle" font-size="13" font-weight="600">Pasa a una persona</text>
+          <text x="145" y="545" text-anchor="middle" font-size="10.5" opacity=".68">avisa a quien el negocio designó</text>
+          <text x="145" y="561" text-anchor="middle" font-size="10.5" opacity=".68">y deja de responder ese chat</text>
+
+          <rect x="290" y="500" width="210" height="82" rx="8" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"></rect>
+          <text x="395" y="527" text-anchor="middle" font-size="13" font-weight="600">Contesta por WhatsApp</text>
+          <text x="395" y="545" text-anchor="middle" font-size="10.5" opacity=".68">con lo que el negocio cargó,</text>
+          <text x="395" y="561" text-anchor="middle" font-size="10.5" opacity=".68">nunca con lo que no está escrito</text>
+
+          <rect x="540" y="500" width="210" height="82" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="645" y="527" text-anchor="middle" font-size="13" font-weight="600">Queda en el sandbox</text>
+          <text x="645" y="545" text-anchor="middle" font-size="10.5" opacity=".68">modo prueba: el mismo flujo,</text>
+          <text x="645" y="561" text-anchor="middle" font-size="10.5" opacity=".68">la salida se desvía al panel</text>
+
+          <!-- recoleccion -->
+          <line x1="145" y1="582" x2="145" y2="614" stroke="currentColor" stroke-opacity=".5"></line>
+          <line x1="645" y1="582" x2="645" y2="614" stroke="currentColor" stroke-opacity=".5"></line>
+          <line x1="145" y1="614" x2="645" y2="614" stroke="currentColor" stroke-opacity=".5"></line>
+          <line x1="395" y1="582" x2="395" y2="646" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar)"></line>
+
+          <rect x="275" y="648" width="240" height="94" rx="8" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="395" y="673" text-anchor="middle" font-size="13.5" font-weight="600">Guarda el turno</text>
+          <text x="395" y="691" text-anchor="middle" font-size="10.5" opacity=".68">el contacto · lo que dijo · lo que</text>
+          <text x="395" y="707" text-anchor="middle" font-size="10.5" opacity=".68">contestó · los datos validados · el costo</text>
+          <text x="395" y="728" text-anchor="middle" font-size="9.5" opacity=".5" font-family="JetBrains Mono, monospace">o queda todo, o no queda nada</text>
+        </g>
+      </svg>
+      <figcaption>El aislamiento por empresa se decide en un solo punto —la instancia de WhatsApp— y no en el workflow. Por eso un cliente nuevo no es un flujo nuevo: es una fila de configuración.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">2 · Va siempre</p>
+      <h2>Las cuatro piezas que no se apagan</h2>
+      <p class="note">La prueba para entrar aquí: que le sirva igual a una tienda, un hotel, una clínica y un gimnasio, sin cambiarle nada.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="pieza">
+        <h3>Responder con su conocimiento</h3>
+        <span class="clave">responder-conocimiento</span>
+        <p>Contesta con el documento que el cliente cargó. Si algo no está escrito ahí, lo dice en vez de inventarlo.</p>
+      </div>
+      <div class="pieza">
+        <h3>Pasar a una persona</h3>
+        <span class="clave">escalar-a-humano</span>
+        <p>Cuando la pregunta se sale de lo que sabe, o alguien se molesta, avisa a quien el negocio designó y se calla.</p>
+      </div>
+      <div class="pieza">
+        <h3>Ver la ficha de quien escribe</h3>
+        <span class="clave">consultar-cliente</span>
+        <p>Sus datos, su estado y —si el negocio lleva saldo— cuánto le queda, en las palabras de ese negocio.</p>
+      </div>
+      <div class="pieza">
+        <h3>Anotar en la ficha</h3>
+        <span class="clave">actualizar-cliente</span>
+        <p>Guarda lo que la persona cuenta conversando, solo en los campos que el negocio definió y respetando sus listas.</p>
+      </div>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 820 268" role="img" aria-label="Comparación: las cuatro piezas estándar ocurren dentro de un solo turno, con una llamada al modelo y sin webhooks. Una herramienta encendida agrega una segunda llamada, con un tope duro de una sola vuelta.">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+        <g font-family="Sora, system-ui, sans-serif" fill="currentColor">
+
+          <text x="16" y="26" font-size="10" font-family="JetBrains Mono, monospace" letter-spacing="1.4" opacity=".6">LAS 4 QUE VAN SIEMPRE</text>
+          <rect x="12" y="38" width="384" height="196" rx="10" fill="var(--card)" stroke="currentColor" stroke-opacity=".22"></rect>
+
+          <rect x="32" y="88" width="108" height="56" rx="7" fill="none" stroke="currentColor" stroke-opacity=".38"></rect>
+          <text x="86" y="110" text-anchor="middle" font-size="12" font-weight="600">el contexto</text>
+          <text x="86" y="127" text-anchor="middle" font-size="9.5" opacity=".62">ficha y saldo dentro</text>
+
+          <line x1="142" y1="116" x2="166" y2="116" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"></line>
+
+          <rect x="168" y="88" width="84" height="56" rx="7" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <text x="210" y="121" text-anchor="middle" font-size="12.5" font-weight="600">Claude</text>
+
+          <line x1="254" y1="116" x2="278" y2="116" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"></line>
+
+          <rect x="280" y="88" width="96" height="56" rx="7" fill="none" stroke="currentColor" stroke-opacity=".38"></rect>
+          <text x="328" y="110" text-anchor="middle" font-size="12" font-weight="600">respuesta</text>
+          <text x="328" y="127" text-anchor="middle" font-size="9.5" opacity=".62">y lo capturado</text>
+
+          <line x1="32" y1="172" x2="376" y2="172" stroke="currentColor" stroke-opacity=".25"></line>
+          <text x="204" y="192" text-anchor="middle" font-size="11" font-weight="600">1 llamada al modelo · ningún webhook</text>
+          <text x="204" y="212" text-anchor="middle" font-size="10" opacity=".62">ver la ficha y anotar en ella pasan dentro del mismo turno</text>
+
+          <text x="424" y="26" font-size="10" font-family="JetBrains Mono, monospace" letter-spacing="1.4" opacity=".6">LAS QUE SE ENCIENDEN</text>
+          <rect x="420" y="38" width="388" height="196" rx="10" fill="none" stroke="var(--accent)" stroke-opacity=".55" stroke-dasharray="5 4"></rect>
+
+          <rect x="438" y="88" width="84" height="56" rx="7" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <text x="480" y="121" text-anchor="middle" font-size="12.5" font-weight="600">Claude</text>
+
+          <line x1="524" y1="116" x2="556" y2="116" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"></line>
+          <text x="540" y="106" text-anchor="middle" font-size="9" opacity=".62">la pide</text>
+
+          <rect x="558" y="88" width="120" height="56" rx="7" fill="none" stroke="var(--accent)" stroke-opacity=".7" stroke-dasharray="5 4"></rect>
+          <text x="618" y="110" text-anchor="middle" font-size="12" font-weight="600">herramienta</text>
+          <text x="618" y="127" text-anchor="middle" font-size="9.5" opacity=".62">webhook firmado</text>
+
+          <line x1="680" y1="116" x2="708" y2="116" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar2)"></line>
+          <text x="694" y="106" text-anchor="middle" font-size="9" opacity=".62">resultado</text>
+
+          <rect x="710" y="88" width="84" height="56" rx="7" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <text x="752" y="112" text-anchor="middle" font-size="12.5" font-weight="600">Claude</text>
+          <text x="752" y="128" text-anchor="middle" font-size="9.5" opacity=".62">responde</text>
+
+          <line x1="438" y1="172" x2="792" y2="172" stroke="currentColor" stroke-opacity=".25"></line>
+          <text x="615" y="192" text-anchor="middle" font-size="11" font-weight="600">2 llamadas · tope duro de una sola vuelta</text>
+          <text x="615" y="212" text-anchor="middle" font-size="10" opacity=".62">cada herramienta es un workflow aparte: se prueba sola, con curl</text>
+        </g>
+      </svg>
+      <figcaption>Por qué ver y anotar la ficha no son herramientas: ya vienen en el contexto del turno. Volverlas herramienta costaría una llamada entera al modelo para leer un dato que el agente ya tenía en la mano.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">3 · Se enciende por caso de uso</p>
+      <h2>Lo que se le puede activar encima</h2>
+      <p class="note">Nada de esto viene puesto: cambia por sector. Un taller no agenda citas de spa y una tienda no descuenta clases. Encenderlas es marcar una casilla en la consola —<span class="inline-code">agent_config.herramientas</span>—, no tocar el flujo.</p>
+    </div>
+
+    <div class="leyenda">
+      <span><em class="estado ok">funcionando</em> corre hoy en producción</span>
+      <span><em class="estado half">a medias</em> existe, pero fuera del estándar: falta exponerla</span>
+      <span><em class="estado">en papel</em> decidida, sin construir</span>
+    </div>
+
+    <div class="familia">
+      <div class="cabeza"><h3>Agenda</h3><span>clínicas, spas, servicios con cita — cierra la cita dentro de la conversación</span></div>
+      <div class="fila">
+        <div class="nombre"><strong>Ver disponibilidad</strong><code>ver-disponibilidad</code></div>
+        <p class="que">Lee el calendario que el negocio ya usa para ofrecer horas que de verdad están libres.</p>
+        <em class="estado">en papel</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Agendar la cita</strong><code>agendar-cita</code></div>
+        <p class="que">Crea la cita en el Google Calendar del negocio. Hoy el agente sabe <em>decir</em> que alguien quiere cita, pero no la crea: ese caso se comporta como escalamiento.</p>
+        <em class="estado">en papel</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Recordatorio de cita</strong><code>recordatorio-cita</code></div>
+        <p class="que">Corre sola, sin conversación: avisa antes y pide confirmación. Depende de que exista la agenda.</p>
+        <em class="estado">en papel</em>
+      </div>
+    </div>
+
+    <div class="familia">
+      <div class="cabeza"><h3>Plata que entra</h3><span>quien cobra por transferencia o vende contra un sitio</span></div>
+      <div class="fila">
+        <div class="nombre"><strong>Confirmar pago</strong><code>confirmar-pago</code></div>
+        <p class="que">Cuando alguien dice «ya pagué», lo verifica en vez de hacerlo esperar. Existe para Savia como flujo aparte.</p>
+        <em class="estado half">a medias</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Estado del pedido</strong><code>estado-pedido</code></div>
+        <p class="que">Consulta contra el sistema del cliente. Ya existe como bot de Telegram contra Siigo en FerreteríaYa; falta exponerlo al agente.</p>
+        <em class="estado half">a medias</em>
+      </div>
+    </div>
+
+    <div class="familia">
+      <div class="cabeza"><h3>Paquetes y saldo</h3><span>gimnasios, spas, cualquiera que venda por bonos o abonos</span></div>
+      <div class="fila">
+        <div class="nombre"><strong>Matricular a un cliente</strong><code>matricular-cliente</code></div>
+        <p class="que">Dejar registrado que alguien <em>compró</em>: qué paquete y con cuántas unidades. Es el paso que hace existir el saldo. Exige confirmación de una persona por diseño.</p>
+        <em class="estado">en papel</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Descontar del saldo</strong><code>registrar-consumo</code></div>
+        <p class="que">Registrar que alguien usó una unidad: asistió, tomó la sesión, redimió el bono. Sin esto el saldo termina diciendo un número que no es.</p>
+        <em class="estado half">a medias</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Recargar el saldo</strong><code>recargar-saldo</code></div>
+        <p class="que">Sumar unidades cuando compra otro paquete. También exige confirmación humana: un agente que recarga solo es un agente que regala.</p>
+        <em class="estado">en papel</em>
+      </div>
+    </div>
+
+    <div class="familia">
+      <div class="cabeza"><h3>Servicio y retención</h3><span>le sirve a casi cualquiera, pero no todos lo quieren</span></div>
+      <div class="fila">
+        <div class="nombre"><strong>Registrar un reclamo</strong><code>registrar-reclamo</code></div>
+        <p class="que">Deja el caso escrito con número de seguimiento, en vez de solo escalarlo a un chat donde se pierde.</p>
+        <em class="estado">en papel</em>
+      </div>
+      <div class="fila">
+        <div class="nombre"><strong>Reactivación</strong><code>reactivacion</code></div>
+        <p class="que">Corre sola: le escribe a quien lleva tiempo sin volver. Hecha a mano para Bejauha; como pieza sirve a cualquier negocio recurrente.</p>
+        <em class="estado half">a medias</em>
+      </div>
+    </div>
+
+    <div class="aviso">
+      <h3>Consultar el saldo dejó de ser una herramienta</h3>
+      <p>Suponía que todo negocio vende paquetes. Lo que hacía lo hace ahora <span class="inline-code">consultar-cliente</span>, que devuelve el saldo <em>dentro</em> de la ficha —y solo cuando ese negocio lleva saldo, con sus propias palabras: clases, sesiones, cupos, créditos.</p>
+    </div>
+
+    <div class="aviso">
+      <h3>Dónde está la brecha, dicha sin adorno</h3>
+      <p>Las cuatro que van siempre están liberadas y corriendo. De las diez que se pueden encender, <strong>ninguna está liberada todavía</strong>: cuatro existen a medias fuera del estándar y seis están en papel. Es la fila 17 del tablero, y es lo que separa «un agente que contesta» de «un agente que resuelve».</p>
+    </div>
+  </section>
+
+  <footer>
+    Fuente: supabase/schema-toque-atiende.sql (qué lleva el producto) · workflows/agente-atencion-generico.json (el recorrido) · TABLERO.md filas 17 y 55<br>
+    Al 29 de agosto de 2026
+  </footer>
+
+</div>

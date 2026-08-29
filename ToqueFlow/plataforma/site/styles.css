@@ -4285,3 +4285,9 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 .ag-campo-ops textarea:focus { outline: none; border-color: var(--orange-2); }
 .ag-campo-ops .adm-hint { margin: 0; }
+
+
+/* Una pieza que va siempre: se ve, no se toca. Sin casilla, porque una casilla
+   —marcada o no— dice que hay una decisión que tomar, y aquí no la hay. */
+.alta-pieza.is-fija { cursor: default; opacity: .95; }
+.alta-pieza.is-fija .pieza-marca { color: var(--verde, #1e9e6a); font-size: 15px; line-height: 1.2; width: 16px; text-align: center; flex: 0 0 auto; }

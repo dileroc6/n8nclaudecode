@@ -263,59 +263,12 @@ begin
 end $$;
 
 
--- ── 4. El catálogo: qué es estándar y qué es de un sector ────────────────────
-insert into public.catalogo (clave, nombre, tipo, descripcion, beneficio, workflow, liberado, activo, orden)
-values
-  ('consultar-cliente', 'Ver la ficha de quien escribe', 'herramienta',
-   'Devuelve lo que el negocio guarda de esa persona: sus datos, su estado y, si el negocio lleva saldo, cuanto le queda.',
-   'El agente sabe con quien esta hablando y no vuelve a preguntar lo que ya le dijeron.',
-   'tool-consultar-cliente', true, true, 20),
-  ('actualizar-cliente', 'Guardar lo que le acaban de decir', 'herramienta',
-   'Anota en la ficha los datos que la persona da en la conversacion, solo en los campos que el negocio definio.',
-   'La base se llena sola con lo que la gente ya esta contando por WhatsApp.',
-   'tool-actualizar-cliente', true, true, 21)
-on conflict (clave) do update set
-  nombre      = excluded.nombre,
-  descripcion = excluded.descripcion,
-  beneficio   = excluded.beneficio,
-  workflow    = excluded.workflow,
-  liberado    = excluded.liberado,
-  activo      = excluded.activo;
-
--- Lo que va SIEMPRE con Toque Atiende: responder, saber con quién habla y
--- anotar lo que le dicen. Eso le sirve igual a una tienda, un hotel y un
--- gimnasio — que era la prueba.
-update public.catalogo
-   set incluye = array['responder-conocimiento', 'consultar-cliente', 'actualizar-cliente']
- where clave = 'agente-atencion';
-
--- Y lo OPCIONAL, que sí cambia por sector. Sale `consultar-saldo`: lo que hacía
--- lo hace ahora `consultar-cliente`, en general.
-update public.catalogo
-   set puede_llevar = array[
-     'matricular-cliente', 'registrar-consumo', 'recargar-saldo',
-     'estado-pedido', 'confirmar-pago',
-     'ver-disponibilidad', 'agendar-cita', 'registrar-reclamo',
-     'recordatorio-cita', 'reactivacion'
-   ]
- where clave = 'agente-atencion';
-
--- `consultar-saldo` se retira del catálogo. No se borra: hay un workflow vivo
--- apuntándole y agentes que la tienen en `herramientas`. Se marca inactiva para
--- que no se pueda vender ni encender de nuevo.
-update public.catalogo
-   set activo      = false,
-       liberado    = false,
-       descripcion = 'Retirada: la reemplaza consultar-cliente, que devuelve el saldo dentro de la ficha y no supone que el negocio venda paquetes.'
- where clave = 'consultar-saldo';
-
--- Los agentes que la tenían pasan a la general, sin quedarse sin nada en el
--- camino.
-update public.agent_config
-   set herramientas = array(
-     select distinct x from unnest(
-       array_remove(coalesce(herramientas, '{}'), 'consultar-saldo')
-       || array['consultar-cliente', 'actualizar-cliente']
-     ) x
-   )
- where 'consultar-saldo' = any(coalesce(herramientas, '{}'));
+-- ── 4. El catálogo ──────────────────────────────────────────────────────────
+-- NO va aquí. Qué lleva Toque Atiende lo escribe UN SOLO archivo:
+-- schema-toque-atiende.sql. Esto estuvo duplicado y al reaplicar este archivo
+-- se borró «escalar a una persona» del producto sin que nadie lo tocara.
+--
+-- Lo que quedaba de este archivo (las dos funciones tf_tool_*) tampoco existe
+-- ya: lo retiró schema-ficha-en-contexto.sql al ver que el agente hacía las
+-- dos cosas sin llamar a nadie. Se conserva el archivo por su encabezado, que
+-- cuenta de dónde salió la decisión.

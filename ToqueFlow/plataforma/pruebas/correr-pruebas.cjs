@@ -31,7 +31,11 @@ const EMPRESA  = process.env.PRUEBAS_COMPANY_ID || "3034fa2d-c918-41bb-9eae-84f2
 const INSTANCIA = process.env.PRUEBAS_INSTANCIA || "bejauha-sandbox";
 
 const { escenarios } = JSON.parse(fs.readFileSync(path.join(__dirname, "escenarios-agente.json"), "utf8"));
-const filtro = process.argv.slice(2);
+// --ver imprime la conversación aunque el escenario pase. Hace falta para los
+// de inyección: que la respuesta no contenga una palabra prohibida no prueba
+// que el agente se haya portado bien, y eso solo lo juzga alguien leyéndola.
+const VER = process.argv.includes("--ver");
+const filtro = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const aCorrer = filtro.length ? escenarios.filter(e => filtro.includes(e.id)) : escenarios;
 
 // Comparar sin tildes ni mayúsculas: "está" y "esta" son lo mismo para esto.
@@ -173,9 +177,9 @@ function fundir(base, extra) {
   }
 
   // ── Detalle de lo que falló ───────────────────────────────────────────────
-  const malos = resultados.filter(r => r.fallos.length);
+  const malos = VER ? resultados : resultados.filter(r => r.fallos.length);
   if (malos.length) {
-    console.log("\n═══ Qué se rompió ═══");
+    console.log(VER ? "\n═══ Las conversaciones ═══" : "\n═══ Qué se rompió ═══");
     for (const { esc, fallos } of malos) {
       console.log("\n▸ " + esc.id + " — " + esc.titulo);
       console.log("  " + esc.porque);
@@ -193,7 +197,11 @@ function fundir(base, extra) {
     "select coalesce(sum(cost_usd),0) s from public.ai_usage where company_id=$1", [EMPRESA])).rows[0].s);
 
   console.log("\n═══ Resumen ═══");
-  console.log("  " + (aCorrer.length - malos.length) + " de " + aCorrer.length + " pasaron");
+  // Se cuenta sobre los fallos de verdad, no sobre lo que se imprimió: con
+  // --ver se imprimen todos y el conteo decía «0 de 4 pasaron» con las cuatro
+  // en verde.
+  const fallaron = resultados.filter((r) => r.fallos.length).length;
+  console.log("  " + (aCorrer.length - fallaron) + " de " + aCorrer.length + " pasaron");
   console.log("  costo de esta corrida: $" + (costoDespues - costoAntes).toFixed(5) + " USD");
 
   // Se limpia todo: son teléfonos falsos y no tienen por qué quedar en la base

@@ -311,26 +311,46 @@ function CamposACapturar({ campos, onChange }) {
 // no existe: el modelo prometería algo y el flujo se quedaría esperando.
 function HerramientasDelAgente({ puestas, onChange }) {
   const [cat, setCat] = React.useState(null);
+  const [prod, setProd] = React.useState(null);
+
   React.useEffect(() => {
     sb.from('catalogo').select('clave,nombre,beneficio,descripcion,liberado')
       .eq('tipo', 'herramienta').eq('activo', true).order('orden')
       .then(({ data }) => setCat(data || []));
+    // Qué va siempre y qué se enciende NO se decide aquí: lo dice el producto
+    // en el catálogo. Si estuviera escrito en la pantalla, cambiar el producto
+    // obligaría a acordarse de cambiar también esto.
+    sb.from('catalogo').select('incluye,puede_llevar').eq('clave', 'agente-atencion').single()
+      .then(({ data }) => setProd(data || { incluye: [], puede_llevar: [] }));
   }, []);
 
-  if (!cat) return null;
-  const libres = cat.filter((h) => h.liberado && h.clave !== 'responder-conocimiento');
-  const enObra = cat.filter((h) => !h.liberado);
+  if (!cat || !prod) return null;
+
+  const de = (claves) => (claves || []).map((k) => cat.find((h) => h.clave === k)).filter(Boolean);
+  const siempre = de(prod.incluye);
+  const opcionales = de(prod.puede_llevar).filter((h) => h.liberado);
+  const enObra = de(prod.puede_llevar).filter((h) => !h.liberado);
   const alternar = (k) => onChange(puestas.includes(k) ? puestas.filter((x) => x !== k) : [...puestas, k]);
 
   return (
     <div className="ag-lista">
-      <div className="ag-lista-head"><label>qué más puede hacer</label></div>
-      <p className="adm-hint">
-        Además de responder con su conocimiento, que va siempre. Cada una es algo que
-        el agente puede consultar o hacer <b>dentro de la conversación</b>.
+      <div className="ag-lista-head"><label>qué hace este agente</label></div>
+
+      {/* Lo que va siempre no se ofrece: se informa. Una casilla vacía al lado
+          de algo que el producto incluye dice lo contrario de lo que es. */}
+      <p className="adm-hint">Esto lo hace siempre, viene con Toque Atiende:</p>
+      {siempre.map((h) => (
+        <div key={h.clave} className="alta-pieza is-fija">
+          <span className="pieza-marca">●</span>
+          <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
+        </div>
+      ))}
+
+      <p className="adm-hint" style={{ marginTop: 14 }}>
+        Y esto se enciende según lo que necesite <b>este</b> negocio:
       </p>
-      {libres.length === 0 && <div className="ag-lista-vacia">Todavía no hay ninguna liberada.</div>}
-      {libres.map((h) => (
+      {opcionales.length === 0 && <div className="ag-lista-vacia">Todavía no hay ninguna liberada.</div>}
+      {opcionales.map((h) => (
         <label key={h.clave} className={'alta-pieza' + (puestas.includes(h.clave) ? ' is-puesta' : '')}>
           <input type="checkbox" checked={puestas.includes(h.clave)} onChange={() => alternar(h.clave)} />
           <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>

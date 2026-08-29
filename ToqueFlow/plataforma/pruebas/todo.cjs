@@ -32,6 +32,10 @@ const ORDEN = [
   "consola-alta",
   "cliente-contactos",
   "cliente-campos",
+  "auditoria-bd",
+  "auditoria-registro-abierto",
+  "auditoria-secretos",
+  "auditoria-n8n",
 ];
 // El canario SÍ va en las de siempre aunque le hable a Claude: es la que
 // detecta fugas entre agentes, y una prueba de seguridad que se corre "cuando
