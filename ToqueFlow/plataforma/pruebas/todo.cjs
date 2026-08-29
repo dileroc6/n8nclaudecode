@@ -22,6 +22,7 @@ const CON_IA = process.argv.includes("--con-ia");
 // solo (compilar), después lo que se rompe con datos (aislamiento), al final lo
 // que cuesta plata.
 const ORDEN = [
+  "nada-de-un-cliente",
   "compila-jsx",
   "aislamiento-rls",
   "aislamiento-entre-clientes",

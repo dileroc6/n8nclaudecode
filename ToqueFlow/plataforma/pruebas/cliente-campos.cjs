@@ -134,6 +134,38 @@ const check = (cond, que, detalle) => {
     check(conOpciones && (conOpciones.opciones || []).length === 3,
       "y le llegan las opciones cerradas, no texto libre", JSON.stringify(conOpciones));
 
+    // ── El candado al guardar ────────────────────────────────────────────────
+    // Que el agente OFREZCA la lista cerrada en el prompt no basta: un prompt
+    // no es un candado. Lo que decide es la validacion en la base, que es la
+    // misma para el agente y para el portal.
+    const valida = async (datos) => (await svc('POST', '/rest/v1/rpc/tf_validar_campos',
+      { p_company: mia.id, p_datos: datos })).data;
+
+    const v1 = await valida({ talla: 'M' });
+    check(v1 && v1.datos && v1.datos.talla === 'M', 'guarda un valor que SI esta en la lista', JSON.stringify(v1));
+
+    const v2 = await valida({ talla: 'XXXL' });
+    check(v2 && Object.keys(v2.datos || {}).length === 0 && (v2.ignorado || []).length === 1,
+      'NO guarda un valor fuera de la lista cerrada', JSON.stringify(v2));
+
+    const v3 = await valida({ inventado: 'lo que sea' });
+    check(v3 && Object.keys(v3.datos || {}).length === 0,
+      'NO guarda un campo que esta empresa nunca definio', JSON.stringify(v3));
+
+    const v4 = await valida({ nombre: 'Ana', email: 'ana@x.com' });
+    check(v4 && v4.datos && v4.datos.nombre === 'Ana' && v4.datos.email === 'ana@x.com',
+      'el nombre y el correo pasan sin tener que declararlos', JSON.stringify(v4));
+
+    // Y el caso que de verdad se da: el modelo contesta con media frase.
+    await rest('PATCH', 'contact_campos?id=eq.' + idTalla, { opciones: ['Talla S', 'Talla M', 'Talla L'] });
+    const v5 = await valida({ talla: 'M' });
+    check(v5 && v5.datos && v5.datos.talla === 'Talla M',
+      'entiende «M» cuando la opcion es «Talla M» (coincidencia unica)', JSON.stringify(v5));
+    const v6 = await valida({ talla: 'Talla' });
+    check(v6 && Object.keys(v6.datos || {}).length === 0,
+      'pero NO adivina cuando casa con varias', JSON.stringify(v6));
+    await rest('PATCH', 'contact_campos?id=eq.' + idTalla, { opciones: ['S', 'M', 'L'] });
+
     // ── Borrar ───────────────────────────────────────────────────────────────
     const del = await rest("DELETE", "contact_campos?id=eq." + idPlaca);
     check(del.ok, "borra un campo suyo", "HTTP " + del.status);

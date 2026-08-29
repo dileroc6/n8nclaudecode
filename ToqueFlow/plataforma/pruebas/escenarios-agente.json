@@ -289,8 +289,8 @@
     },
     {
       "id": "usa-herramienta",
-      "titulo": "Usa una herramienta con un contacto REAL",
-      "porque": "Es el unico escenario que corre contra un contacto de verdad de Bejauha, no contra un telefono inventado. Existe por el bug del 28-ago: los 46 contactos tienen el telefono con «+» y WhatsApp lo entrega sin el, asi que el agente no habria reconocido a ninguno — y ninguna prueba lo vio porque todas usaban telefonos que yo escribi.",
+      "titulo": "Sabe el saldo de un contacto REAL",
+      "porque": "Es el unico escenario que corre contra un contacto de verdad de Bejauha, no contra un telefono inventado. Existe por el bug del 28-ago: los 46 contactos tienen el telefono con «+» y WhatsApp lo entrega sin el, asi que el agente no habria reconocido a ninguno — y ninguna prueba lo vio porque todas usaban telefonos que yo escribi. Desde el 28-ago prueba ademas el camino nuevo: el saldo llega DENTRO del contexto de cada turno, con las palabras del negocio, en vez de costar una llamada aparte a una herramienta.",
       "telefono": "573185478900",
       "turnos": [
         {
