@@ -13,7 +13,7 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const PLAT = path.join(__dirname, "..");
+const PLAT = path.join(__dirname, "..", "..");
 
 fs.readFileSync(path.join(PLAT, "credentials.env"), "utf8").split("\n").forEach(l => {
   const m = l.match(/^([A-Z_]+)=(.*)$/); if (m) process.env[m[1]] = m[2].trim();

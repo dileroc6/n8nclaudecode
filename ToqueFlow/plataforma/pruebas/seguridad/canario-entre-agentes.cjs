@@ -16,7 +16,7 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const PLAT = path.join(__dirname, "..");
+const PLAT = path.join(__dirname, "..", "..");
 const REPO = path.join(PLAT, "..", "..");
 
 fs.readFileSync(path.join(PLAT, "credentials.env"), "utf8").split("\n").forEach(l => {

@@ -1,33 +1,62 @@
 # Pruebas
 
-Cinco scripts. Todos se corren desde `ToqueFlow/plataforma/`.
+Dos carpetas, porque responden preguntas distintas.
 
-| Comando | Qué comprueba | Cuesta |
-|---|---|---|
-| `node pruebas/compila-jsx.cjs` | Que todo el JSX del sitio compile y que el HTML no cargue archivos que no existen | gratis |
-| `node pruebas/aislamiento-rls.cjs` | Que **nadie sin sesión** pueda leer datos, usando la llave pública del sitio | gratis |
-| `node pruebas/aislamiento-entre-clientes.cjs` | Que **un cliente no pueda ver a otro**. Monta dos empresas de verdad y un usuario de la primera | gratis |
-| `node pruebas/consola-agentes.cjs` | Que la pestaña Agentes funcione con una sesión real de super admin y el RLS puesto | gratis |
-| `node pruebas/correr-pruebas.cjs` | Los 12 escenarios de conversación contra el agente real | ~$0,06 USD |
+| Carpeta | La pregunta |
+|---|---|
+| `seguridad/` | ¿puede alguien ver o hacer algo que no debe? |
+| `calidad/` | ¿funciona, y se ve como tiene que verse? |
 
-## Antes de tocar el agente o el portal, correr las cinco
+```
+node pruebas/todo.cjs             las de siempre (~2 min)
+node pruebas/todo.cjs --con-ia    también las de conversación (~$0.10)
+node pruebas/todo.cjs seguridad   solo una carpeta
+```
 
-No es ceremonia. El 27 de agosto de 2026 aparecieron **cinco bugs en un solo día**, y ninguno lo encontró leer código:
+Seguridad va primero a propósito: si algo se está filtrando, da igual que la
+pantalla se vea bonita.
 
-- una URL corrompida que mandaba a los clientes a un sitio inexistente
-- un header que faltaba y hacía fallar toda llamada al modelo
-- el nombre del cliente que el agente decía pero no guardaba
-- un trigger que reventaba cualquier `UPDATE` sobre la configuración
-- **dos vistas que entregaban la configuración y el conocimiento completos de un cliente a cualquiera, sin iniciar sesión**
+## seguridad/
 
-El último apareció por casualidad, yendo a construir otra cosa.
+| | Qué comprueba |
+|---|---|
+| `aislamiento-rls` | ninguna tabla entrega datos sin sesión |
+| `aislamiento-entre-clientes` | un cliente autenticado solo ve lo suyo |
+| `auditoria-bd` | RLS, vistas, `SECURITY DEFINER`, y qué alcanza de verdad la llave pública |
+| `auditoria-registro-abierto` | qué alcanza alguien que se registra solo |
+| `auditoria-secretos` | el sitio publicado, el repo, el historial y el candado del pre-commit |
+| `auditoria-n8n` | qué webhooks comprueban quién llama |
+| `canario-entre-agentes` | que un agente no suelte datos de otro cliente |
 
-## Las dos reglas que salieron de ahí
+**Los permisos no se leen, se intentan.** La primera versión de `auditoria-bd`
+listaba los `GRANT` y daba 33 hallazgos graves; los 33 eran falsos, porque
+Supabase concede permisos amplios a `anon` a propósito y deja que RLS decida.
+Mirar el `GRANT` dice quién tiene la llave; solo intentar entrar dice si la
+puerta abre.
 
-**El aislamiento se prueba desde afuera.** Todas las pruebas anteriores usaban el rol de servicio o la conexión directa a Postgres, que legítimamente ven todo — por eso salían en verde mientras la puerta estaba abierta. Hay que probar desde donde llegaría un atacante: con la llave pública, sin sesión.
+## calidad/
 
-**Toda vista sobre una tabla con RLS nace con `security_invoker = on`.** En Postgres una vista corre con los permisos de su dueño salvo que se le diga lo contrario, así que hereda el RLS de nadie. `aislamiento-rls.cjs` lo comprueba y falla si alguien lo olvida.
+| | Qué comprueba |
+|---|---|
+| `compila-jsx` | que el sitio no se despliegue roto |
+| `nada-de-un-cliente` | que ninguna pantalla compartida hable de un solo sector |
+| `consola-agentes` · `consola-catalogo` · `consola-alta` | la consola de administración |
+| `cliente-contactos` · `cliente-campos` | lo que el cliente puede hacer con su base |
+| `correr-pruebas` | los 18 escenarios de conversación (cuesta plata) |
+| `calidad-conversacion` | el tono y la calidad de las respuestas (cuesta plata) |
 
-## Las pruebas se limpian solas
+Los escenarios se leen con `node calidad/correr-pruebas.cjs --ver`: en los de
+inyección, «no contiene la palabra prohibida» no es lo mismo que «se portó
+bien», y eso solo lo juzga alguien leyéndolo.
 
-Crean empresas, usuarios y contactos temporales y los borran al terminar. Lo único que **no** se borra es el consumo de IA en `ai_usage`: probar cuesta plata de verdad y el panel de consumo no debe mentir.
+## El candado del pre-commit
+
+`.githooks/buscar-secretos.cjs` impide commitear algo que parezca un secreto.
+Se activa una vez por máquina:
+
+```
+git config core.hooksPath .githooks
+```
+
+`auditoria-secretos` comprueba que esté puesto: un candado que nadie instaló no
+protege nada.

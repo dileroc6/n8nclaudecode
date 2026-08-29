@@ -18,7 +18,7 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const SITE = path.join(__dirname, "..", "site");
+const SITE = path.join(__dirname, "..", "..", "site");
 
 // Las pantallas que ve CUALQUIER cliente. Las de la consola de ToqueFlow no
 // entran: ahí sí se nombra a los clientes, que es de lo que tratan.

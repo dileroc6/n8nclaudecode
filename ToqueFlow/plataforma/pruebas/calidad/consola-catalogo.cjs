@@ -13,7 +13,7 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const PLAT = path.join(__dirname, "..");
+const PLAT = path.join(__dirname, "..", "..");
 
 fs.readFileSync(path.join(PLAT, "credentials.env"), "utf8").split("\n").forEach(l => {
   const m = l.match(/^([A-Z_]+)=(.*)$/); if (m) process.env[m[1]] = m[2].trim();
@@ -178,7 +178,7 @@ const check = (cond, que, detalle) => {
     // El error de fondo, no el caso: dos migraciones escribiendo lo mismo. La
     // segunda pisa a la primera y el sintoma aparece dias despues, en una
     // pantalla, sin que nadie haya tocado nada.
-    const DIR = path.join(__dirname, "..", "site", "supabase");
+    const DIR = path.join(__dirname, "..", "..", "site", "supabase");
     const escriben = fs.readdirSync(DIR).filter((f) => f.endsWith(".sql")).filter((f) => {
       const s = fs.readFileSync(path.join(DIR, f), "utf8");
       return s.split("\n").some((l) => !l.trim().startsWith("--") && /set\s+incluye\s*=/.test(l));

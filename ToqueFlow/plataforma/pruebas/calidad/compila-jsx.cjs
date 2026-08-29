@@ -11,11 +11,11 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const SITE = path.join(__dirname, "..", "site");
+const SITE = path.join(__dirname, "..", "..", "site");
 
 let babel;
 try {
-  babel = require(path.join(__dirname, "..", "node_modules", "@babel", "standalone"));
+  babel = require(path.join(__dirname, "..", "..", "node_modules", "@babel", "standalone"));
 } catch (e) {
   try { babel = require("@babel/standalone"); }
   catch (e2) { console.error("Falta @babel/standalone: npm i --no-save @babel/standalone"); process.exit(2); }

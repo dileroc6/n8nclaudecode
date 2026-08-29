@@ -24,7 +24,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const PLAT = path.join(__dirname, "..");
+const PLAT = path.join(__dirname, "..", "..");
 const RAIZ = path.join(PLAT, "..", "..");
 
 fs.readFileSync(path.join(PLAT, "credentials.env"), "utf8").split("\n").forEach((l) => {
@@ -115,7 +115,27 @@ const PELIGROS = [
   }
   if (!expuesto) ok(PROHIBIDO.length + " rutas comprobadas, ninguna entrega el archivo");
 
-  // ── 3. El repositorio, que es público ────────────────────────────────────
+  // ── 3. El candado que impide que vuelva a pasar ──────────────────────────
+  // `core.hooksPath` es configuración LOCAL: no viaja con el repo. Quien clone
+  // en otra máquina no tiene el hook salvo que lo active, y un candado que
+  // nadie puso no protege nada. Por eso se comprueba aquí en vez de confiar en
+  // que alguien se acuerde.
+  bloque("El candado del pre-commit");
+  let hooks = "";
+  try { hooks = execSync("git config core.hooksPath", { cwd: RAIZ, encoding: "utf8" }).trim(); } catch (e) { hooks = ""; }
+
+  if (hooks !== ".githooks") {
+    mal("el hook no está activo en esta máquina (core.hooksPath = " + (hooks || "sin configurar") + ")");
+    anota("media", "el pre-commit no está instalado",
+      "Se activa con: git config core.hooksPath .githooks — sin el, nada impide commitear una llave.");
+  } else if (!fs.existsSync(path.join(RAIZ, ".githooks", "buscar-secretos.cjs"))) {
+    mal("core.hooksPath apunta a .githooks pero el buscador no está");
+    anota("media", "falta .githooks/buscar-secretos.cjs", "El hook esta configurado pero vacio.");
+  } else {
+    ok("el pre-commit está activo: no deja commitear algo que parezca un secreto");
+  }
+
+  // ── 4. El repositorio, que es público ────────────────────────────────────
   bloque("El repositorio (es público)");
 
   // Lo que git tiene versionado AHORA.

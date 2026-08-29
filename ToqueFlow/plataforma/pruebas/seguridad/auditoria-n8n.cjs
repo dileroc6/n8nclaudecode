@@ -19,7 +19,7 @@
 // ============================================================================
 const fs = require("fs");
 const path = require("path");
-const RAIZ = path.join(__dirname, "..", "..", "..");
+const RAIZ = path.join(__dirname, "..", "..", "..", "..");
 const BASE = "https://n8n.srv1398596.hstgr.cloud";
 
 // ── La llave ────────────────────────────────────────────────────────────────

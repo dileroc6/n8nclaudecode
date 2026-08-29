@@ -1,0 +1,24 @@
+#!/bin/sh
+# ============================================================================
+# ToqueFlow — Que no se pueda commitear un secreto
+# ----------------------------------------------------------------------------
+# Diego: «No quiero que vuelvan a quedar secretos y/o tokens guardados en texto
+# plano.»
+#
+# Una regla que hay que recordar no es un mecanismo. Esto lo es: revisa lo que
+# está a punto de entrar al commit y, si parece un secreto, no deja seguir.
+#
+# Importa más de lo normal por una razón: el repo es PÚBLICO. Un secreto que
+# entra una vez queda en el historial para siempre —borrarlo después no lo
+# quita— y ya pasó: una llave de n8n se commiteó, siguió sirviendo meses, y
+# solo apareció auditando.
+#
+# Se instala solo (lo hace `instalar-hooks.cjs`), o a mano:
+#     git config core.hooksPath .githooks
+#
+# Si algún día bloquea algo que de verdad no es un secreto:
+#     git commit --no-verify
+# ...pero mirarlo dos veces antes, que para eso está.
+# ============================================================================
+
+exec node "$(git rev-parse --show-toplevel)/.githooks/buscar-secretos.cjs"
