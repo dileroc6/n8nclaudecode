@@ -115,7 +115,7 @@
 
     <div class="field">
       <label for="c-name">Nombre de la campaña</label>
-      <input type="text" id="c-name" placeholder="Ej. Reactivación Karma julio" />
+      <input type="text" id="c-name" placeholder="Ej. Reactivación de julio" />
     </div>
 
     <!-- Paso 1: segmento -->
@@ -237,7 +237,9 @@
   const OPTS = {
     status:  ['activo','no_activo','prospecto','deudor','embajador'],
     stage:   ['cliente','caliente','tibio','frio'],
-    service: ['karma','beja','uja','paquete'],
+    // Lo que vende este negocio son los valores que él mismo guardó, no una
+    // lista que la plataforma pueda saber. Aquí estaban los de Bejauha.
+    service: [],
   };
   const sel = { status:new Set(), stage:new Set(), service:new Set() };
   let whenMode = 'ahora'; // 'ahora' | 'programar'
@@ -266,6 +268,17 @@
     });
   }
   renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+
+  // Qué vende este negocio se averigua mirando su base, no suponiéndolo. Se
+  // hace después de pintar para que la pantalla no espere por esta consulta.
+  (async () => {
+    const { data } = await sb.from('contacts').select('service_type')
+      .eq('company_id', companyId).not('service_type','is',null).limit(2000);
+    const vals = Array.from(new Set((data||[]).map(x=>x.service_type).filter(Boolean))).sort();
+    if(!vals.length){ document.getElementById('f-service').innerHTML='<span class="muted">Este negocio todavía no registra qué compró cada quien.</span>'; return; }
+    OPTS.service = vals;
+    renderChecklist('service','f-service');
+  })();
 
   function buildFilters() {
     const f = {};
