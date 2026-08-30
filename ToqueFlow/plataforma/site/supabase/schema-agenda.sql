@@ -162,8 +162,6 @@ begin
     select * into v_srv from public.agenda_servicios
     where company_id = p_company and activo and lower(nombre) = lower(btrim(p_servicio));
     if not found then
-      -- Devolver los servicios que sí existen es mejor que un error: el agente
-      -- puede repreguntar con la lista en la mano.
       return json_build_object('ok', false, 'motivo', 'no ofrecemos ese servicio',
         'servicios', (select coalesce(json_agg(nombre order by orden), '[]'::json)
                       from public.agenda_servicios where company_id = p_company and activo));
@@ -171,7 +169,12 @@ begin
   end if;
 
   v_paso := make_interval(mins => coalesce(v_srv.minutos, 60));
-  v_fin  := v_ini + make_interval(days => greatest(1, least(p_dias, 30)));
+
+  -- Hasta el FINAL del último día, no hasta la misma hora. «Los próximos tres
+  -- días» incluye ese tercer día entero.
+  v_fin := timezone(v_tz,
+             date_trunc('day', timezone(v_tz, v_ini))
+             + make_interval(days => greatest(1, least(p_dias, 30)) + 1));
 
   select coalesce(json_agg(json_build_object(
            'inicio', h.inicio, 'fin', h.inicio + v_paso,
@@ -180,8 +183,6 @@ begin
     into v_libre
   from (
     select
-      -- Se calcula en hora de reloj del negocio y se vuelve a instante aquí,
-      -- que es el único sitio donde hace falta.
       timezone(v_tz, s.ini_local) as inicio,
       f.cupos,
       coalesce((
@@ -195,7 +196,6 @@ begin
           and a.fin    > timezone(v_tz, s.ini_local)
       ), 0) as tomados
     from (
-      -- Los días del rango, en fecha local del negocio.
       select generate_series(
         date_trunc('day', timezone(v_tz, v_ini)),
         date_trunc('day', timezone(v_tz, v_fin)),
@@ -207,8 +207,6 @@ begin
      and f.activa
      and extract(dow from d.dia_local)::int = f.dia
     cross join lateral (
-      -- Cada arranque posible dentro de la franja. El último empieza tan tarde
-      -- que aún termina antes de cerrar: por eso se resta la duración.
       select generate_series(
         d.dia_local + f.desde::interval,
         d.dia_local + f.hasta::interval - v_paso,
@@ -227,11 +225,8 @@ begin
   where h.cupos > h.tomados;
 
   return json_build_object(
-    'ok', true,
-    'servicio', v_srv.nombre,
-    'minutos', coalesce(v_srv.minutos, 60),
-    'zona', v_tz,
-    'huecos', v_libre
+    'ok', true, 'servicio', v_srv.nombre, 'minutos', coalesce(v_srv.minutos, 60),
+    'zona', v_tz, 'huecos', v_libre
   );
 end;
 $fn$;

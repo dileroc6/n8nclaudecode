@@ -54,6 +54,7 @@ const ORDEN = {
     "cargador-conocimiento",
     "agenda",
     "agendar-cita",
+    "agente-agenda",
   ],
 };
 

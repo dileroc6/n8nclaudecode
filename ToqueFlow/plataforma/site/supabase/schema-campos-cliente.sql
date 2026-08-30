@@ -109,91 +109,13 @@ end $$;
 -- La captura deja de leerse de `agent_config` y pasa a salir de aquí. Así el
 -- cliente cambia un campo desde su portal y el agente se entera en el siguiente
 -- mensaje, sin que nadie toque la configuración del agente.
-create or replace function public.tf_agente_contexto(
-  p_instance text,
-  p_telefono text,
-  p_test     boolean default false
-)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_rt      public.agent_runtime%rowtype;
-  v_contact public.contacts%rowtype;
-  v_hist    json;
-  v_tools   json;
-  v_campos  json;
-  v_tel     text := public.tf_telefono(p_telefono);
-begin
-  select * into v_rt from public.agent_runtime
-  where whatsapp_instance = p_instance and activo;
-  if not found then return null; end if;
+-- La definición de `tf_agente_contexto` VIVÍA AQUÍ y se movió a
+-- schema-agente-contexto.sql, que es el único archivo que la define.
+--
+-- Estaba repetida en nueve archivos: reaplicar cualquiera de los viejos la
+-- devolvía a una versión anterior en silencio. Lo que este archivo hace
+-- además sigue abajo.
 
-  select * into v_contact from public.contacts
-  where company_id = v_rt.company_id
-    and public.tf_telefono(phone) = v_tel;
-
-  if p_test then
-    select coalesce(json_agg(json_build_object('dir', h.direction, 'texto', h.body) order by h.created_at), '[]'::json)
-      into v_hist
-    from (select direction, body, created_at from public.test_messages
-           where company_id = v_rt.company_id
-             and public.tf_telefono(telefono) = v_tel
-             and flow = 'agente' and body is not null
-           order by created_at desc limit 10) h;
-  else
-    select coalesce(json_agg(json_build_object('dir', h.direction, 'texto', h.body) order by h.created_at), '[]'::json)
-      into v_hist
-    from (select direction, body, created_at from public.message_log
-           where company_id = v_rt.company_id and contact_id = v_contact.id
-             and body is not null
-           order by created_at desc limit 10) h;
-  end if;
-
-  select coalesce(json_agg(json_build_object(
-           'clave', c.clave, 'nombre', c.nombre,
-           'descripcion', coalesce(c.beneficio, c.descripcion),
-           'workflow', c.workflow
-         ) order by c.orden), '[]'::json)
-    into v_tools
-  from public.catalogo c
-  where c.clave = any(coalesce(v_rt.herramientas, '{}'))
-    and c.tipo = 'herramienta' and c.activo and c.workflow is not null;
-
-  -- Los campos que el negocio quiere que el agente averigüe. Salen de
-  -- `contact_campos`, que el cliente maneja desde su portal.
-  select coalesce(json_agg(json_build_object(
-           'clave', cc.clave, 'etiqueta', cc.etiqueta,
-           'obligatorio', cc.obligatorio,
-           'opciones', case when cc.tipo = 'opciones' then to_jsonb(cc.opciones) else '[]'::jsonb end
-         ) order by cc.orden), '[]'::json)
-    into v_campos
-  from public.contact_campos cc
-  where cc.company_id = v_rt.company_id and cc.capturar;
-
-  return json_build_object(
-    'company_id', v_rt.company_id, 'agent_id', v_rt.agent_id,
-    'empresa', v_rt.empresa, 'agente', v_rt.agente, 'company_slug', v_rt.company_slug,
-    'config', json_build_object(
-      'identidad', v_rt.identidad,
-      'captura', json_build_object('campos', v_campos),
-      'enrutamiento', v_rt.enrutamiento, 'limites', v_rt.limites, 'agenda', v_rt.agenda,
-      'conocimiento', v_rt.conocimiento, 'conocimiento_at', v_rt.conocimiento_at,
-      'herramientas', v_tools
-    ),
-    'contacto', case when v_contact.id is null then null else json_build_object(
-      'id', v_contact.id, 'nombre', v_contact.full_name,
-      'status', v_contact.status, 'lead_stage', v_contact.lead_stage,
-      'metadata', v_contact.metadata
-    ) end,
-    'asignado_humano', coalesce((v_contact.metadata->>'asignado_humano')::boolean, false),
-    'historial', v_hist
-  );
-end;
-$fn$;
 
 revoke all on function public.tf_agente_contexto(text, text, boolean) from public, anon, authenticated;
 do $$
