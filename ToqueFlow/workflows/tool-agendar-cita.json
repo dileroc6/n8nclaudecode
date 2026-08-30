@@ -1,0 +1,93 @@
+{
+  "name": "ToqueFlow - Tool Agendar la cita",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-agendar-cita",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "tool-agendar-cita-entrada",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Todo en UN solo parámetro jsonb: el nodo de Postgres de n8n parte los\n// parámetros por coma, y aquí viajan nombres y notas escritos por una persona.\n//\n// No se valida nada aquí. Si sigue libre esa hora, si el negocio atiende ese\n// día, si el servicio existe — todo eso lo decide la base, DENTRO de la misma\n// transacción en la que escribe. Comprobarlo aquí sería comprobarlo antes, y\n// entre el antes y la escritura cabe otra cita.\nconst b = $input.first().json.body || $input.first().json;\nreturn [{ json: { payload: JSON.stringify({\n  instance: String(b.instance || ''),\n  telefono: String(b.telefono || ''),\n  nombre:   b.nombre   ? String(b.nombre).trim()   : null,\n  servicio: b.servicio ? String(b.servicio).trim() : null,\n  inicio:   b.inicio   ? String(b.inicio)          : null,\n  notas:    b.notas    ? String(b.notas).trim()    : null,\n}) } }];"
+      },
+      "id": "tool-agendar-cita-extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_agendar_cita($1::jsonb) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload ] }}"
+        }
+      },
+      "id": "tool-agendar-cita-bd",
+      "name": "Agendar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Agendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

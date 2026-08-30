@@ -40,6 +40,7 @@ const ORDEN = {
     "auditoria-secretos",
     "auditoria-n8n",
     "cliente-tono",
+    "cliente-conocimiento",
     "canario-entre-agentes",
   ],
   calidad: [
@@ -52,6 +53,7 @@ const ORDEN = {
     "cliente-campos",
     "cargador-conocimiento",
     "agenda",
+    "agendar-cita",
   ],
 };
 

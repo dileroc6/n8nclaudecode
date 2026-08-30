@@ -4326,3 +4326,34 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .tono-aviso { margin-top: 10px; font-size: 13px; color: var(--light-muted); }
 .tono-aviso.mal { color: #c1272d; }
 @media (max-width: 640px) { .tono-pie i { flex-basis: 100%; } }
+
+
+/* Qué sabe el asistente, en los ajustes del cliente. */
+.saber-medidor { margin-bottom: 18px; }
+.saber-barra { height: 6px; border-radius: 999px; background: var(--light-line); overflow: hidden; }
+.saber-barra i { display: block; height: 100%; background: var(--orange-2); border-radius: 999px; transition: width .3s; }
+.saber-medidor span { display: inline-block; margin-top: 7px; font-size: 12px; color: var(--light-muted);
+  font-variant-numeric: tabular-nums; }
+.saber-medidor.cerca .saber-barra i { background: #e0a300; }
+.saber-medidor.pasado .saber-barra i { background: #c1272d; }
+.saber-medidor i:not(.saber-barra i) { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: var(--light-muted); }
+.saber-doc { padding: 14px 16px; border: 1px solid var(--light-line); border-radius: 12px; margin-bottom: 10px; }
+.saber-doc.off { opacity: .55; }
+.saber-doc-h { display: flex; align-items: baseline; gap: 10px; }
+.saber-doc-h b { font-size: 14px; font-weight: 600; color: var(--light-ink); }
+.saber-doc-h span { font-size: 12px; color: var(--light-muted); font-variant-numeric: tabular-nums; }
+.saber-doc p { margin: 6px 0 10px; font-size: 13px; line-height: 1.55; color: var(--light-muted); }
+.saber-doc-acc { display: flex; gap: 14px; }
+.saber-doc-acc button { background: none; border: 0; padding: 0; font-size: 12px; color: var(--light-muted);
+  text-decoration: underline; cursor: pointer; }
+.saber-doc-acc button:hover { color: var(--light-ink); }
+.saber-doc-acc button.mal:hover { color: #c1272d; }
+.saber-nuevo { margin-top: 4px; }
+.saber-editor { margin-top: 14px; padding: 18px; border: 1px solid var(--orange-2); border-radius: 12px;
+  background: color-mix(in oklab, var(--orange-2) 4%, transparent); }
+.saber-editor input, .saber-editor textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--light-line);
+  border-radius: 10px; font: inherit; font-size: 14px; line-height: 1.6; color: var(--light-ink);
+  background: var(--light-bg); }
+.saber-editor textarea { resize: vertical; }
+.saber-editor input:focus, .saber-editor textarea:focus { outline: none; border-color: var(--orange-2); }
+.saber-editor-pie { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }

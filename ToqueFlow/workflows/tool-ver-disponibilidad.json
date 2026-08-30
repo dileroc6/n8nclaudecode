@@ -1,0 +1,93 @@
+{
+  "name": "ToqueFlow - Tool Ver disponibilidad",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-ver-disponibilidad",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "tool-ver-disponibilidad-entrada",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// De qué instancia viene y qué servicio pregunta. El company_id NUNCA viene\n// del payload: se deriva adentro de la base, como en todas las herramientas.\nconst b = $input.first().json.body || $input.first().json;\nconst dias = Number(b.dias);\nreturn [{ json: {\n  instance: String(b.instance || ''),\n  servicio: (b.servicio == null || String(b.servicio).trim() === '') ? null : String(b.servicio).trim(),\n  // Dos semanas por defecto. Más allá el negocio todavía no sabe qué va a\n  // hacer, y la lista se vuelve tan larga que el modelo se pierde en ella.\n  dias: Number.isFinite(dias) && dias > 0 ? Math.min(dias, 30) : 14,\n}}];"
+      },
+      "id": "tool-ver-disponibilidad-extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_ver_disponibilidad($1, $2, $3::int) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.instance, $json.servicio, $json.dias ] }}"
+        }
+      },
+      "id": "tool-ver-disponibilidad-bd",
+      "name": "Consultar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Consultar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

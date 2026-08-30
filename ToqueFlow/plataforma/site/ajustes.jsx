@@ -8,6 +8,132 @@
 // Se guarda por `tf_agente_tono`, que solo escribe el tono y solo en un agente
 // de esta empresa. Un UPDATE abierto sobre la configuración dejaría mover la
 // instancia de WhatsApp, y eso es de lo que cuelga todo el aislamiento.
+// ── Qué sabe tu asistente ────────────────────────────────────────────────────
+// Los documentos con los que responde. El cliente los escribe, los edita y los
+// apaga sin pedirle permiso a nadie: es su información, y es la que más cambia
+// —precios, horarios, una promoción que se acabó.
+//
+// Apagar en vez de borrar está a propósito: una promoción de diciembre se
+// apaga en enero y se vuelve a encender el año siguiente sin reescribirla.
+function QueSabe() {
+  const [docs, setDocs] = React.useState(null);
+  const [uso, setUso] = React.useState(null);
+  const [editando, setEditando] = React.useState(null);   // el doc abierto, o {} para uno nuevo
+  const [aviso, setAviso] = React.useState(null);
+
+  const cargar = React.useCallback(async () => {
+    const [d, u] = await Promise.all([
+      TF_AUTH.sb.from('agent_knowledge').select('*').order('orden').order('created_at'),
+      TF_AUTH.sb.from('agent_knowledge_uso').select('*').maybeSingle(),
+    ]);
+    setDocs(d.data || []);
+    setUso(u.data || null);
+  }, []);
+  React.useEffect(() => { cargar(); }, [cargar]);
+
+  if (docs === null) return null;
+
+  const total = docs.filter((d) => d.activo).reduce((a, d) => a + (d.bytes || 0), 0);
+  const limite = Number((uso && uso.bytes_limite) || 40000);
+  const pct = Math.min(100, Math.round((total * 100) / (limite || 1)));
+  const kb = (n) => (n >= 1000 ? (n / 1000).toFixed(1).replace('.0', '') + ' KB' : n + ' B');
+
+  const guardar = async () => {
+    const e = editando;
+    const titulo = (e.titulo || '').trim();
+    const contenido = (e.contenido || '').trim();
+    if (!titulo || !contenido) { setAviso({ mal: true, txt: 'Ponle un título y algo de contenido.' }); return; }
+
+    const fila = { titulo, contenido, tipo: 'manual', origen: 'portal', activo: e.activo !== false };
+    const r = e.id
+      ? await TF_AUTH.sb.from('agent_knowledge').update(fila).eq('id', e.id)
+      : await TF_AUTH.sb.from('agent_knowledge').insert({ ...fila, company_id: (window.TF_PROFILE || {}).company_id });
+
+    if (r.error) { setAviso({ mal: true, txt: 'No se pudo guardar: ' + r.error.message }); return; }
+    setEditando(null);
+    setAviso({ mal: false, txt: 'Guardado. Tu asistente ya responde con esto.' });
+    cargar();
+  };
+
+  const alternar = async (d) => {
+    await TF_AUTH.sb.from('agent_knowledge').update({ activo: !d.activo }).eq('id', d.id);
+    cargar();
+  };
+
+  const borrar = async (d) => {
+    if (!confirm('¿Borrar «' + d.titulo + '»? Si solo quieres que deje de usarlo, apágalo en vez de borrarlo.')) return;
+    await TF_AUTH.sb.from('agent_knowledge').delete().eq('id', d.id);
+    cargar();
+  };
+
+  return (
+    <section className="dash-section">
+      <div className="dash-section-h">
+        <h2>Qué sabe tu asistente</h2>
+        <p>Lo que responde sale de aquí. Si algo no está escrito, no se lo inventa: lo pasa a una persona.</p>
+      </div>
+
+      <div className={'saber-medidor' + (pct >= 100 ? ' pasado' : pct >= 75 ? ' cerca' : '')}>
+        <div className="saber-barra"><i style={{ width: Math.max(pct, total ? 2 : 0) + '%' }} /></div>
+        <span>{kb(total)} de {kb(limite)}</span>
+        {/* Pasarse no bloquea nada: el asistente sigue funcionando. Bloquearlo
+            castigaría al cliente por darle MÁS información, que es al revés. */}
+        {pct >= 100 && <i>Te pasaste de lo incluido. Sigue funcionando igual; hablemos para ajustar el plan.</i>}
+      </div>
+
+      {docs.length === 0 && (
+        <div className="ag-lista-vacia">
+          Todavía no hay nada. Empieza por lo que más te preguntan: precios, horarios y qué ofreces.
+        </div>
+      )}
+
+      {docs.map((d) => (
+        <div key={d.id} className={'saber-doc' + (d.activo ? '' : ' off')}>
+          <div className="saber-doc-h">
+            <b>{d.titulo}</b>
+            <span>{kb(d.bytes || 0)}{d.activo ? '' : ' · apagado'}</span>
+          </div>
+          <p>{(d.contenido || '').slice(0, 160)}{(d.contenido || '').length > 160 ? '…' : ''}</p>
+          <div className="saber-doc-acc">
+            <button type="button" onClick={() => { setEditando(d); setAviso(null); }}>editar</button>
+            <button type="button" onClick={() => alternar(d)}>{d.activo ? 'apagar' : 'encender'}</button>
+            <button type="button" className="mal" onClick={() => borrar(d)}>borrar</button>
+          </div>
+        </div>
+      ))}
+
+      {!editando && (
+        <button type="button" className="btn btn-ghost saber-nuevo"
+                onClick={() => { setEditando({ activo: true }); setAviso(null); }}>
+          + Agregar algo que deba saber
+        </button>
+      )}
+
+      {editando && (
+        <div className="saber-editor">
+          <div className="form-field">
+            <label>De qué se trata</label>
+            <input type="text" value={editando.titulo || ''} placeholder="Ej. Precios y formas de pago"
+                   onChange={(e) => setEditando({ ...editando, titulo: e.target.value })} />
+          </div>
+          <div className="form-field">
+            <label>Lo que tiene que saber</label>
+            <textarea rows={9} value={editando.contenido || ''}
+                      placeholder={'Escríbelo como se lo explicarías a alguien nuevo.\nLos precios exactos, con el número.\nSi hay excepciones, ponlas: es lo que más preguntan.'}
+                      onChange={(e) => setEditando({ ...editando, contenido: e.target.value })} />
+          </div>
+          <div className="saber-editor-pie">
+            <button type="button" className="btn btn-ghost" onClick={() => { setEditando(null); setAviso(null); }}>Cancelar</button>
+            <button type="button" className="btn btn-primary" onClick={guardar}>Guardar</button>
+          </div>
+        </div>
+      )}
+
+      {aviso && <p className={'tono-aviso' + (aviso.mal ? ' mal' : '')}>{aviso.txt}</p>}
+    </section>
+  );
+}
+
 function ComoHabla() {
   const [agentes, setAgentes] = React.useState(null);
   const [elegido, setElegido] = React.useState(null);
@@ -127,6 +253,8 @@ function AjustesApp() {
           <a href="contacto.html" className="btn btn-primary">Hablar con tu equipo <span className="arrow">→</span></a>
         </div>
         <p className="set-managed-note">// ¿necesitas un flow nuevo o cambiar uno existente? lo coordina tu equipo de ToqueFlow.</p>
+
+        <QueSabe />
 
         <ComoHabla />
 

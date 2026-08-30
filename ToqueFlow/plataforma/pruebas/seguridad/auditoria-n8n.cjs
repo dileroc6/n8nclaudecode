@@ -93,7 +93,11 @@ const api = async (p) => {
 
   for (const w of activos) {
     const full = await api("/workflows/" + w.id);
-    const entradas = (full.nodes || []).filter((n) => /webhook/i.test(n.type) && !n.disabled);
+    // Solo las ENTRADAS. `respondToWebhook` también lleva «webhook» en el tipo y
+    // no es una puerta: es el nodo que contesta. Contarlo daba un hallazgo
+    // grave por cada flujo que responde algo, y eso es ruido que tapa lo real.
+    const entradas = (full.nodes || []).filter(
+      (n) => !n.disabled && /^n8n-nodes-base.(webhook|formTrigger)$/i.test(n.type));
     if (!entradas.length) continue;
 
     // Se mira el flujo completo una vez, no por nodo: la comprobacion puede
