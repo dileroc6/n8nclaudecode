@@ -4291,3 +4291,38 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
    —marcada o no— dice que hay una decisión que tomar, y aquí no la hay. */
 .alta-pieza.is-fija { cursor: default; opacity: .95; }
 .alta-pieza.is-fija .pieza-marca { color: var(--verde, #1e9e6a); font-size: 15px; line-height: 1.2; width: 16px; text-align: center; flex: 0 0 auto; }
+
+
+/* Lo que hizo el asistente del cliente este mes. Va antes que los flows a
+   propósito: es lo primero que quiere saber quien paga. */
+.trabajo { margin-bottom: 32px; padding: 22px 24px; border: 1px solid var(--light-line); border-radius: 16px;
+  background: color-mix(in oklab, var(--orange-2) 4%, transparent); }
+.trabajo-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.trabajo-h h2 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--light-ink); margin: 0; }
+.trabajo-h span { font-size: 13px; color: var(--light-muted); }
+.trabajo-n { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.trabajo-n > div { display: flex; flex-direction: column; gap: 2px; }
+.trabajo-n b { font-size: 28px; font-weight: 600; letter-spacing: -.03em; color: var(--light-ink);
+  font-variant-numeric: tabular-nums; line-height: 1.1; }
+.trabajo-n span { font-size: 13px; color: var(--light-muted); }
+@media (max-width: 640px) { .trabajo-n { grid-template-columns: 1fr; gap: 14px; } }
+
+
+/* Cómo habla el asistente, en los ajustes del cliente. */
+.tono-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.tono-tab { padding: 7px 13px; border: 1px solid var(--light-line); border-radius: 999px; background: none;
+  font-size: 13px; color: var(--light-muted); cursor: pointer; }
+.tono-tab.on { border-color: var(--orange-2); color: var(--light-ink);
+  background: color-mix(in oklab, var(--orange-2) 8%, transparent); }
+.tono-tab em { font-style: normal; opacity: .6; }
+.tono-caja { width: 100%; padding: 14px 16px; border: 1px solid var(--light-line); border-radius: 12px;
+  font: inherit; font-size: 14px; line-height: 1.6; color: var(--light-ink); background: var(--light-bg);
+  resize: vertical; }
+.tono-caja:focus { outline: none; border-color: var(--orange-2); }
+.tono-pie { display: flex; align-items: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+.tono-pie span { font-size: 12px; color: var(--light-muted); font-variant-numeric: tabular-nums; }
+.tono-pie span.cerca { color: var(--orange-2); }
+.tono-pie i { font-style: normal; font-size: 12px; color: var(--light-muted); flex: 1; }
+.tono-aviso { margin-top: 10px; font-size: 13px; color: var(--light-muted); }
+.tono-aviso.mal { color: #c1272d; }
+@media (max-width: 640px) { .tono-pie i { flex-basis: 100%; } }

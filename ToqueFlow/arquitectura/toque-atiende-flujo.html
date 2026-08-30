@@ -151,6 +151,7 @@
     flex-direction: column;
     gap: 8px;
   }
+  .pieza.plataforma { border-left-color: var(--pend); }
   .pieza .clave {
     font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
     font-size: 11px;
@@ -358,8 +359,8 @@
   <section>
     <div class="sec-head">
       <p class="eyebrow">2 · Va siempre</p>
-      <h2>Las cuatro piezas que no se apagan</h2>
-      <p class="note">La prueba para entrar aquí: que le sirva igual a una tienda, un hotel, una clínica y un gimnasio, sin cambiarle nada.</p>
+      <h2>Las cuatro herramientas que no se apagan</h2>
+      <p class="note">La prueba para entrar aquí: que le sirva igual a una tienda, un hotel, una clínica y un gimnasio, sin cambiarle nada. <strong>Herramienta</strong> quiere decir algo que el agente usa dentro de una conversación — el portal y el simulador también van siempre, pero los usa la persona, y van más abajo.</p>
     </div>
 
     <div class="grid-4">
@@ -442,6 +443,72 @@
         </g>
       </svg>
       <figcaption>Por qué ver y anotar la ficha no son herramientas: ya vienen en el contexto del turno. Volverlas herramienta costaría una llamada entera al modelo para leer un dato que el agente ya tenía en la mano.</figcaption>
+    </figure>
+
+    <div class="sec-head" style="margin-top:14px">
+      <p class="eyebrow">Y dos que no se preguntan</p>
+      <h2>El otro lado: lo que opera la persona</h2>
+      <p class="note">Las cuatro de arriba son del agente. Estas dos son del cliente, y entran en el alta sin que nadie las elija: en el catálogo están marcadas como <span class="inline-code">vendible = false</span> y toda empresa nueva las recibe.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="pieza plataforma">
+        <h3>El portal</h3>
+        <span class="clave">portal</span>
+        <p>Donde el cliente entra con su usuario: su base de contactos, los campos de su ficha, su conocimiento, sus campañas y lo que consume. Solo ve lo suyo.</p>
+      </div>
+      <div class="pieza plataforma">
+        <h3>El simulador</h3>
+        <span class="clave">sandbox</span>
+        <p>Probar el agente con conversaciones de verdad sin arriesgar el WhatsApp del negocio: corre el flujo real y desvía la salida al panel.</p>
+      </div>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 820 300" role="img" aria-label="El portal y el agente nunca se hablan entre sí: el cliente escribe en Supabase desde su portal y el agente lo lee; el agente anota en Supabase y el cliente lo ve en su portal.">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+        <g font-family="Sora, system-ui, sans-serif" fill="currentColor">
+
+          <rect x="20" y="56" width="230" height="182" rx="9" fill="var(--card)" stroke="currentColor" stroke-opacity=".3"></rect>
+          <text x="135" y="84" text-anchor="middle" font-size="13.5" font-weight="600">El cliente, en su portal</text>
+          <text x="36" y="110" font-size="10.5" opacity=".68">· carga y edita su conocimiento</text>
+          <text x="36" y="130" font-size="10.5" opacity=".68">· define los campos de la ficha</text>
+          <text x="36" y="150" font-size="10.5" opacity=".68">· ve, filtra e importa contactos</text>
+          <text x="36" y="170" font-size="10.5" opacity=".68">· prueba en el simulador</text>
+          <text x="36" y="190" font-size="10.5" opacity=".68">· manda campañas</text>
+          <text x="36" y="210" font-size="10.5" opacity=".68">· ve lo que consume</text>
+
+          <line x1="252" y1="128" x2="326" y2="128" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar3)"></line>
+          <text x="289" y="120" text-anchor="middle" font-size="9.5" opacity=".62">escribe</text>
+          <line x1="326" y1="168" x2="252" y2="168" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar3)"></line>
+          <text x="289" y="185" text-anchor="middle" font-size="9.5" opacity=".62">ve</text>
+
+          <rect x="330" y="104" width="170" height="88" rx="9" fill="var(--card)" stroke="currentColor" stroke-opacity=".38"></rect>
+          <text x="415" y="140" text-anchor="middle" font-size="13.5" font-weight="600">Supabase</text>
+          <text x="415" y="158" text-anchor="middle" font-size="10" opacity=".62">la única fuente</text>
+          <text x="415" y="172" text-anchor="middle" font-size="10" opacity=".62">de verdad</text>
+
+          <line x1="504" y1="128" x2="578" y2="128" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar3)"></line>
+          <text x="541" y="120" text-anchor="middle" font-size="9.5" opacity=".62">lee</text>
+          <line x1="578" y1="168" x2="504" y2="168" stroke="currentColor" stroke-opacity=".5" marker-end="url(#ar3)"></line>
+          <text x="541" y="185" text-anchor="middle" font-size="9.5" opacity=".62">anota</text>
+
+          <rect x="580" y="56" width="230" height="182" rx="9" fill="var(--wash)" stroke="var(--accent)" stroke-width="1.6"></rect>
+          <text x="695" y="84" text-anchor="middle" font-size="13.5" font-weight="600">El agente, en WhatsApp</text>
+          <text x="596" y="110" font-size="10.5" opacity=".68">· lee el conocimiento cargado</text>
+          <text x="596" y="130" font-size="10.5" opacity=".68">· lee la ficha de quien escribe</text>
+          <text x="596" y="150" font-size="10.5" opacity=".68">· anota lo que le cuentan</text>
+          <text x="596" y="170" font-size="10.5" opacity=".68">· deja el turno en el historial</text>
+          <text x="596" y="190" font-size="10.5" opacity=".68">· registra lo que costó</text>
+
+          <text x="415" y="266" text-anchor="middle" font-size="10.5" opacity=".55" font-family="JetBrains Mono, monospace">nunca se hablan entre sí</text>
+        </g>
+      </svg>
+      <figcaption>Por qué el portal es parte del producto y no un extra: el agente no tiene otra manera de enterarse de un precio nuevo. El cliente lo cambia en su portal y el agente lo contesta en el mensaje siguiente, sin desplegar nada ni pedirle nada a ToqueFlow.</figcaption>
     </figure>
   </section>
 

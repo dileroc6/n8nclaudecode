@@ -267,6 +267,7 @@ function DashApp({ companyId, previewName }) {
   const [filter, setFilter] = React.useState('todos');
   const [selectedId, setSelectedId] = React.useState(null);
   const [bizKpis, setBizKpis] = React.useState(null);
+  const [trabajo, setTrabajo] = React.useState(null);
 
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
@@ -275,16 +276,32 @@ function DashApp({ companyId, previewName }) {
     (async () => {
       const cid = companyId;
       if (!cid) { setFlows([]); setLoading(false); return; }
-      const [flowsRes, usageRes, contactsRes, campsRes, runsRes, tmRes] = await Promise.all([
+      const [flowsRes, usageRes, contactsRes, campsRes, runsRes, tmRes, msgRes] = await Promise.all([
         TF_AUTH.sb.from('flows').select('*').eq('company_id', cid).order('position', { ascending: true }).order('created_at', { ascending: true }),
         TF_AUTH.sb.from('ai_usage').select('sede_id,success,created_at').eq('company_id', cid),
-        TF_AUTH.sb.from('contacts').select('status,full_name,service_type').eq('company_id', cid),
+        TF_AUTH.sb.from('contacts').select('status,full_name,service_type,created_at').eq('company_id', cid),
         TF_AUTH.sb.from('campaigns').select('status').eq('company_id', cid),
         TF_AUTH.sb.from('campaign_runs').select('status').eq('company_id', cid),
         TF_AUTH.sb.from('test_messages').select('id').eq('company_id', cid),
+        // Las conversaciones REALES del mes. Se piden aparte porque
+        // `message_log` puede ser grande y solo hace falta el mes en curso.
+        TF_AUTH.sb.from('message_log').select('contact_id,created_at')
+          .eq('company_id', cid)
+          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
       ]);
       const usg = usageRes.data || [];
       setUsage(usg);
+
+      // Lo que hizo el asistente este mes, en las tres cifras que le importan
+      // a quien paga: a cuánta gente atendió, cuánto contestó, y cuántas
+      // personas nuevas quedaron en su base sin que nadie las escribiera.
+      const desdeEl1 = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const msgs = msgRes.data || [];
+      setTrabajo({
+        conversaciones: new Set(msgs.map((m) => m.contact_id).filter(Boolean)).size,
+        respuestas: msgs.length,
+        nuevos: (contactsRes.data || []).filter((c) => c.created_at && new Date(c.created_at) >= desdeEl1).length,
+      });
       // Stats EN VIVO para las tarjetas de negocio (Base de datos=stock, Campañas=follow, Simulador=chat).
       const cts = (contactsRes.data || []).filter((c) => !/^UserToque/i.test(c.full_name || ''));
       const camps = campsRes.data || [];
@@ -433,6 +450,22 @@ function DashApp({ companyId, previewName }) {
               </button>
             ))}
           </div>
+        )}
+
+        {/* Lo que hizo el asistente este mes. Solo aparece si de verdad hizo
+            algo: una banda de ceros el primer día no informa, desanima. */}
+        {trabajo && (trabajo.conversaciones > 0 || trabajo.nuevos > 0) && (
+          <section className="trabajo">
+            <div className="trabajo-h">
+              <h2>Tu asistente este mes</h2>
+              <span>lo que se te quitó de encima</span>
+            </div>
+            <div className="trabajo-n">
+              <div><b>{trabajo.conversaciones}</b><span>{trabajo.conversaciones === 1 ? 'conversación atendida' : 'conversaciones atendidas'}</span></div>
+              <div><b>{trabajo.respuestas}</b><span>{trabajo.respuestas === 1 ? 'mensaje respondido' : 'mensajes respondidos'}</span></div>
+              <div><b>{trabajo.nuevos}</b><span>{trabajo.nuevos === 1 ? 'persona nueva en tu base' : 'personas nuevas en tu base'}</span></div>
+            </div>
+          </section>
         )}
 
         <div className="dash-overview">

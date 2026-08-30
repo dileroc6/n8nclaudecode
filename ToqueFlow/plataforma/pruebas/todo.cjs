@@ -39,6 +39,7 @@ const ORDEN = {
     "auditoria-registro-abierto",
     "auditoria-secretos",
     "auditoria-n8n",
+    "cliente-tono",
     "canario-entre-agentes",
   ],
   calidad: [
@@ -50,6 +51,7 @@ const ORDEN = {
     "cliente-contactos",
     "cliente-campos",
     "cargador-conocimiento",
+    "agenda",
   ],
 };
 

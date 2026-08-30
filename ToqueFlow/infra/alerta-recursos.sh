@@ -20,6 +20,15 @@ set -uo pipefail
 # A dónde avisar. Un webhook de n8n que enrute a WhatsApp, Telegram o correo.
 WEBHOOK_URL="${TOQUE_ALERTA_WEBHOOK:-https://n8n.srv1398596.hstgr.cloud/webhook/alerta-recursos}"
 
+# La firma que prueba que el aviso viene de este VPS y no de cualquiera.
+# La URL es adivinable, y sin firma alguien de afuera puede mandarle alertas
+# falsas a los dos socios — o peor, callar las de verdad entre el ruido.
+#
+# Se pone como variable de entorno del cron, NUNCA escrita aquí:
+#   crontab -e  →  TOQUE_ALERTA_FIRMA=<la firma>
+#                  */15 * * * * /opt/toque/alerta-recursos.sh
+TOQUE_ALERTA_FIRMA="${TOQUE_ALERTA_FIRMA:-}"
+
 # Umbrales. Se avisa cuando se cruzan.
 MIN_RAM_MB=600          # memoria disponible mínima antes de avisar
 MAX_SWAP_PCT=25         # si el swap usado pasa esto, la RAM ya no alcanza
@@ -78,6 +87,7 @@ echo "$ts AVISO ($nivel): $texto" >> "$LOG"
 if [ -n "$WEBHOOK_URL" ]; then
   curl -s -m 15 -X POST "$WEBHOOK_URL" \
     -H 'Content-Type: application/json' \
+    -H "X-Toque-Signature: ${TOQUE_ALERTA_FIRMA:-}" \
     -d "$(printf '{"nivel":"%s","texto":"%s","motivos":"%s","ram_disponible_mb":%s,"swap_pct":%s,"disco_pct":%s,"top_contenedor":"%s"}' \
           "$nivel" "$texto" "$(IFS=' · '; echo "${motivos[*]:-}")" \
           "${ram_disp_mb:-0}" "$swap_pct" "${disco_pct:-0}" "${top_contenedor:-}")" \
