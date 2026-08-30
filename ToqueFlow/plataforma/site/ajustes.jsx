@@ -15,6 +15,103 @@
 //
 // Apagar en vez de borrar está a propósito: una promoción de diciembre se
 // apaga en enero y se vuelve a encender el año siguiente sin reescribirla.
+// ── Qué tienes contratado ────────────────────────────────────────────────────
+// Los tres niveles, en las palabras del cliente:
+//
+//   tu producto      lo que contrataste
+//   lo que le sumas  los paquetes: los que tienes y los que existen
+//   por dentro       las piezas, solo si le interesa mirar
+//
+// Los que NO tiene se muestran a propósito, pero sin botón de compra: el
+// objetivo es que sepa que existen, no venderle desde una pantalla. La
+// conversación la abre él.
+function QueTienes() {
+  const [cat, setCat] = React.useState(null);
+  const [mios, setMios] = React.useState(null);
+  const [abierto, setAbierto] = React.useState(null);
+
+  React.useEffect(() => {
+    // El catálogo es público a propósito: es lo que ToqueFlow ofrece, no datos
+    // de nadie.
+    sb.from('catalogo').select('clave,nombre,beneficio,descripcion,tipo,contiene,incluye,puede_llevar,liberado')
+      .eq('activo', true).eq('visible_cliente', true).order('orden')
+      .then(({ data }) => setCat(data || []));
+    sb.from('mis_agentes').select('id').limit(1).then(() => {});
+    sb.from('agent_config').select('herramientas').then(({ data }) => {
+      const todas = [];
+      for (const a of data || []) for (const h of a.herramientas || []) todas.push(h);
+      setMios(Array.from(new Set(todas)));
+    });
+  }, []);
+
+  if (!cat || !mios) return null;
+
+  const prod = cat.find((x) => x.clave === 'agente-atencion');
+  if (!prod) return null;
+  const de = (ks) => (ks || []).map((k) => cat.find((x) => x.clave === k)).filter(Boolean);
+
+  const paquetes = de(prod.puede_llevar).filter((x) => x.tipo === 'paquete' && x.liberado);
+  const tengo = (p) => mios.includes(p.clave) || (p.contiene || []).some((k) => mios.includes(k));
+
+  return (
+    <section className="dash-section">
+      <div className="dash-section-h">
+        <h2>Qué tienes contratado</h2>
+        <p>Tu asistente hace esto. Lo de abajo se le puede sumar cuando lo necesites.</p>
+      </div>
+
+      {/* Nivel 1 */}
+      <div className="tuyo">
+        <div className="tuyo-h">
+          <span className="niv-tag">tu producto</span>
+          <b>{prod.nombre}</b>
+        </div>
+        <div className="tuyo-piezas">
+          {de(prod.incluye).map((x) => (
+            <div key={x.clave} className="tuyo-pieza">
+              <span>●</span><b>{x.nombre}</b><i>{x.beneficio || x.descripcion}</i>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Nivel 2 */}
+      <p className="adm-hint" style={{ marginTop: 18 }}>Lo que se le puede sumar:</p>
+      {paquetes.map((p) => {
+        const lo = tengo(p);
+        const ver = abierto === p.clave;
+        return (
+          <div key={p.clave} className={'tuyo-paq' + (lo ? ' on' : '')}>
+            <button type="button" className="tuyo-paq-h" onClick={() => setAbierto(ver ? null : p.clave)}>
+              <span className="tuyo-estado">{lo ? '✓' : '+'}</span>
+              <div>
+                <b>{p.nombre}</b>
+                <span>{p.beneficio || p.descripcion}</span>
+              </div>
+              <em>{lo ? 'lo tienes' : 'ver qué hace'}</em>
+            </button>
+            {ver && (
+              <div className="tuyo-piezas dentro">
+                {de(p.contiene).map((x) => (
+                  <div key={x.clave} className={'tuyo-pieza' + (x.liberado ? '' : ' falta')}>
+                    <span>{x.liberado ? '●' : '○'}</span><b>{x.nombre}</b>
+                    <i>{x.liberado ? (x.beneficio || x.descripcion) : 'En construcción.'}</i>
+                  </div>
+                ))}
+                {!lo && (
+                  <p className="tuyo-nota">
+                    Si te sirve, escríbele a tu equipo de ToqueFlow y lo activamos.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function QueSabe() {
   const [docs, setDocs] = React.useState(null);
   const [uso, setUso] = React.useState(null);
@@ -253,6 +350,8 @@ function AjustesApp() {
           <a href="contacto.html" className="btn btn-primary">Hablar con tu equipo <span className="arrow">→</span></a>
         </div>
         <p className="set-managed-note">// ¿necesitas un flow nuevo o cambiar uno existente? lo coordina tu equipo de ToqueFlow.</p>
+
+        <QueTienes />
 
         <QueSabe />
 

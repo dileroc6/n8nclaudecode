@@ -35,6 +35,8 @@ Cliente (pyme) ──> Portal ToqueFlow (HTML en Hostinger)
 
 **Escala:** sumar un cliente = configurarlo en la plataforma, no rehacer flujos.
 
+Qué se vende: [producto, paquetes y piezas](ToqueFlow/arquitectura/producto-paquetes-piezas.md) — los tres niveles y qué va en cada uno.
+
 Detalle: [arquitectura](ToqueFlow/arquitectura/arquitectura-toque.md) · [contrato n8n](ToqueFlow/arquitectura/contrato-n8n.md) · [modo prueba](ToqueFlow/arquitectura/modo-prueba-sandbox.md)
 
 ## Crecimiento

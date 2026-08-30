@@ -26,6 +26,8 @@ ToqueFlow/
 └── plataforma/         ← EL CÓDIGO: sitio, portal, Supabase y deploy
 ```
 
+**Qué vende ToqueFlow, en tres niveles:** [arquitectura/producto-paquetes-piezas.md](arquitectura/producto-paquetes-piezas.md) — producto · paquetes · piezas. **Es la hoja de ruta:** antes de construir algo, ahí se decide en qué nivel vive.
+
 **`arquitectura/` es canónico.** Esos tres documentos describen cómo funciona la plataforma para *todos* los clientes, no solo para uno. Antes vivían duplicados en los docs de la plataforma y en `Bejauha/docs/`; ahora hay una sola copia y los demás apuntan aquí.
 
 ---

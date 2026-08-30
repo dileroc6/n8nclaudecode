@@ -74,7 +74,9 @@ begin
          ) order by c.orden), '[]'::json)
     into v_tools
   from public.catalogo c
-  where c.clave = any(coalesce(v_rt.herramientas, '{}'))
+  -- Se expanden los paquetes: `herramientas` puede traer la clave de una
+  -- pieza suelta o la de un paquete, y el agente solo entiende piezas.
+  where c.clave = any(public.tf_piezas_del_agente(v_rt.herramientas))
     and c.tipo = 'herramienta' and c.activo and c.workflow is not null;
 
   select coalesce(json_agg(json_build_object(

@@ -314,12 +314,12 @@ function HerramientasDelAgente({ puestas, onChange }) {
   const [prod, setProd] = React.useState(null);
 
   React.useEffect(() => {
-    sb.from('catalogo').select('clave,nombre,beneficio,descripcion,liberado')
-      .eq('tipo', 'herramienta').eq('activo', true).order('orden')
+    sb.from('catalogo').select('clave,nombre,beneficio,descripcion,liberado,tipo,contiene,estado')
+      .eq('activo', true).order('orden')
       .then(({ data }) => setCat(data || []));
-    // Qué va siempre y qué se enciende NO se decide aquí: lo dice el producto
-    // en el catálogo. Si estuviera escrito en la pantalla, cambiar el producto
-    // obligaría a acordarse de cambiar también esto.
+    // Qué va siempre y qué se suma NO se decide aquí: lo dice el producto en el
+    // catálogo. Escribirlo en la pantalla obligaría a acordarse de cambiar dos
+    // sitios cada vez.
     sb.from('catalogo').select('incluye,puede_llevar').eq('clave', 'agente-atencion').single()
       .then(({ data }) => setProd(data || { incluye: [], puede_llevar: [] }));
   }, []);
@@ -328,38 +328,82 @@ function HerramientasDelAgente({ puestas, onChange }) {
 
   const de = (claves) => (claves || []).map((k) => cat.find((h) => h.clave === k)).filter(Boolean);
   const siempre = de(prod.incluye);
-  const opcionales = de(prod.puede_llevar).filter((h) => h.liberado);
-  const enObra = de(prod.puede_llevar).filter((h) => !h.liberado);
+  const ofrecidos = de(prod.puede_llevar);
+  const paquetes = ofrecidos.filter((x) => x.tipo === 'paquete');
+  const sueltas = ofrecidos.filter((x) => x.tipo !== 'paquete');
+
   const alternar = (k) => onChange(puestas.includes(k) ? puestas.filter((x) => x !== k) : [...puestas, k]);
+
+  // Dentro de un paquete puede haber piezas todavía sin construir. Se muestran
+  // igual, marcadas: es lo que hay que saber antes de prometerle el paquete a
+  // un cliente.
+  const dentro = (p) => de(p.contiene);
 
   return (
     <div className="ag-lista">
       <div className="ag-lista-head"><label>qué hace este agente</label></div>
 
-      {/* Lo que va siempre no se ofrece: se informa. Una casilla vacía al lado
-          de algo que el producto incluye dice lo contrario de lo que es. */}
-      <p className="adm-hint">Esto lo hace siempre, viene con Toque Atiende:</p>
-      {siempre.map((h) => (
-        <div key={h.clave} className="alta-pieza is-fija">
-          <span className="pieza-marca">●</span>
-          <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
-        </div>
-      ))}
+      {/* ── Nivel 1: el producto ─────────────────────────────────────────── */}
+      <div className="niv">
+        <div className="niv-h"><span className="niv-tag">producto</span><b>Toque Atiende</b></div>
+        <p className="adm-hint">Va siempre. Le sirve igual a una tienda, un hotel, una clínica y un gimnasio.</p>
+        {siempre.map((h) => (
+          <div key={h.clave} className="alta-pieza is-fija">
+            <span className="pieza-marca">●</span>
+            <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
+          </div>
+        ))}
+      </div>
 
-      <p className="adm-hint" style={{ marginTop: 14 }}>
-        Y esto se enciende según lo que necesite <b>este</b> negocio:
-      </p>
-      {opcionales.length === 0 && <div className="ag-lista-vacia">Todavía no hay ninguna liberada.</div>}
-      {opcionales.map((h) => (
-        <label key={h.clave} className={'alta-pieza' + (puestas.includes(h.clave) ? ' is-puesta' : '')}>
-          <input type="checkbox" checked={puestas.includes(h.clave)} onChange={() => alternar(h.clave)} />
-          <div><b>{h.nombre}</b><span>{h.beneficio || h.descripcion}</span></div>
-        </label>
-      ))}
-      {enObra.length > 0 && (
-        <p className="adm-hint">
-          En construcción y por eso no se ofrecen: {enObra.map((h) => h.nombre).join(' · ')}.
-        </p>
+      {/* ── Nivel 2: los paquetes ────────────────────────────────────────── */}
+      <div className="niv">
+        <div className="niv-h"><span className="niv-tag">paquetes</span><b>Lo que se le suma según el negocio</b></div>
+        <p className="adm-hint">Cada uno se vende aparte. Marcar el paquete le da al agente todas sus piezas.</p>
+
+        {paquetes.map((p) => {
+          const puesto = puestas.includes(p.clave);
+          const piezas = dentro(p);
+          const listas = piezas.filter((x) => x.liberado).length;
+          return (
+            <div key={p.clave} className={'paq' + (puesto ? ' on' : '') + (p.liberado ? '' : ' no-listo')}>
+              <label className="paq-h">
+                <input type="checkbox" checked={puesto} disabled={!p.liberado}
+                       onChange={() => alternar(p.clave)} />
+                <div>
+                  <b>{p.nombre}</b>
+                  <span>{p.beneficio || p.descripcion}</span>
+                </div>
+                <em>{listas} de {piezas.length} listas</em>
+              </label>
+              {/* Las piezas de dentro se ven siempre, no solo al marcar: es lo
+                  que hay que mirar para saber si el paquete se puede prometer. */}
+              <div className="paq-piezas">
+                {piezas.map((x) => (
+                  <div key={x.clave} className={'paq-pieza' + (x.liberado ? '' : ' falta')}>
+                    <span>{x.liberado ? '●' : '○'}</span>
+                    <b>{x.nombre}</b>
+                    {!x.liberado && <i>falta construirla</i>}
+                  </div>
+                ))}
+              </div>
+              {!p.liberado && <p className="paq-aviso">Todavía no se puede vender: le faltan piezas.</p>}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Sueltas: lo que no cabe en un paquete ─────────────────────────── */}
+      {sueltas.length > 0 && (
+        <div className="niv">
+          <div className="niv-h"><span className="niv-tag">sueltas</span><b>Piezas que van aparte</b></div>
+          {sueltas.map((h) => (
+            <label key={h.clave} className={'alta-pieza' + (puestas.includes(h.clave) ? ' is-puesta' : '') + (h.liberado ? '' : ' is-fija')}>
+              <input type="checkbox" checked={puestas.includes(h.clave)} disabled={!h.liberado}
+                     onChange={() => alternar(h.clave)} />
+              <div><b>{h.nombre}</b><span>{h.liberado ? (h.beneficio || h.descripcion) : 'Falta construirla.'}</span></div>
+            </label>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -4357,3 +4357,63 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .saber-editor textarea { resize: vertical; }
 .saber-editor input:focus, .saber-editor textarea:focus { outline: none; border-color: var(--orange-2); }
 .saber-editor-pie { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+
+
+/* Los tres niveles del catálogo: producto · paquete · pieza.
+   Que se vean como niveles y no como una lista plana es el punto: una lista
+   plana no dice qué se vende y qué es una pieza de dentro. */
+.niv { margin-bottom: 22px; }
+.niv-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.niv-tag { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--light-muted);
+  border: 1px solid var(--light-line); border-radius: 999px; padding: 2px 8px; }
+.niv-h b { font-size: 14px; font-weight: 600; color: var(--light-ink); }
+
+.paq { border: 1px solid var(--light-line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.paq.on { border-color: var(--orange-2); background: color-mix(in oklab, var(--orange-2) 5%, transparent); }
+.paq.no-listo { opacity: .62; }
+.paq-h { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.paq.no-listo .paq-h { cursor: default; }
+.paq-h input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--orange-2); flex: 0 0 auto; }
+.paq-h > div { flex: 1; }
+.paq-h b { display: block; font-size: 14px; font-weight: 600; color: var(--light-ink); }
+.paq-h span { display: block; font-size: 12.5px; line-height: 1.5; color: var(--light-muted); margin-top: 2px; }
+.paq-h em { font-style: normal; font-size: 11px; color: var(--light-muted); white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+.paq-piezas { margin: 10px 0 0 28px; display: flex; flex-direction: column; gap: 4px; }
+.paq-pieza { display: flex; align-items: baseline; gap: 8px; font-size: 12.5px; color: var(--light-muted); }
+.paq-pieza span { color: var(--verde, #1e9e6a); font-size: 10px; }
+.paq-pieza.falta span { color: var(--light-line); }
+.paq-pieza b { font-weight: 500; color: var(--light-ink); }
+.paq-pieza.falta b { color: var(--light-muted); }
+.paq-pieza i { font-style: normal; font-size: 11px; opacity: .8; }
+.paq-aviso { margin: 10px 0 0 28px; font-size: 12px; color: var(--light-muted); }
+
+
+/* Qué tiene contratado el cliente, en su portal. Mismos tres niveles que en la
+   consola, con sus palabras. */
+.tuyo { padding: 16px 18px; border: 1px solid var(--light-line); border-radius: 12px;
+  background: color-mix(in oklab, var(--orange-2) 4%, transparent); }
+.tuyo-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.tuyo-h b { font-size: 15px; font-weight: 600; color: var(--light-ink); }
+.tuyo-piezas { display: flex; flex-direction: column; gap: 8px; }
+.tuyo-piezas.dentro { margin: 12px 0 0 30px; }
+.tuyo-pieza { display: grid; grid-template-columns: 14px auto; gap: 2px 8px; align-items: baseline; }
+.tuyo-pieza span { color: var(--verde, #1e9e6a); font-size: 10px; }
+.tuyo-pieza.falta span { color: var(--light-line); }
+.tuyo-pieza b { font-size: 13.5px; font-weight: 600; color: var(--light-ink); }
+.tuyo-pieza.falta b { color: var(--light-muted); font-weight: 500; }
+.tuyo-pieza i { grid-column: 2; font-style: normal; font-size: 12.5px; line-height: 1.5; color: var(--light-muted); }
+.tuyo-paq { border: 1px solid var(--light-line); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+.tuyo-paq.on { border-color: color-mix(in oklab, var(--verde, #1e9e6a) 45%, var(--light-line)); }
+.tuyo-paq-h { display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 14px 16px;
+  background: none; border: 0; text-align: left; cursor: pointer; font: inherit; }
+.tuyo-paq-h:hover { background: color-mix(in oklab, var(--light-ink) 3%, transparent); }
+.tuyo-paq-h > div { flex: 1; }
+.tuyo-paq-h b { display: block; font-size: 14px; font-weight: 600; color: var(--light-ink); }
+.tuyo-paq-h span { display: block; font-size: 12.5px; line-height: 1.5; color: var(--light-muted); margin-top: 2px; }
+.tuyo-paq-h em { font-style: normal; font-size: 11px; color: var(--light-muted); white-space: nowrap; }
+.tuyo-estado { width: 20px; height: 20px; flex: 0 0 auto; border-radius: 999px; display: grid; place-items: center;
+  font-size: 12px; border: 1px solid var(--light-line); color: var(--light-muted); }
+.tuyo-paq.on .tuyo-estado { background: var(--verde, #1e9e6a); border-color: var(--verde, #1e9e6a); color: #fff; }
+.tuyo-nota { margin: 12px 0 0; font-size: 12.5px; color: var(--light-muted); }
+.tuyo-paq .tuyo-piezas.dentro { padding: 0 16px 16px; margin-left: 32px; }
