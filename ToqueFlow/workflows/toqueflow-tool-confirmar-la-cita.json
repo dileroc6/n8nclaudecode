@@ -1,0 +1,93 @@
+{
+  "name": "ToqueFlow - Tool Confirmar la cita",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-confirmar-cita",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "cc-entrada",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// La cita se busca por el telefono de quien escribe, dentro de la base. NO se\n// acepta un id de cita desde fuera: el modelo podria equivocarse, y confirmar\n// la cita de otro es peor que no confirmar ninguna.\nconst b = $input.first().json.body || $input.first().json;\nreturn [{ json: { payload: JSON.stringify({\n  instance: String(b.instance || ''),\n  telefono: String(b.telefono || '').replace(/\\D/g, ''),\n  viene: b.viene === false ? false : true,\n}) } }];"
+      },
+      "id": "cc-extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_confirmar_cita($1::jsonb) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload ] }}"
+        }
+      },
+      "id": "cc-bd",
+      "name": "Confirmar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Confirmar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

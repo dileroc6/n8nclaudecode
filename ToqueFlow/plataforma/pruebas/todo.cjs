@@ -55,6 +55,7 @@ const ORDEN = {
     "agenda",
     "agendar-cita",
     "agente-agenda",
+    "recordatorio-cita",
   ],
 };
 

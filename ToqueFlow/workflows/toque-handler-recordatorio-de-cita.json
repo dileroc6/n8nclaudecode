@@ -1,0 +1,162 @@
+{
+  "name": "Toque - Handler Recordatorio de Cita",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "rec-trigger",
+      "name": "Trigger (desde receptor)",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// El texto del recordatorio. Se arma aqui y no en la base porque es lo que\n// lee una persona, y cambiarlo no deberia ser una migracion.\n//\n// Si el negocio escribio el suyo en la configuracion, se usa ese; si no, uno\n// que sirve para cualquier sector — no dice «tu clase» ni «tu tratamiento».\nconst e = $input.first().json;\nconst p = e.payload || e;\n\nconst nombre = (p.nombre || '').trim().split(/\\s+/)[0] || '';\nconst saludo = nombre ? 'Hola ' + nombre + ', ' : 'Hola, ';\n\nlet texto = (p.texto || '').trim();\nif (!texto) {\n  // La fecha ya viene con punto («10:00 a. m.»), asi que agregar otro deja\n  // «a. m..». Se pone solo si hace falta.\n  const fecha = String(p.cuando || '').trim();\n  texto = saludo + 'te recordamos tu ' + (p.servicio ? p.servicio.toLowerCase() : 'cita') +\n          ' el ' + fecha + (/[.!?]$/.test(fecha) ? '' : '.');\n  if (p.pedir_confirmacion) {\n    texto += ' ¿Nos confirmas si vienes?';\n  }\n} else {\n  // El texto del negocio puede traer marcas; se reemplazan las que tengan\n  // sentido y las demas se quitan, para que nadie reciba un {{cuando}} suelto.\n  texto = texto\n    .replace(/\\{\\{\\s*nombre\\s*\\}\\}/gi, nombre)\n    .replace(/\\{\\{\\s*cuando\\s*\\}\\}/gi, p.cuando || '')\n    .replace(/\\{\\{\\s*servicio\\s*\\}\\}/gi, p.servicio || '')\n    .replace(/\\{\\{[^}]*\\}\\}/g, '')\n    .replace(/\\s{2,}/g, ' ')\n    .trim();\n}\n\nreturn [{ json: {\n  instance: String(p.instance || ''),\n  telefono: String(p.telefono || '').replace(/\\D/g, ''),\n  company_id: p.company_id,\n  cita_id: p.cita_id,\n  texto,\n  test: !!p.test,\n}}];"
+      },
+      "id": "rec-armar",
+      "name": "Armar el mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "t1",
+              "leftValue": "={{ $json.test }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "rec-si-test",
+      "name": "¿Es modo prueba?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "insert into public.test_messages (company_id, telefono, direction, author, body, flow) values ($1::uuid, $2, 'out', 'sistema', $3, 'recordatorio') returning id;",
+        "options": {
+          "queryReplacement": "={{ [ $json.company_id, $json.telefono, $json.texto ] }}"
+        }
+      },
+      "id": "rec-sandbox",
+      "name": "Escribir en el simulador",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        400,
+        -110
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.EVOLUTION_API_URL }}/message/sendText/{{ $json.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $json.telefono, delay: 1200, linkPreview: false, text: $json.texto }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "rec-enviar",
+      "name": "Enviar por WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        110
+      ]
+    }
+  ],
+  "connections": {
+    "Trigger (desde receptor)": {
+      "main": [
+        [
+          {
+            "node": "Armar el mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar el mensaje": {
+      "main": [
+        [
+          {
+            "node": "¿Es modo prueba?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Es modo prueba?": {
+      "main": [
+        [
+          {
+            "node": "Escribir en el simulador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar por WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}
