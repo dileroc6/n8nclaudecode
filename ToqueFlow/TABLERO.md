@@ -47,14 +47,32 @@ Plantilla lista en [estrategia/plantilla-propuesta.md](estrategia/plantilla-prop
 
 ## 🏗️ Producto estándar
 
-Seis capacidades: responder y sugerir · agendar · capturar · recordar · enrutar · registrar.
-Especificación completa en [estrategia/producto-estandar.md](estrategia/producto-estandar.md).
+**Tres niveles: producto · paquetes · piezas.** Lo que se contrata, lo que se le
+suma y lo que el agente llama por dentro. La definición y la regla de dónde va
+lo nuevo están en [arquitectura/producto-paquetes-piezas.md](arquitectura/producto-paquetes-piezas.md).
+
+### Dónde va cada caja
+
+| | | Listo | Se vende |
+|---|---|---|---|
+| **Producto** | Toque Atiende | **4 de 4** | ✅ hoy |
+| **Paquete** | Toque Agenda | **4 de 4** | ✅ hoy |
+| **Paquete** | Toque Recargas | 0 de 3 | ⬜ |
+| **Paquete** | Toque Tienda | 0 de 2 | ⬜ |
+| Sueltas | Reclamo · Reactivación | 0 de 2 | ⬜ |
+
+**Dos cajas vendibles hoy.** Toque Agenda es la que necesitan las clínicas, los
+spas y los talleres — el segmento que Ferney está tocando.
 
 **En orden de retorno sobre hora invertida:**
 
 | # | Pieza | Por qué ahí | Quién |
 |---|---|---|---|
-| 17 | 🟡 **Construir las piezas que faltan** | ✅ **Toque Agenda casi entero** (30-ago): `ver-disponibilidad` y `agendar-cita` hechas y probadas en conversación real; falta `recordatorio-cita`. **Falta Toque Recargas** —matricular, descontar, recargar— con la regla que no se negocia: **matricular y recargar los confirma SIEMPRE una persona.** El cliente final los pide por WhatsApp, el agente registra la solicitud, y al dueño le llega el aviso para aprobar; un agente que recarga solo es un agente que regala. **Falta Toque Tienda** —estado del pedido, confirmar pago—, que necesita integrar contra la tienda de cada cliente: **es otro precio, y la integración es por PLATAFORMA y no por cliente** (la primera tienda WooCommerce cuesta construirla; la segunda ya está hecha). Y `registrar-reclamo`, suelta | Diego |
+| 17 | ~~⭐ Construir las piezas que faltan~~ | ✅ **Se partió en una tarea por paquete** (filas 119, 120 y 121), que es como se construye y como se vende. Antes era una sola fila que mezclaba los tres y no dejaba ver qué estaba vendible |
+| 119 | ⭐ **Toque Recargas** — 0 de 3 | Para quien vende por paquetes, clases, sesiones o bonos. Faltan **matricular · descontar · recargar**. **La regla que no se negocia: matricular y recargar los confirma SIEMPRE una persona.** El cliente final los pide por WhatsApp, el agente registra la solicitud, y al dueño le llega el aviso para aprobar — un agente que recarga solo es un agente que regala. **Es el paquete que Bejauha necesita para cortarse del sistema viejo** (fila 25), así que desbloquea dos cosas a la vez. Lo puedo hacer solo | Claude |
+| 120 | **Toque Tienda** — 0 de 2 | Estado del pedido y confirmar pago, contra la tienda del cliente. **Necesita una decisión tuya antes de empezar: contra qué plataforma va primero** — el WooCommerce de Savia o el Siigo de FerreteríaYa. Y el matiz que cambia cómo se cobra: **la integración es por PLATAFORMA, no por cliente.** La primera tienda Woo cuesta construirla; la segunda ya está hecha. El primer cliente de cada plataforma paga la construcción, los demás pagan el producto | Diego |
+| 121 | **Las dos piezas sueltas** | `registrar-reclamo` (anota una queja y la escala) y `reactivacion` (le escribe a quien lleva tiempo sin volver). No caben en ningún paquete: son de cualquier negocio. Las puedo hacer solas cuando haya hueco | Claude |
+| 122 | **Ponerles precio a los paquetes** | La columna `precio_cop` existe y está vacía en los tres. Sin precio de lista, cada venta vuelve a ser una cotización a medida — que es exactamente lo que los paquetes vinieron a evitar. **Toque Atiende y Toque Agenda ya se pueden vender, así que estos dos precios son los urgentes** | Ambos |
 | 18 | ~~⭐ Varios agentes por empresa~~ | ✅ **Hecho el 28-ago.** `agent_config` tiene ahora su propia llave y un nombre; una empresa puede tener los agentes que necesite, cada uno con su número de WhatsApp, su tono y sus herramientas. **El cambio fue pequeño porque el diseño ya lo permitía sin saberlo:** todo se resuelve por la instancia, que siempre fue única — el agente nunca preguntó «¿cuál es el agente de esta empresa?» sino «¿de quién es esta instancia?». El conocimiento se comparte, y lo que cambia entre sedes se carga solo para un agente. Probado con dos agentes de FerreteríaYa: Bogotá ve 2 documentos, Medellín 1 |
 | 19 | 🔴 **El ensayo de go-live falló, y destapó algo que hay que arreglar antes** | Diego escribió el 30-ago y **no recibió respuesta**. El agente sí entendió y redactó bien («Holaa 🤍 Tenemos dos planes: Virtual $79.900/mes…»); falló al enviarlo. El motivo: WhatsApp mandó `remoteJid = "30146492928046@lid"` con `addressingMode: "lid"` — **ya no siempre manda el número, manda un identificador opaco**. El agente le quita el `@lid`, se queda con dígitos que no son un teléfono, y Evolution lo rechaza. **A quien llegue así, el agente ni le puede contestar ni lo reconoce en la base**, porque busca por teléfono. Es el mismo tipo de fallo que el del «+» en los 46 contactos, y ninguna prueba lo vio porque todas usan números inventados. Y no es un caso raro: el WhatsApp de Diego llegó así. **El arreglo toca el workflow compartido**, así que va con el protocolo de la fila 65 | Claude |
 | 20 | ~~Sacar las columnas de Bejauha de la tabla compartida~~ | ✅ **Hecho el 28-ago**, aplicando la regla que dio Diego: *si es un módulo estándar debe servirle a TODOS los sectores; las herramientas sí cambian por sector*. Se retiró la lista fija de productos de Bejauha en `service_type`, y **el saldo se mudó a su propia tabla** — una tienda o un hotel ya no cargan con dos columnas que nunca van a llenar. `status` se amplió sin quitar lo que Bejauha usa. **Falta borrar las columnas viejas** de `contacts`: las leen `contactos.html` y el simulador, y romper el panel de un cliente que sí paga por limpiar un nombre feo no vale la pena | Diego |
