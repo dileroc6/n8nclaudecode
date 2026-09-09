@@ -559,6 +559,43 @@ function AdminApp({ profile }) {
                     </div>
                   );
                 })()}
+
+                {/* QUÉ tiene, no cuántos. Un número no sirve para lo que uno
+                    hace de verdad en esta lista: mirar diez clientes y saber
+                    quién lleva qué. Los pines van pegados a su placa —«Toque
+                    Atiende +Agenda»— porque sueltos no se entiende de qué
+                    cuelgan. Relleno = encendido; contorno = contratado y
+                    apagado, que es una situación distinta y alguien debería
+                    saber por qué. */}
+                {(() => {
+                  const mias   = matriz.filter((m) => m.company_id === c.id && m.vendible && m.estado_empresa !== 'no');
+                  if (!mias.length) return <div className="admin-co-tiene"><em>sin productos contratados</em></div>;
+                  const orden  = (a, b) => (a.orden || 0) - (b.orden || 0);
+                  const placas = mias.filter((m) => m.es_placa !== false).sort(orden);
+                  const pines  = mias.filter((m) => m.es_placa === false).sort(orden);
+                  const claves = placas.map((p) => p.clave);
+                  // Un pin cuya placa no está contratada no puede desaparecer
+                  // de la tarjeta: es justo el caso que hay que ver.
+                  const sueltos = pines.filter((x) => claves.indexOf(x.requiere) === -1);
+                  const corto = (n) => String(n).replace(/^Toque\s+/i, '');
+                  return (
+                    <div className="admin-co-tiene">
+                      {placas.map((p) => (
+                        <span key={p.clave} className={'admin-chip' + (p.estado_empresa === 'activo' ? ' is-on' : '')}>
+                          {p.nombre}
+                          {pines.filter((x) => x.requiere === p.clave).map((x) => (
+                            <i key={x.clave} className={x.estado_empresa === 'activo' ? 'is-on' : ''}>+{corto(x.nombre)}</i>
+                          ))}
+                        </span>
+                      ))}
+                      {sueltos.map((x) => (
+                        <span key={x.clave} className="admin-chip is-huerfano" title={'no hace nada: falta ' + (x.requiere_nombre || x.requiere)}>
+                          +{corto(x.nombre)} <i>sin su placa</i>
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
                 <div className="admin-co-foot">
                   <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Entrar →</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>

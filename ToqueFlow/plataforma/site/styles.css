@@ -3608,7 +3608,9 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .admin-co-stats div { display: flex; flex-direction: column; gap: 3px; }
 .admin-co-stats b { font-size: 15px; color: var(--ink); }
 .admin-co-stats span { font-family: var(--mono); font-size: 10.5px; color: var(--mute); text-transform: lowercase; }
-.admin-co-foot { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; align-items: stretch; }
+/* Tres botones en dos columnas dejaban el tercero estirado a lo ancho. Con
+   `auto-fit` se reparten solos, sean dos o cuatro. */
+.admin-co-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; align-items: stretch; }
 .admin-co-stats div:last-child b { font-size: 12px; font-weight: 600; line-height: 1.35; }
 .admin-co-logo { width: 100px; height: 76px; border-radius: 14px; object-fit: contain; background: #fff; border: 1px solid var(--line); padding: 7px; flex-shrink: 0; }
 .admin-co-logo-fallback { display: flex; align-items: center; justify-content: center; padding: 0; font-family: var(--mono); font-weight: 600; font-size: 22px; color: var(--ink); background: var(--light-1); }
@@ -3949,6 +3951,144 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .emp-resto-fila b { font-size: 13.5px; font-weight: 600; margin-right: 8px; }
 .emp-resto-fila span { display: block; font-size: 12px; color: var(--mute); margin-top: 4px; line-height: 1.45; }
 
+/* ── Productos: un árbol ────────────────────────────────────────────────────
+   La estructura ES un árbol, así que se dibuja como un árbol. Las líneas de
+   sangría no son adorno: son lo único que dice, sin leer, que un pin no se
+   sostiene solo. */
+
+.cat-arbol { display: flex; flex-direction: column; gap: 34px; }
+
+/* El suelo: lo que toda empresa recibe. Una línea, sin tarjeta y sin número
+   grande — es contexto, no catálogo. Se ve distinto a propósito: si se
+   pareciera a lo vendible, alguien lo cotizaría. */
+.cat-suelo {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px;
+  padding: 11px 15px; border-radius: 10px;
+  background: color-mix(in oklab, var(--ink) 4%, transparent);
+  border: 1px dashed var(--line);
+  margin-bottom: -14px;
+}
+.cat-suelo b { font-size: 12.5px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.cat-suelo span { font-size: 12.5px; color: var(--mute); line-height: 1.5; }
+.cat-banda { display: flex; flex-direction: column; gap: 8px; }
+.cat-banda > header {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px;
+  padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+}
+.cat-banda > header h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ink); }
+.cat-banda > header em {
+  flex: 1 1 300px; font-style: normal; font-size: 12.5px; color: var(--mute); line-height: 1.5;
+}
+.cat-banda > header em b { color: var(--ink); font-weight: 600; }
+.cat-cuenta { font-family: var(--mono); font-size: 26px; font-weight: 600; line-height: 1; color: var(--orange-2); }
+
+/* Lo que no se vende se lee apagado. Si se ve igual que lo vendible, alguien
+   va a ofrecer lo que no existe — y ya pasó. */
+.cat-banda.is-apagada .cat-cuenta { color: var(--mute); }
+.cat-banda.is-apagada .cat-nodo { opacity: .68; }
+.cat-banda.is-apagada .cat-nodo:hover { opacity: 1; }
+
+.cat-nodo { border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.cat-nodo.is-obra { border-style: dashed; }
+.cat-nodo-cabeza {
+  width: 100%; display: grid;
+  grid-template-columns: 12px 1fr auto auto auto auto auto;
+  align-items: center; gap: 10px;
+  padding: 13px 15px; background: none; border: none; cursor: pointer; text-align: left;
+}
+.cat-nodo-cabeza:hover { background: color-mix(in oklab, var(--ink) 3%, transparent); }
+.cat-flecha { font-size: 10px; color: var(--mute); width: 10px; flex-shrink: 0; }
+.cat-nodo-n { min-width: 0; font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+.cat-nodo-n.cat-raiz { font-size: 15.5px; }
+.cat-mas { font-style: normal; font-family: var(--mono); color: var(--orange-2); font-weight: 600; }
+.cat-dentro { font-family: var(--mono); font-size: 10.5px; color: var(--mute); white-space: nowrap; }
+
+/* El nivel 2 entra y cuelga de una línea. */
+.cat-nodo.cat-nivel-2 {
+  margin: 6px 0 6px 30px; position: relative;
+  background: transparent;
+}
+.cat-nodo.cat-nivel-2::before {
+  content: ''; position: absolute; left: -16px; top: -3px; bottom: -3px;
+  border-left: 1px solid var(--line);
+}
+
+.cat-nodo-cuerpo {
+  padding: 4px 16px 15px 36px; display: flex; flex-direction: column; gap: 9px;
+  border-top: 1px solid var(--line);
+}
+.cat-nodo-cuerpo h5 {
+  margin: 6px 0 1px; font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--mute);
+}
+.cat-nodo-cuerpo h5.cat-h5-suma { margin-bottom: 0; }
+.cat-pitch { font-style: italic; }
+.cat-params-lista { margin: 0; padding-left: 17px; }
+.cat-params-lista li { font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+
+.cat-hoja {
+  display: grid; grid-template-columns: 14px minmax(120px, 230px) 1fr auto;
+  align-items: baseline; gap: 4px 10px; font-size: 12.5px; line-height: 1.5;
+}
+.cat-hoja-punto { color: var(--orange-2); font-size: 9px; }
+.cat-hoja.is-obra .cat-hoja-punto { color: var(--mute); }
+.cat-hoja b { color: var(--ink); font-weight: 600; }
+.cat-hoja span { color: var(--mute); min-width: 0; }
+.cat-hoja-obra { font-family: var(--mono); font-size: 10px; font-style: normal; color: #b06a12; white-space: nowrap; }
+.cat-piezas-pie { margin: 4px 0 0; font-size: 11.5px; color: var(--mute); font-style: italic; }
+
+@media (max-width: 700px) {
+  .cat-nodo.cat-nivel-2 { margin-left: 16px; }
+  .cat-nodo.cat-nivel-2::before { left: -10px; }
+  .cat-nodo-cuerpo { padding-left: 18px; }
+  .cat-precio, .cat-clientes, .cat-dentro { width: 100%; }
+}
+
+/* ── Qué tiene cada cliente, en la lista de empresas ────────────────────────
+   Un número («3 productos») no responde la pregunta que uno trae a esta lista.
+   Los nombres sí. Relleno = encendido; contorno = contratado y apagado. */
+
+.admin-co-tiene { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }
+.admin-co-tiene em { font-size: 11.5px; color: var(--mute); font-style: italic; }
+.admin-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 500; line-height: 1;
+  padding: 5px 9px; border-radius: 7px;
+  border: 1px solid var(--line); color: var(--mute);
+}
+.admin-chip.is-on { color: var(--ink); border-color: transparent; background: color-mix(in oklab, var(--ink) 8%, transparent); }
+.admin-chip i {
+  font-style: normal; font-family: var(--mono); font-size: 10px;
+  padding: 2px 5px; border-radius: 4px;
+  border: 1px solid var(--line); color: var(--mute);
+}
+.admin-chip i.is-on { color: #1f8a5b; border-color: color-mix(in oklab, #1f8a5b 40%, transparent); }
+.admin-chip.is-huerfano { color: #b06a12; border-color: color-mix(in oklab, #d98324 40%, transparent); }
+
+/* Lo que se le puede sumar, agrupado por la placa a la que se le suma. */
+.emp-resto-grupo { display: flex; flex-direction: column; gap: 7px; }
+.emp-resto-grupo + .emp-resto-grupo { margin-top: 18px; }
+.emp-resto-grupo h4 {
+  margin: 0 0 2px; font-size: 12.5px; font-weight: 600; color: var(--ink);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px;
+}
+.emp-resto-grupo h4 em { font-size: 11.5px; font-weight: 400; color: var(--mute); font-style: normal; }
+
+/* ── La jerarquía, dibujada ──────────────────────────────────────────────────
+   Un pin entra un poco y cuelga de una línea. No es decoración: es la única
+   señal que dice, sin leer, que eso no se sostiene solo. */
+.emp-item.is-pin, .emp-resto-fila.is-pin { margin-left: 26px; position: relative; }
+.emp-item.is-pin::before, .emp-resto-fila.is-pin::before {
+  content: ''; position: absolute; left: -15px; top: 0; bottom: 0;
+  border-left: 1px solid var(--line);
+}
+.emp-falta {
+  font-family: var(--mono); font-style: normal; font-size: 10px;
+  letter-spacing: .03em; white-space: nowrap; align-self: center;
+  color: #b06a12; background: color-mix(in oklab, #d98324 12%, transparent);
+  border-radius: 5px; padding: 3px 8px;
+}
+
 .emp-usuario { display: flex; align-items: center; gap: 11px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
 .emp-usuario > div { flex: 1; min-width: 0; }
 .emp-usuario b { display: block; font-size: 13.5px; }
@@ -4009,6 +4149,42 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 .cat-aviso b { color: #8a5410; }
 
+/* ── Placas base y pines ────────────────────────────────────────────────────
+   La jerarquía tiene que verse antes de leerse: un pin lleva su «+» delante y
+   dice de qué placa cuelga. Si hay que leer para saber cuál es cuál, la
+   pantalla no está haciendo su trabajo. */
+
+.cat-nivel-marca {
+  font-family: var(--mono); font-style: normal; font-weight: 600;
+  color: var(--orange-2); font-size: 16px; line-height: 1;
+}
+.cat-requiere {
+  font-family: var(--mono); font-size: 10px; font-style: normal;
+  color: var(--mute); background: color-mix(in oklab, var(--ink) 6%, transparent);
+  padding: 3px 8px; border-radius: 5px; white-space: nowrap;
+}
+.cat-precio {
+  display: flex; align-items: baseline; gap: 8px; flex: 0 0 auto;
+  font-family: var(--mono); font-size: 12.5px; white-space: nowrap;
+}
+.cat-precio b { color: var(--ink); font-weight: 600; }
+.cat-precio b em { font-style: normal; font-weight: 400; color: var(--mute); font-size: 10.5px; }
+.cat-precio i { font-style: normal; color: var(--mute); font-size: 10.5px; }
+
+.cat-pines { display: flex; flex-direction: column; gap: 7px; }
+.cat-pin-fila {
+  display: grid; grid-template-columns: auto auto auto 1fr; align-items: baseline;
+  gap: 10px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px;
+}
+.cat-pin-fila.is-obra { border-style: dashed; }
+.cat-pin-fila b { font-size: 13px; color: var(--ink); white-space: nowrap; }
+.cat-pin-fila span { font-size: 12px; color: var(--mute); line-height: 1.5; grid-column: 1 / -1; }
+.cat-precio-mini { font-family: var(--mono); font-size: 11px; font-style: normal; color: var(--ink); }
+@media (max-width: 620px) {
+  .cat-pin-fila { grid-template-columns: 1fr; gap: 5px; }
+  .cat-precio { width: 100%; }
+}
+
 @media (max-width: 640px) { .cat-clientes { width: 100%; } }
 .admin-salir {
   font-family: var(--mono); font-size: 12px; color: var(--mute); text-decoration: none;
@@ -4039,7 +4215,20 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 .admin-cards.is-lista .admin-co-stats > div { background: none; padding: 0; text-align: right; white-space: nowrap; }
 .admin-cards.is-lista .admin-co-stats b { font-size: 14px; }
 .admin-cards.is-lista .admin-co-stats span { font-size: 10.5px; }
-.admin-cards.is-lista .admin-co-foot { border: none; padding: 0; margin: 0; gap: 6px; }
+/* Los botones eran un grid de dos columnas heredado de la tarjeta, y con tres
+   botones el tercero se estiraba a lo ancho de la fila. En la lista van
+   pegados a la derecha, del tamaño de su texto, y solo el de entrar lleva
+   color: si los tres pesan igual, ninguno guía. */
+.admin-cards.is-lista .admin-co-foot {
+  border: none; padding: 0; margin: 0; gap: 6px;
+  display: flex; justify-content: flex-end; flex-wrap: wrap;
+}
+.admin-cards.is-lista .admin-co-btn { flex: 0 0 auto; }
+/* En vista lista la tarjeta es un grid de TRES columnas. Los chips de qué
+   tiene cada cliente son un cuarto hijo: sin esto se meten como una columna
+   más, empujan los botones a renglones sueltos y la lista queda corrida.
+   Van en su propia línea, debajo del nombre, ocupando el ancho completo. */
+.admin-cards.is-lista .admin-co-tiene { grid-column: 1 / -1; margin-top: 2px; }
 .admin-cards.is-lista .admin-co-btn { padding: 5px 11px; font-size: 12px; }
 @media (max-width: 860px) {
   .admin-cards.is-lista .admin-co-card { grid-template-columns: 1fr; }

@@ -186,6 +186,11 @@ const check = (cond, que, detalle) => {
     }
   } finally {
     await limpiar();
+    // El usuario también. `borrarUsuario` existía desde el principio y nunca se
+    // llamaba: cada corrida dejaba un super_admin vivo. Al 8-sep había 23, todos
+    // con permisos totales y sin dueño. Una prueba que no limpia lo suyo no es
+    // gratis: acaba siendo un problema de seguridad, no de orden.
+    await borrarUsuario();
     const queda = await rest("GET", "agent_config?select=company_id&company_id=eq." + emp.id);
     check(Array.isArray(queda.data) && queda.data.length === 0,
           "al borrar la empresa se lleva su agente (cascade)", JSON.stringify(queda.data));

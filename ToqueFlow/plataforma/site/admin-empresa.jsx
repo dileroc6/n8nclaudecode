@@ -44,16 +44,41 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
   const [mostrarResto, setMostrarResto] = React.useState(false);
 
   const mias = matriz.filter((m) => m.company_id === company.id);
+
+  // Un pin va pegado a su placa. Una lista donde «Agenda» aparece a seis
+  // renglones de «Toque Atiende» no deja ver de qué cuelga, y de qué cuelga es
+  // justo lo que hay que poder mirar sin preguntar.
+  //
+  // Todo esto degrada bien si el SQL de placas todavía no está aplicado:
+  // `es_placa` llega indefinido, nada se considera pin, y la lista queda plana
+  // como estaba. Una consola que se rompe por una migración pendiente es peor
+  // que una consola sin jerarquía.
+  const esPin      = (m) => m.es_placa === false;
+  const ordenPlaca = (clave) => {
+    const p = mias.find((x) => x.clave === clave);
+    return p ? (p.orden || 0) : 0;
+  };
+  // [orden de su placa, la placa antes que sus pines, su propio orden]
+  const jerarquia = (m) => [
+    ordenPlaca(esPin(m) ? (m.requiere || m.clave) : m.clave),
+    esPin(m) ? 1 : 0,
+    m.orden || 0,
+  ];
+  const porJerarquia = (a, b) => {
+    const ja = jerarquia(a), jb = jerarquia(b);
+    return ja[0] - jb[0] || ja[1] - jb[1] || ja[2] - jb[2];
+  };
+
   // Los encendidos arriba: es lo que está pasando ahora. Los apagados debajo,
   // porque son cosas que el cliente TIENE y no están andando — eso siempre
   // tiene un motivo y alguien debería saber cuál.
   const tiene = mias.filter((m) => m.estado_empresa !== 'no')
-    .sort((a, b) => (a.estado_empresa === b.estado_empresa ? a.orden - b.orden
+    .sort((a, b) => (a.estado_empresa === b.estado_empresa ? porJerarquia(a, b)
                      : a.estado_empresa === 'activo' ? -1 : 1));
   const encendidos = tiene.filter((m) => m.estado_empresa === 'activo');
   const apagados   = tiene.filter((m) => m.estado_empresa !== 'activo');
   const noTiene = mias.filter((m) => m.estado_empresa === 'no' && m.tipo !== 'herramienta' && m.vendible)
-                      .sort((a, b) => a.orden - b.orden);
+                      .sort(porJerarquia);
 
   const r  = resumen.find((x) => x.company_id === company.id) || {};
   // Todos los agentes de esta empresa, no «el» agente. Una empresa puede
@@ -113,13 +138,20 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
           const esta = abierto === p.catalogo_id;
           const encendido = p.estado_empresa === 'activo';
           return (
-            <article key={p.catalogo_id} className={'emp-item' + (encendido ? '' : ' is-apagado')}>
+            <article key={p.catalogo_id}
+                     className={'emp-item' + (encendido ? '' : ' is-apagado') + (esPin(p) ? ' is-pin' : '')}>
               <button type="button" className="emp-item-cabeza" onClick={() => setAbierto(esta ? null : p.catalogo_id)}>
                 <span className={'emp-luz ' + (encendido ? 'on' : 'off')}></span>
                 <span className="emp-item-n">
+                  {esPin(p) && <i className="cat-nivel-marca">+</i>}
                   {p.nombre}
                   {p.veces > 1 && <i className="emp-sedes">{p.veces} sedes</i>}
                   {!p.vendible && <i className="emp-sedes">viene con la plataforma</i>}
+                  {/* Un pin encendido sobre una placa apagada no hace nada. Que
+                      se vea aquí evita ir a buscar por qué «está encendido y no
+                      funciona». */}
+                  {esPin(p) && p.placa_lista === false &&
+                    <i className="emp-falta">no hace nada: falta {p.requiere_nombre}</i>}
                 </span>
                 <span className={'emp-estado e-' + p.estado_empresa}>
                   {encendido ? 'encendido'
@@ -214,25 +246,84 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                 onClick={() => setMostrarResto(!mostrarResto)}>
           <span>
             <b>Lo que le podrías vender</b>
-            <em>{noTiene.length} piezas del catálogo que este cliente todavía no tiene</em>
+            <em>
+              {(() => {
+                const listo = noTiene.filter((p) => p.liberado !== false && (p.es_placa !== false || p.placa_lista !== false)).length;
+                return listo + ' se le puede activar hoy · ' + (noTiene.length - listo) + ' todavía no';
+              })()}
+            </em>
           </span>
           <i>{mostrarResto ? '−' : '+'}</i>
         </button>
         {mostrarResto && (
           <div className="emp-resto">
-            {noTiene.map((p) => (
-              <div key={p.catalogo_id} className="emp-resto-fila">
-                <div>
-                  <b>{p.nombre}</b>
-                  <i className={'cat-estado e-' + EMP_MADUREZ[p.estado_pieza][1]}>{EMP_MADUREZ[p.estado_pieza][0]}</i>
-                  <span>{p.beneficio || p.descripcion}</span>
+            {/* Agrupado por placa y no en una lista plana: la pregunta que uno
+                trae a esta pantalla es «¿qué le puedo sumar a lo que ya
+                tiene?», y una lista donde Agenda y Toque Imprime salen
+                seguidos, al mismo nivel, no la responde. */}
+            {(() => {
+              const orden = (a, b) => (a.orden || 0) - (b.orden || 0);
+              const suyas = tiene.filter((m) => !esPin(m)).sort(orden);
+              const grupos = [];
+              for (const placa of suyas) {
+                const pines = noTiene.filter((p) => p.requiere === placa.clave).sort(orden);
+                if (pines.length) grupos.push({
+                  clave: placa.clave,
+                  titulo: 'Para sumarle a ' + placa.nombre,
+                  ayuda: placa.estado_empresa === 'activo'
+                    ? 'la placa está encendida: lo que se active aquí funciona de una'
+                    : 'ojo: ' + placa.nombre + ' está contratado pero apagado, así que nada de esto funcionaría todavía',
+                  filas: pines,
+                });
+              }
+              const claves = suyas.map((m) => m.clave);
+              const resto = noTiene.filter((p) => !p.requiere || claves.indexOf(p.requiere) === -1).sort(orden);
+              if (resto.length) grupos.push({
+                clave: '_resto',
+                titulo: 'Lo que no tiene de base',
+                ayuda: 'productos que se venden solos, y pines de placas que este cliente todavía no lleva',
+                filas: resto,
+              });
+
+              return grupos.map((g) => (
+                <div key={g.clave} className="emp-resto-grupo">
+                  <h4>{g.titulo} <em>{g.ayuda}</em></h4>
+                  {g.filas.map((p) => {
+                    // Tres razones distintas para no poder activar, y decir
+                    // cuál es vale más que un botón gris. Antes se podía
+                    // activar cualquier cosa: un pin sin su placa quedaba
+                    // contratado y sin hacer nada, y el cliente lo veía en su
+                    // panel como algo que compró.
+                    const enObra  = p.liberado === false;
+                    const sinBase = !enObra && esPin(p) && p.placa_lista === false;
+                    return (
+                      <div key={p.catalogo_id} className={'emp-resto-fila' + (esPin(p) ? ' is-pin' : '')}>
+                        <div>
+                          {esPin(p) && <i className="cat-nivel-marca">+</i>}
+                          <b>{p.nombre}</b>
+                          <i className={'cat-estado e-' + EMP_MADUREZ[p.estado_pieza][1]}>{EMP_MADUREZ[p.estado_pieza][0]}</i>
+                          {p.precio_cop ? <i className="cat-precio-mini">${new Intl.NumberFormat('es-CO').format(p.precio_cop)}/mes</i> : null}
+                          {p.implementacion_cop ? <i className="cat-precio-mini">+ ${new Intl.NumberFormat('es-CO').format(p.implementacion_cop)} alta</i> : null}
+                          {esPin(p) && p.requiere_nombre &&
+                            <i className="cat-requiere">requiere {p.requiere_nombre}</i>}
+                          <span>{p.beneficio || p.descripcion}</span>
+                        </div>
+                        {enObra ? (
+                          <span className="emp-falta">en construcción</span>
+                        ) : sinBase ? (
+                          <span className="emp-falta">falta {p.requiere_nombre}</span>
+                        ) : (
+                          <button type="button" className="ag-mini" disabled={busy}
+                                  onClick={() => onCambiar(company, comoPieza(p), 'proximamente')}>
+                            activar
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                <button type="button" className="ag-mini" disabled={busy}
-                        onClick={() => onCambiar(company, comoPieza(p), 'proximamente')}>
-                  activar
-                </button>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         )}
       </section>

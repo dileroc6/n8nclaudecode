@@ -94,9 +94,17 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
       const body = await r.json().catch(() => ({}));
       const avisoUsuario = (!r.ok || body.error) ? ('El usuario no se creó: ' + (body.error || 'error') + '. La empresa sí quedó.') : null;
 
-      // Las piezas elegidas, más las que vienen con la plataforma.
+      // Las piezas elegidas, más las que vienen con la plataforma. El portal va
+      // siempre; el simulador solo si hay agente, porque simula conversaciones
+      // y sin agente no hay nada que simular. Antes iba a todo el mundo: una
+      // empresa que solo contratara la base de contactos veía en su panel un
+      // simulador de conversaciones que no podía usar.
       const conPlataforma = { ...f.piezas };
-      for (const c of catalogo) if (!c.vendible && c.tipo === 'producto') conPlataforma[c.clave] = true;
+      for (const c of catalogo) {
+        if (c.vendible || c.tipo !== 'producto') continue;
+        if (c.requiere && !f.piezas[c.requiere]) continue;
+        conPlataforma[c.clave] = true;
+      }
 
       const filas = catalogo
         .filter((c) => conPlataforma[c.clave])
