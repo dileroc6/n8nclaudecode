@@ -1,0 +1,199 @@
+{
+  "name": "Toque - Algo fallo",
+  "nodes": [
+    {
+      "id": "a",
+      "name": "Recoge el fallo",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "b",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -200,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Lo que manda el Error Trigger de n8n cuando cualquier flujo revienta.\n// De aqui sale el payload para tf_fallo_registrar, que agrupa y decide si\n// toca avisar — el anti-spam vive en la base, no aqui, para que valga igual\n// venga de donde venga.\nconst e = $input.first().json || {};\nconst ex = e.execution || {};\nconst wf = e.workflow || {};\nconst err = ex.error || {};\n\nreturn [{ json: { payload: JSON.stringify({\n  workflow: wf.name || 'desconocido',\n  nodo: ex.lastNodeExecuted || (err.node && err.node.name) || null,\n  mensaje: String(err.message || 'sin mensaje').slice(0, 900),\n  ejecucion: String(ex.id || ''),\n}) } }];"
+      }
+    },
+    {
+      "id": "c",
+      "name": "Anotar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        20,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_fallo_registrar($1::jsonb) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload ] }}"
+        }
+      }
+    },
+    {
+      "id": "d",
+      "name": "Armar el correo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json.resultado || {};\nconst e = $('Recoge el fallo').first().json || {};\nconst wf = (e.workflow || {}).name || 'un flujo';\nconst ex = e.execution || {};\nconst err = ex.error || {};\n\nreturn [{ json: {\n  avisar: r.avisar === true,\n  asunto: '[ToqueFlow] Fallo en ' + wf,\n  cuerpo: [\n    'Se rompio: ' + wf,\n    'Nodo: ' + (ex.lastNodeExecuted || 'sin identificar'),\n    '',\n    String(err.message || 'sin mensaje'),\n    '',\n    'Ejecucion: ' + (ex.id || 's/n'),\n    ex.url ? ex.url : '',\n    '',\n    'Este aviso no se repite en una hora aunque el flujo siga fallando.',\n  ].join('\\n'),\n} }];"
+      }
+    },
+    {
+      "id": "e",
+      "name": "Vale la pena avisar",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.avisar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f",
+      "name": "Avisar",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        680,
+        220
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "jiR95J4fH8tOO5Vv",
+          "name": "SMTP ToqueFlow"
+        }
+      },
+      "parameters": {
+        "fromEmail": "ToqueFlow Alertas <hola@toqueflow.com>",
+        "toEmail": "ing_diegolrc@hotmail.com,feruroc@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.cuerpo }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "g",
+      "name": "Callar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        680,
+        380
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Recoge el fallo": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Anotar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anotar": {
+      "main": [
+        [
+          {
+            "node": "Armar el correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar el correo": {
+      "main": [
+        [
+          {
+            "node": "Vale la pena avisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vale la pena avisar": {
+      "main": [
+        [
+          {
+            "node": "Avisar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Callar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}

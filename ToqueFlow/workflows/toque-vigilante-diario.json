@@ -1,0 +1,257 @@
+{
+  "name": "Toque - Vigilante diario",
+  "nodes": [
+    {
+      "id": "a",
+      "name": "Cada manana",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -420,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 13 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b",
+      "name": "Como va cada empresa",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -200,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from public.tf_vigilancia();",
+        "options": {}
+      }
+    },
+    {
+      "id": "c",
+      "name": "Instancias de WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        20,
+        300
+      ],
+      "parameters": {
+        "url": "={{ $env.EVOLUTION_API_URL }}/instance/fetchInstances",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d",
+      "name": "Que hay que revisar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Se junta lo que dice la base (quien esta callado) con lo que dice Evolution\n// (que instancias estan conectadas). Son preguntas distintas y una no cubre a\n// la otra: el trafico de los agentes VIEJOS no pasa por la plataforma, asi que\n// esos clientes SOLO se ven por Evolution. Es el caso de FerreteriaYa.\n\n// OJO: `.all()` y no `.first()`. El nodo de HTTP devuelve UN ITEM POR\n// INSTANCIA, asi que leer solo el primero devolvia una instancia suelta, el\n// filtro no encontraba nada y el vigilante decia que todo estaba bien —\n// teniendo cuatro instancias caidas hace 18 dias. Fallar en silencio es\n// justo lo que este flujo existe para evitar.\nconst salud = $('Como va cada empresa').all().map((x) => x.json);\n\nlet inst = [];\ntry {\n  const items = $('Instancias de WhatsApp').all().map((x) => x.json);\n  for (const it of items) {\n    if (Array.isArray(it)) inst = inst.concat(it);\n    else if (Array.isArray(it.data)) inst = inst.concat(it.data);\n    else if (it && (it.name || it.instanceName)) inst.push(it);\n  }\n} catch (e) { inst = []; }\n\n// Evolution repite cada instancia, asi que se deja una por nombre.\nconst vistas = {};\nfor (const i of inst) {\n  const n = i.name || i.instanceName || 'sin nombre';\n  if (!vistas[n]) vistas[n] = i;\n}\n\n// `open` es conectada. `connecting` NO lo es: es justo el estado en el que se\n// quedaron las cuatro de FerreteriaYa el 23 de agosto, y en el que llevan\n// desde entonces sin que nadie se enterara.\nconst desconectadas = Object.keys(vistas).map((n) => {\n  const e = String(vistas[n].connectionStatus || vistas[n].status || '').toLowerCase();\n  return { n, e };\n}).filter((x) => x.e && x.e !== 'open' && x.e !== 'connected');\n\nconst malas = salud.filter((s) => ['sin_estrenar', 'callado', 'pico'].indexOf(s.estado) !== -1);\n\nconst lineas = [];\nif (malas.length) {\n  lineas.push('EMPRESAS:');\n  for (const m of malas) lineas.push('  - ' + m.empresa + ': ' + m.detalle);\n}\nif (desconectadas.length) {\n  if (lineas.length) lineas.push('');\n  lineas.push('WHATSAPP SIN CONECTAR (' + desconectadas.length + ' de ' + Object.keys(vistas).length + '):');\n  for (const d of desconectadas) lineas.push('  - ' + d.n + ': ' + d.e);\n  lineas.push('');\n  lineas.push('Se arregla volviendo a escanear el QR de cada una.');\n}\n\nreturn [{ json: {\n  avisar: lineas.length > 0,\n  asunto: '[ToqueFlow] ' + (malas.length + desconectadas.length) + ' cosa(s) que revisar',\n  cuerpo: lineas.length ? lineas.join('\\n') : 'Todo andando.',\n  revisadas: Object.keys(vistas).length,\n} }];"
+      }
+    },
+    {
+      "id": "e",
+      "name": "Hay algo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.avisar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f",
+      "name": "Avisar",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        680,
+        220
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "jiR95J4fH8tOO5Vv",
+          "name": "SMTP ToqueFlow"
+        }
+      },
+      "parameters": {
+        "fromEmail": "ToqueFlow Alertas <hola@toqueflow.com>",
+        "toEmail": "ing_diegolrc@hotmail.com,feruroc@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.cuerpo }}",
+        "options": {}
+      },
+      "webhookId": "55debabc-ff08-40df-a3b7-dce37a352080"
+    },
+    {
+      "id": "g",
+      "name": "Todo bien",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        680,
+        380
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "h",
+      "name": "A mano",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        460
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CAqm2hrD9XHwjE2s",
+          "name": "Toque - Firma de alertas del VPS"
+        }
+      },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "toque-vigilar",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "webhookId": "a244be71-edb9-4adf-96b6-7b89850eea19"
+    }
+  ],
+  "connections": {
+    "Cada manana": {
+      "main": [
+        [
+          {
+            "node": "Como va cada empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Como va cada empresa": {
+      "main": [
+        [
+          {
+            "node": "Instancias de WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instancias de WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Que hay que revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Que hay que revisar": {
+      "main": [
+        [
+          {
+            "node": "Hay algo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay algo": {
+      "main": [
+        [
+          {
+            "node": "Avisar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Todo bien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A mano": {
+      "main": [
+        [
+          {
+            "node": "Como va cada empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "errorWorkflow": "Hjg94IM97CaNuEGp",
+    "timezone": "America/Bogota"
+  }
+}

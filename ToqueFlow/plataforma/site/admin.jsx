@@ -329,6 +329,7 @@ function AdminApp({ profile }) {
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
   const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
+  const [salud, setSalud] = React.useState([]);            // como va cada empresa: andando, callada, sin estrenar
   const [consumoDet, setConsumoDet] = React.useState([]);  // consumo por producto y mes
   const [consumoPlan, setConsumoPlan] = React.useState([]);// consumo contra lo que paga
   const [catBusy, setCatBusy] = React.useState(false);
@@ -347,7 +348,7 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp, sal] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -361,6 +362,9 @@ function AdminApp({ profile }) {
       sb.from('empresa_resumen').select('*'),
       sb.from('consumo_detalle').select('*'),
       sb.from('consumo_vs_plan').select('*'),
+      // Como va cada empresa. Es una funcion y no una vista porque compara lo
+      // de hoy con lo normal de ESA empresa, y eso se calcula, no se guarda.
+      sb.rpc('tf_salud'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
@@ -373,6 +377,7 @@ function AdminApp({ profile }) {
     setResumen(res.data || []);
     setConsumoDet(cd.data || []);
     setConsumoPlan(cp.data || []);
+    setSalud(sal.data || []);
     setLoading(false);
   }, []);
 
@@ -526,6 +531,34 @@ function AdminApp({ profile }) {
 
         {loading && <div className="admin-empty">Cargando…</div>}
 
+        {/* Lo primero que se ve al entrar: si hay algo roto. Antes la consola
+            decia que tiene cada cliente pero no si le esta FUNCIONANDO, y un
+            cliente caido se veia igual que uno sano. */}
+        {!loading && (() => {
+          const malas = salud.filter((x) => ['sin_estrenar', 'callado', 'pico'].indexOf(x.estado) !== -1);
+          const flojas = salud.filter((x) => x.estado === 'flojo');
+          if (!malas.length && !flojas.length) {
+            return (
+              <div className="salud-banda is-bien">
+                <span className="salud-punto"></span>
+                <b>Todo andando</b>
+                <em>{salud.filter((x) => x.agente_activo).length} agente(s) encendido(s) y recibiendo</em>
+              </div>
+            );
+          }
+          return (
+            <div className="salud-banda is-mal">
+              <span className="salud-punto"></span>
+              <div>
+                <b>{malas.length + flojas.length} cosa(s) que revisar</b>
+                {malas.concat(flojas).map((x) => (
+                  <span key={x.company_id}><i>{x.empresa}</i> · {x.detalle}</span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {!loading && tab === 'empresas' && (
           <div className={vistaEmp === 'lista' ? 'admin-cards is-lista' : 'admin-cards'}>
             {companies.length === 0 && <div className="admin-empty">Aún no hay empresas. Crea la primera.</div>}
@@ -541,6 +574,18 @@ function AdminApp({ profile }) {
                     <b>{c.name}</b>
                   </button>
                   <span className={`flow-status ${c.status === 'active' ? 'on' : 'off'}`}><span className="flow-status-dot"></span>{c.status === 'active' ? 'activa' : 'pausada'}</span>
+                  {/* «Activa» es una decision del negocio; esto es si le esta
+                      funcionando. Son cosas distintas y confundirlas fue lo que
+                      dejo a FerreteriaYa 18 dias caida sin que nadie lo viera. */}
+                  {(() => {
+                    const h = salud.find((x) => x.company_id === c.id);
+                    if (!h || h.estado === 'ok' || h.estado === 'apagado') return null;
+                    return <span className="salud-chip" title={h.detalle}>{
+                      h.estado === 'callado' ? 'callado' :
+                      h.estado === 'sin_estrenar' ? 'nunca ha recibido' :
+                      h.estado === 'pico' ? 'pico de mensajes' : 'flojo'
+                    }</span>;
+                  })()}
                 </div>
                 {(() => {
                   // El resumen sale de la vista `empresa_resumen`, que cuenta
