@@ -79,7 +79,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "// Se junta lo que dice la base (quien esta callado) con lo que dice Evolution\n// (que instancias estan conectadas). Son preguntas distintas y una no cubre a\n// la otra: el trafico de los agentes VIEJOS no pasa por la plataforma, asi que\n// esos clientes SOLO se ven por Evolution. Es el caso de FerreteriaYa.\n\n// OJO: `.all()` y no `.first()`. El nodo de HTTP devuelve UN ITEM POR\n// INSTANCIA, asi que leer solo el primero devolvia una instancia suelta, el\n// filtro no encontraba nada y el vigilante decia que todo estaba bien —\n// teniendo cuatro instancias caidas hace 18 dias. Fallar en silencio es\n// justo lo que este flujo existe para evitar.\nconst salud = $('Como va cada empresa').all().map((x) => x.json);\n\nlet inst = [];\ntry {\n  const items = $('Instancias de WhatsApp').all().map((x) => x.json);\n  for (const it of items) {\n    if (Array.isArray(it)) inst = inst.concat(it);\n    else if (Array.isArray(it.data)) inst = inst.concat(it.data);\n    else if (it && (it.name || it.instanceName)) inst.push(it);\n  }\n} catch (e) { inst = []; }\n\n// Evolution repite cada instancia, asi que se deja una por nombre.\nconst vistas = {};\nfor (const i of inst) {\n  const n = i.name || i.instanceName || 'sin nombre';\n  if (!vistas[n]) vistas[n] = i;\n}\n\n// `open` es conectada. `connecting` NO lo es: es justo el estado en el que se\n// quedaron las cuatro de FerreteriaYa el 23 de agosto, y en el que llevan\n// desde entonces sin que nadie se enterara.\nconst desconectadas = Object.keys(vistas).map((n) => {\n  const e = String(vistas[n].connectionStatus || vistas[n].status || '').toLowerCase();\n  return { n, e };\n}).filter((x) => x.e && x.e !== 'open' && x.e !== 'connected');\n\nconst malas = salud.filter((s) => ['sin_estrenar', 'callado', 'pico'].indexOf(s.estado) !== -1);\n\nconst lineas = [];\nif (malas.length) {\n  lineas.push('EMPRESAS:');\n  for (const m of malas) lineas.push('  - ' + m.empresa + ': ' + m.detalle);\n}\nif (desconectadas.length) {\n  if (lineas.length) lineas.push('');\n  lineas.push('WHATSAPP SIN CONECTAR (' + desconectadas.length + ' de ' + Object.keys(vistas).length + '):');\n  for (const d of desconectadas) lineas.push('  - ' + d.n + ': ' + d.e);\n  lineas.push('');\n  lineas.push('Se arregla volviendo a escanear el QR de cada una.');\n}\n\nreturn [{ json: {\n  avisar: lineas.length > 0,\n  asunto: '[ToqueFlow] ' + (malas.length + desconectadas.length) + ' cosa(s) que revisar',\n  cuerpo: lineas.length ? lineas.join('\\n') : 'Todo andando.',\n  revisadas: Object.keys(vistas).length,\n} }];"
+        "jsCode": "// Se junta lo que dice la base (quien esta callado) con lo que dice Evolution\n// (que instancias estan conectadas). Son preguntas distintas y una no cubre a\n// la otra: el trafico de los agentes VIEJOS no pasa por la plataforma, asi que\n// esos clientes SOLO se ven por Evolution. Es el caso de FerreteriaYa.\n\n// OJO: `.all()` y no `.first()`. El nodo de HTTP devuelve UN ITEM POR\n// INSTANCIA, asi que leer solo el primero devolvia una instancia suelta, el\n// filtro no encontraba nada y el vigilante decia que todo estaba bien —\n// teniendo cuatro instancias caidas hace 18 dias. Fallar en silencio es\n// justo lo que este flujo existe para evitar.\nconst salud = $('Como va cada empresa').all().map((x) => x.json);\n\nlet inst = [];\ntry {\n  const items = $('Instancias de WhatsApp').all().map((x) => x.json);\n  for (const it of items) {\n    if (Array.isArray(it)) inst = inst.concat(it);\n    else if (Array.isArray(it.data)) inst = inst.concat(it.data);\n    else if (it && (it.name || it.instanceName)) inst.push(it);\n  }\n} catch (e) { inst = []; }\n\n// Evolution repite cada instancia, asi que se deja una por nombre.\nconst vistas = {};\nfor (const i of inst) {\n  const n = i.name || i.instanceName || 'sin nombre';\n  if (!vistas[n]) vistas[n] = i;\n}\n\n// `open` es conectada. `connecting` NO lo es: es justo el estado en el que se\n// quedaron las cuatro de FerreteriaYa el 23 de agosto, y en el que llevan\n// desde entonces sin que nadie se enterara.\nconst desconectadas = Object.keys(vistas).map((n) => {\n  const e = String(vistas[n].connectionStatus || vistas[n].status || '').toLowerCase();\n  return { n, e };\n}).filter((x) => x.e && x.e !== 'open' && x.e !== 'connected');\n\nconst malas = salud.filter((s) => ['sin_estrenar', 'callado', 'pico'].indexOf(s.estado) !== -1);\n\nconst lineas = [];\nif (malas.length) {\n  lineas.push('EMPRESAS:');\n  for (const m of malas) lineas.push('  - ' + m.empresa + ': ' + m.detalle);\n}\nif (desconectadas.length) {\n  if (lineas.length) lineas.push('');\n  lineas.push('WHATSAPP SIN CONECTAR (' + desconectadas.length + ' de ' + Object.keys(vistas).length + '):');\n  for (const d of desconectadas) lineas.push('  - ' + d.n + ': ' + d.e);\n  lineas.push('');\n  lineas.push('Se arregla volviendo a escanear el QR de cada una.');\n}\n\n\n// El bolsillo. Un cliente que se pasa NO es solo un costo: es la mejor señal\n// de venta adicional que hay, y llega sola.\nlet consumo = [];\ntry { consumo = $('Quien se pasa del plan').all().map((x) => x.json).filter((x) => x && x.empresa); } catch (e) { consumo = []; }\n\nif (consumo.length) {\n  if (lineas.length) lineas.push('');\n  lineas.push('LA IA SE ESTA COMIENDO EL MARGEN:');\n  for (const c of consumo) lineas.push('  - ' + c.empresa + ' [' + c.nivel + ']: ' + c.detalle);\n  lineas.push('');\n  lineas.push('Al 20% es una conversacion de venta. Al 40% hay que mirarlo.');\n}\n\nreturn [{ json: {\n  avisar: lineas.length > 0,\n  asunto: '[ToqueFlow] ' + (malas.length + desconectadas.length) + ' cosa(s) que revisar',\n  cuerpo: lineas.length ? lineas.join('\\n') : 'Todo andando.',\n  revisadas: Object.keys(vistas).length,\n} }];"
       }
     },
     {
@@ -171,6 +171,28 @@
         "options": {}
       },
       "webhookId": "a244be71-edb9-4adf-96b6-7b89850eea19"
+    },
+    {
+      "id": "j",
+      "name": "Quien se pasa del plan",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        20,
+        460
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select * from public.tf_consumo_alerta();",
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -200,7 +222,7 @@
       "main": [
         [
           {
-            "node": "Que hay que revisar",
+            "node": "Quien se pasa del plan",
             "type": "main",
             "index": 0
           }
@@ -241,6 +263,17 @@
         [
           {
             "node": "Como va cada empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quien se pasa del plan": {
+      "main": [
+        [
+          {
+            "node": "Que hay que revisar",
             "type": "main",
             "index": 0
           }

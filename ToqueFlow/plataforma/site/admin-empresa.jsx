@@ -398,6 +398,14 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                         ? 'se está comiendo el margen'
                         : 'sobre ' + mensualidad.toLocaleString('es-CO') + ' COP/mes'}
                     </i>
+                    {/* De dónde sale ese número. No es lo mismo lo que el
+                        cliente paga de verdad que lo que costaría hoy a
+                        precio de lista, y el margen se mira con lo primero. */}
+                    <em className="con-origen">
+                      {plan.mensualidad_a_mano
+                        ? 'lo que paga de verdad'
+                        : 'a precio de lista: lo que tiene encendido. Nadie ha escrito lo que paga'}
+                    </em>
                   </React.Fragment>
                 ) : (
                   <React.Fragment>

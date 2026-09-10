@@ -4633,3 +4633,11 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
   padding: 3px 8px; border-radius: 5px; color: #b06a12;
   background: color-mix(in oklab, #d98324 14%, transparent);
 }
+
+/* De dónde sale la mensualidad. Un número sin procedencia invita a creerlo:
+   lo que el cliente paga de verdad y lo que costaría a precio de lista son
+   cosas distintas, y el margen se mira con la primera. */
+.con-origen {
+  display: block; font-style: normal; font-family: var(--mono);
+  font-size: 10px; color: var(--mute); margin-top: 3px; line-height: 1.4;
+}
