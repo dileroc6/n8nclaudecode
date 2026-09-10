@@ -206,6 +206,39 @@ const api = async (p) => {
       "Fallan en silencio. Asi lleva dias caido el WhatsApp de FerreteriaYa sin que nadie lo supiera.");
   }
 
+  // ── 5. Secretos escritos a mano dentro de los flujos ─────────────────────
+  // La firma que protege al agente estaba en texto plano DENTRO de `wa-router`,
+  // y el receptor de eventos tiene la suya igual con un «TODO mover a variable
+  // de entorno» de julio. Un secreto ahi dentro lo ve cualquiera que entre a
+  // n8n o que exporte el flujo — y es la llave que abre el agente.
+  //
+  // Se comprueba la FORMA, no el valor: no hay que traerse el secreto aqui
+  // para saber que esta donde no debe.
+  bloque("Secretos escritos a mano en los flujos");
+  const CABECERAS = ["x-toque-signature", "x-signature", "apikey", "authorization"];
+  const conSecreto = [];
+  for (const w of activos) {
+    const full = await api("/workflows/" + w.id);
+    for (const n of (full.nodes || [])) {
+      const params = JSON.stringify(n.parameters || {});
+      // Un valor pegado a una cabecera de autenticacion que NO sea una
+      // expresion de n8n (`{{ $env... }}`) ni una credencial.
+      for (const c of CABECERAS) {
+        const re = new RegExp('"name"\\s*:\\s*"' + c + '"\\s*,\\s*"value"\\s*:\\s*"([^"]{16,})"', "i");
+        const m = params.match(re);
+        if (m && m[1].indexOf("{{") === -1) {
+          conSecreto.push({ wf: w.name, nodo: n.name, cabecera: c, pista: m[1].slice(0, 6) + "…" });
+        }
+      }
+    }
+  }
+  if (!conSecreto.length) ok("ningun flujo activo lleva un secreto escrito a mano");
+  else {
+    for (const x of conSecreto)
+      mal(x.wf.slice(0, 34).padEnd(36) + x.nodo.slice(0, 22).padEnd(24) + x.cabecera + " = " + x.pista);
+    anota("alta", conSecreto.length + " secreto(s) escritos a mano dentro de flujos de n8n",
+      "Lo ve cualquiera que entre a n8n o exporte el flujo. Van en una variable de entorno del VPS y se leen con {{ $env.NOMBRE }}.");
+  }
   console.log("\n" + "═".repeat(70));
   if (!hallazgos.length) console.log("✅ n8n no tiene puertas abiertas.");
   else {
