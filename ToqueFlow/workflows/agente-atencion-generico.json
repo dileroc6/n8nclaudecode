@@ -470,7 +470,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify(Object.assign({}, ($('¿Pidió una herramienta?').first().json.bloque || {}).input || {}, { instance: $('Extraer mensaje').first().json.instance, telefono: $('Extraer mensaje').first().json.telefono })) }}",
+        "jsonBody": "={{ JSON.stringify(Object.assign({}, { referencia: $('Extraer mensaje').first().json.wa_id }, ($('¿Pidió una herramienta?').first().json.bloque || {}).input || {}, { instance: $('Extraer mensaje').first().json.instance, telefono: $('Extraer mensaje').first().json.telefono })) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {

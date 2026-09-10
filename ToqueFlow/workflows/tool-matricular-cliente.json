@@ -1,0 +1,93 @@
+{
+  "name": "ToqueFlow - Tool Matricular a un cliente",
+  "nodes": [
+    {
+      "id": "entrada",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-matricular-cliente",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// La herramienta recibe lo que el agente le paso, mas de que instancia viene\n// y a quien atiende. NUNCA recibe el company_id: se deriva adentro de la base,\n// igual que en el agente. Si una herramienta aceptara la empresa del payload,\n// bastaria un error en el agente para tocarle los datos a otro cliente.\nconst b = $input.first().json.body || $input.first().json;\n\n// Se pasa el objeto entero como UN jsonb. El nodo de Postgres parte los\n// parametros por coma, y aqui viaja texto escrito por una persona.\nconst payload = Object.assign({}, b);\npayload.instance = String(b.instance || '');\npayload.telefono = String(b.telefono || '').replace(/D/g, '');\n\nreturn [{ json: { payload: JSON.stringify(payload) } }];"
+      }
+    },
+    {
+      "id": "ejecutar",
+      "name": "Ejecutar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        40,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_matricular_cliente($1::jsonb) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload ] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}
