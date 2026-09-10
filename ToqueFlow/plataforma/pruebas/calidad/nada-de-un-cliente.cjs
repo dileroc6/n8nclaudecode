@@ -22,7 +22,7 @@ const SITE = path.join(__dirname, "..", "..", "site");
 
 // Las pantallas que ve CUALQUIER cliente. Las de la consola de ToqueFlow no
 // entran: ahí sí se nombra a los clientes, que es de lo que tratan.
-const COMPARTIDAS = ["contactos.html", "campanas.html", "dashboard.html", "login.html"];
+const COMPARTIDAS = ["contactos.html", "campanas.html", "dashboard.html", "login.html", "modo-prueba.html"];
 
 // Palabras de un cliente concreto que no deben aparecer en el texto que ve
 // otro. Se buscan como palabra suelta para no cazar `clases_restantes`, que es
@@ -89,10 +89,6 @@ for (const archivo of COMPARTIDAS) {
   }
 }
 
-// El simulador queda fuera a propósito, y conviene decirlo en voz alta en vez
-// de que parezca que pasó.
-console.log("\n  (modo-prueba.html no se revisa todavía: está escrito alrededor");
-console.log("   de las clases de Bejauha. Es la tarea 54 del tablero.)");
 
 console.log("\n═══ " + (fallos.length
   ? fallos.length + " pantalla(s) con vocabulario de un cliente"

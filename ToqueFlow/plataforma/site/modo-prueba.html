@@ -102,6 +102,25 @@
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,(m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
   const $ = (id) => document.getElementById(id);
 
+  // El vocabulario del negocio: como llama a sus unidades. Un gimnasio dice
+  // «clases», un spa «sesiones», una tienda «bonos». La pantalla estaba escrita
+  // con las palabras de Bejauha, asi que un hotel entraba a probar su bot y
+  // veia un simulador hablando de clases que no vende.
+  const VOC = (company && company.metadata && company.metadata.vocabulario) || {};
+  const UNI  = VOC.unidad || 'unidad';
+  const UNIS = VOC.unidad_plural || 'unidades';
+
+  // ¿Este negocio lleva saldo? Si no, la pestaña de admin no tiene sentido:
+  // sus flujos no existen para el. Se pregunta por lo que TIENE, no se supone.
+  let llevaSaldo = false;
+  try {
+    const { data: piezas } = await sb.from('empresa_catalogo')
+      .select('clave, estado_empresa')
+      .eq('company_id', companyId)
+      .in('clave', ['paquete-recargas', 'registrar-consumo', 'recargar-saldo', 'consultar-saldo']);
+    llevaSaldo = (piezas || []).some((x) => x.estado_empresa === 'activo');
+  } catch (e) {}
+
   let testContact = null;
   try {
     const { data } = await sb.from('contacts').select('id,full_name,phone').eq('company_id', companyId).eq('phone', TEST_PHONE).maybeSingle();
@@ -111,13 +130,22 @@
   const TABS = {
     cliente: { flows:['agente_atencion'], rol:'cliente', flow:'agente_atencion', input:true,
       hint:'Escribe como un cliente por WhatsApp: dudas, horarios, agenda, reactivación. Responde el agente de atención.',
-      ph:'Escribe como cliente… (ej. ¿tienen clases el sábado?)', utils:['clear'] },
+      ph:'Escribe como cliente… (ej. ¿cuánto vale?, ¿a qué hora abren?)', utils:['clear'] },
     admin: { flows:['gestion_clases','deudor'], rol:'admin', flow:'gestion_clases', input:true,
-      hint:'Escribe comandos de admin: recarga (+N), consulta de saldo, asistencia (−1). También puedes simular un pago fallido. Opera sobre el contacto de prueba.',
-      ph:'Escribe como admin… (ej. recárgale 8 · ¿cuántas clases le quedan?)', utils:['saldo','deudor','clear'] },
+      hint:'Escribe comandos de admin: recarga (+N), consulta de saldo, consumo (−1). También puedes simular un pago fallido. Opera sobre el contacto de prueba.',
+      ph:'Escribe como admin… (ej. recárgale 8 · ¿cuántas ' + UNIS + ' le quedan?)', utils:['saldo','deudor','clear'] },
     campana: { flows:['campana'], input:false,
       hint:'Vista previa de las campañas lanzadas en modo prueba: el mensaje que recibiría cada persona.', utils:['clear'] },
   };
+  // La pestaña de admin opera sobre el saldo. A quien no lleva saldo se le
+  // esconde en vez de enseñarle una pantalla que no le sirve — y esconderla es
+  // mas honesto que dejarla y que falle al pulsarla.
+  if (!llevaSaldo) {
+    const tabAdmin = document.querySelector('#tabs .tab[data-tab="admin"]');
+    if (tabAdmin) tabAdmin.remove();
+    delete TABS.admin;
+  }
+
   let active = 'cliente';
   const h = (location.hash || '').replace('#', '');
   if (TABS[h]) active = h;
@@ -203,15 +231,27 @@
 
   // Reiniciar saldo del contacto de prueba
   $('btn-saldo').onclick = async (e) => {
-    const val = prompt('¿Con cuántas clases quieres dejar el contacto de prueba?\n(es solo un número inicial para probar recarga/consulta)', '8');
+    const val = prompt('¿Con cuántas ' + UNIS + ' quieres dejar el contacto de prueba?\n(es solo un número inicial para probar recarga/consulta)', '8');
     if (val === null) return;
     const BASE = parseInt(val, 10);
     if (!Number.isFinite(BASE) || BASE < 0) { alert('Escribe un número válido (ej. 8).'); return; }
     e.target.disabled = true;
-    const { error } = await sb.from('contacts').update({ clases_restantes: BASE, service_type: 'paquete' }).eq('company_id', companyId).eq('phone', TEST_PHONE);
+    // A `contact_saldo`, que es donde vive el saldo desde que se saco de la
+    // tabla compartida. Escribir en `clases_restantes` mantenia vivas las
+    // columnas viejas Y dejaba el sandbox mirando un sitio distinto del que
+    // mira produccion — que es justo lo que el sandbox no puede hacer.
+    let error = null;
+    if (testContact && testContact.id) {
+      const r = await sb.from('contact_saldo')
+        .upsert({ contact_id: testContact.id, company_id: companyId, unidades: BASE },
+                { onConflict: 'contact_id' });
+      error = r.error;
+    } else {
+      error = { message: 'todavía no hay contacto de prueba; escribe algo primero en la pestaña Cliente' };
+    }
     if (error) alert('No se pudo reiniciar: ' + error.message);
     else {
-      await sb.from('test_messages').insert({ company_id: companyId, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, direction: 'out', author: 'sistema', body: 'Saldo de prueba dejado en ' + BASE + ' clases. Ya puedes probar recarga/consulta.', flow: 'gestion_clases' });
+      await sb.from('test_messages').insert({ company_id: companyId, contact_id: testContact ? testContact.id : null, telefono: TEST_PHONE, direction: 'out', author: 'sistema', body: 'Saldo de prueba dejado en ' + BASE + ' ' + (BASE === 1 ? UNI : UNIS) + '. Ya puedes probar recarga/consulta.', flow: 'gestion_clases' });
       lastKey = ''; await load();
     }
     e.target.disabled = false;
