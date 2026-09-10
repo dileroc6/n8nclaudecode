@@ -425,6 +425,30 @@ function AdminApp({ profile }) {
     setUsers((us) => us.map((x) => x.id === u.id ? { ...x, company_id: company_id || null } : x));
     await sb.from('profiles').update({ company_id: company_id || null }).eq('id', u.id);
   };
+  // Encender o apagar los avisos de un cliente. Es una decisión de operación
+  // —«a este no me avises mientras lo arreglo»— y tenía que ser SQL, que es
+  // como se termina aguantando el ruido en vez de callarlo.
+  const toggleAvisos = async (c) => {
+    const h = salud.find((x) => x.company_id === c.id) || {};
+    const silenciar = !h.silenciado;
+    let motivo = null;
+    if (silenciar) {
+      // Se pide el motivo porque dentro de tres meses alguien va a preguntar
+      // por qué este cliente no avisa, y tiene que haber respuesta.
+      motivo = window.prompt('¿Por qué se silencian los avisos de ' + c.name + '?\n(queda escrito con la fecha)', 'está congelado');
+      if (motivo === null) return;
+    }
+    const { data, error } = await sb.rpc('tf_vigilancia_silenciar', {
+      p_company: c.id, p_silenciar: silenciar, p_motivo: motivo,
+    });
+    if (error || (data && data.ok === false)) {
+      setToast({ type: 'error', text: 'No se pudo: ' + (error ? error.message : data.motivo) });
+      return;
+    }
+    setToast({ type: 'ok', text: silenciar ? 'Avisos silenciados' : 'Avisos encendidos' });
+    reload();
+  };
+
   const toggleCompany = async (c) => {
     const status = c.status === 'active' ? 'paused' : 'active';
     setCompanies((cs) => cs.map((x) => x.id === c.id ? { ...x, status } : x));
@@ -643,6 +667,20 @@ function AdminApp({ profile }) {
                 })()}
                 <div className="admin-co-foot">
                   <button type="button" className="admin-co-btn primary" onClick={() => setFichaCo(c)}>Entrar →</button>
+                  {(() => {
+                    const h = salud.find((x) => x.company_id === c.id);
+                    if (!h) return null;
+                    return (
+                      <button type="button"
+                              className={'admin-co-btn' + (h.silenciado ? ' is-callado' : '')}
+                              title={h.silenciado
+                                ? 'No se avisa si se cae: ' + (h.silencio_motivo || 'sin motivo escrito')
+                                : 'Se avisa por correo si se cae o se queda callado'}
+                              onClick={() => toggleAvisos(c)}>
+                        {h.silenciado ? 'Avisos: en silencio' : 'Avisos: encendidos'}
+                      </button>
+                    );
+                  })()}
                   <button type="button" className="admin-co-btn" onClick={() => { setCompanyFilter(c.id); setTab('usuarios'); }}>Usuarios</button>
                   <button type="button" className="admin-co-btn" onClick={() => { setConsumoCo(c.id); setTab('consumo'); }}>Consumo IA</button>
                 </div>
