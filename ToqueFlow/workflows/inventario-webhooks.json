@@ -1,0 +1,254 @@
+[
+  {
+    "wf": "Savia — Confirmar Transferencia (WF-04)",
+    "id": "1zkSdcF3dn1K0kpd",
+    "ruta": "savia/confirmar-transfer",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Luxe Smile WF01 — Captación y Calificación",
+    "id": "CuBrhx5KucZ4mMXX",
+    "ruta": "luxe-smile-messages",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "FERRE - Agente WA Nico Bogotá",
+    "id": "GaTuSv4LfAI30ojK",
+    "ruta": "ferre-bog/wa",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "FerreteríaYa WA — Agente Nico",
+    "id": "I5s9ttKr1xNnUAHh",
+    "ruta": "ferreteriaya-wa",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WF-02 — Agente IA (v2)",
+    "id": "IMmZ34MsJ2Qv6aFB",
+    "ruta": "agente-ia-v2",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "FERRE - Agente WA Nico",
+    "id": "M4tZI2AQqT0K5cnj",
+    "ruta": "ferre/wa",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Agente Admin Sheet (WF-ADM)",
+    "id": "QCRewv0AGcfFqINt",
+    "ruta": "bejauha-adm-sheet",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Inbound Bot Planes (Sheet)",
+    "id": "RS4t963GlxCBNKq4",
+    "ruta": "bejauha-inbound-test",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WF-04 - Escalacion",
+    "id": "SBhElhiVwF1JNOeI",
+    "ruta": "escalacion",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WF-03 - Agendador",
+    "id": "TiYyaqXDH4sJT6y3",
+    "ruta": "agendador",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Savia — Follow-up Fotos (WF-06)",
+    "id": "iJ7mwdB80RM9VcEP",
+    "ruta": "savia/followup-fotos",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WF-07 - Confirmacion Calendly",
+    "id": "kIGzvLlIYz4PKrrV",
+    "ruta": "calendly-confirmacion",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Savia — Webhook WooCommerce Order (WF-02)",
+    "id": "qOwllAj32Pwo5l5g",
+    "ruta": "savia/woo-order",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "FERRE - Agente WA Nico Medellín",
+    "id": "yyU7bunkmVQlCJOX",
+    "ruta": "ferre-med/wa",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WF-02 — Agente IA",
+    "id": "zhgAnN8hDcgTqgqU",
+    "ruta": "agente-ia",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "WA Router - Dev Multi-Proyecto",
+    "id": "IxpEmIZCHPPp4sC7",
+    "ruta": "wa-router",
+    "gravedad": "ALTA",
+    "porque": "deja inyectar mensajes o hacer que el WhatsApp del cliente escriba",
+    "ultima": "2026-09-10T00:28:55.298Z",
+    "dias": 1
+  },
+  {
+    "wf": "Bejauha - Dashboard Admin (WF05)",
+    "id": "6yuuBScT8qA7QxPk",
+    "ruta": "bejauha-dashboard",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Sandbox Page (HTML)",
+    "id": "IKxkfrw9u0bFJnFy",
+    "ruta": "bejauha-sandbox",
+    "gravedad": "MEDIA",
+    "porque": "sin clasificar",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Sandbox API (portal)",
+    "id": "ffy0Dd6Jo6pc7uYC",
+    "ruta": "bejauha-test-chat",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Sandbox API (portal)",
+    "id": "ffy0Dd6Jo6pc7uYC",
+    "ruta": "bejauha-test-poll",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Sandbox API (portal)",
+    "id": "ffy0Dd6Jo6pc7uYC",
+    "ruta": "bejauha-test-reset",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Bejauha - Dashboard Acciones (WF06)",
+    "id": "qrI64ER7gCd4jXSc",
+    "ruta": "bejauha-dashboard-action",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Savia — Sync Catálogo WC",
+    "id": "gjBMsSnFRefCpIiP",
+    "ruta": "savia-sync-catalogo",
+    "gravedad": "MEDIA",
+    "porque": "expone o cambia datos del cliente",
+    "ultima": "2026-09-10T08:00:00.013Z",
+    "dias": 0
+  },
+  {
+    "wf": "Ferretería Ya - WF-1 - Blog SEO",
+    "id": "u3Yfmb2dQS2oYnWo",
+    "ruta": "fy-trigger-wf1",
+    "gravedad": "MEDIA",
+    "porque": "sin clasificar",
+    "ultima": "2026-09-10T11:00:00.034Z",
+    "dias": 0
+  },
+  {
+    "wf": "AP - brief-blog (form)",
+    "id": "JQEvRdrNvyNZBjfC",
+    "ruta": "brief-blog",
+    "gravedad": "BAJA",
+    "porque": "formulario publico: puede estar bien abierto",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Ferre Impresion Rappi",
+    "id": "KSUMI2TaXjYyjZOc",
+    "ruta": "(Form Trigger)",
+    "gravedad": "BAJA",
+    "porque": "formulario publico: puede estar bien abierto",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "AP - brief-blog (form GET)",
+    "id": "W1032lBc7omoAYYP",
+    "ruta": "brief-blog-form",
+    "gravedad": "BAJA",
+    "porque": "formulario publico: puede estar bien abierto",
+    "ultima": null,
+    "dias": null
+  },
+  {
+    "wf": "Lau - Newsletter",
+    "id": "8pQg9Nu2dXAjxUkL",
+    "ruta": "lau-newsletter",
+    "gravedad": "BAJA",
+    "porque": "formulario publico: puede estar bien abierto",
+    "ultima": "2026-09-08T22:17:43.891Z",
+    "dias": 2
+  }
+]

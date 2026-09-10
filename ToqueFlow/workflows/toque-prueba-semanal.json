@@ -1,0 +1,285 @@
+{
+  "name": "Toque - Prueba semanal del agente",
+  "nodes": [
+    {
+      "id": "a",
+      "name": "Cada lunes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 12 * * 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "h",
+      "name": "A mano",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        460
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CAqm2hrD9XHwjE2s",
+          "name": "Toque - Firma de alertas del VPS"
+        }
+      },
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "toque-prueba-semanal",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "b",
+      "name": "Preparar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -420,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Una conversacion de prueba, en el sandbox. Va con un telefono inventado y\n// `test: true`, asi que corre el flujo REAL pero la salida se desvia a\n// `test_messages` en vez de salir por WhatsApp. Es la regla del sandbox: se\n// prueba lo mismo que corre en produccion, o la prueba no vale.\nconst tel = '5730000' + String(Date.now()).slice(-5);\nreturn [{ json: {\n  telefono: tel,\n  instance: 'dev-router',\n  pregunta: 'hola, cuanto vale la membresia?',\n  wa_id: 'SEMANAL' + Date.now(),\n} }];"
+      }
+    },
+    {
+      "id": "c",
+      "name": "Escribirle al agente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_BASE_URL || \"https://n8n.srv1398596.hstgr.cloud\" }}/webhook/toque-agente",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ instance: $json.instance, test: true, data: { key: { remoteJid: $json.telefono + \"@s.whatsapp.net\", fromMe: false, id: $json.wa_id }, message: { conversation: $json.pregunta } } }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "d",
+      "name": "Que contesto",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        20,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select direction, body from public.test_messages where telefono = $1 and created_at > now() - interval '5 minutes' order by created_at desc limit 5;",
+        "options": {
+          "queryReplacement": "={{ [ $('Preparar').first().json.telefono ] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "e",
+      "name": "Revisar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Lo que se comprueba es lo minimo que tiene que seguir siendo verdad: que\n// el agente CONTESTA. No sustituye al banco de pruebas completo —esos 14\n// escenarios miden lo que dice, y siguen corriendose a mano— pero caza lo\n// que de verdad rompe a todos los clientes a la vez: que el flujo compartido\n// se quedo mudo.\nconst filas = $input.all().map((x) => x.json);\nconst salida = filas.filter((f) => f.direction === 'out' && String(f.body || '').trim().length > 0);\nconst respuesta = salida.length ? String(salida[0].body) : null;\n\nconst problemas = [];\nif (!respuesta) problemas.push('El agente NO contesto nada en el sandbox.');\nelse if (respuesta.length < 15) problemas.push('Contesto algo demasiado corto: ' + JSON.stringify(respuesta));\n\nreturn [{ json: {\n  avisar: problemas.length > 0,\n  asunto: '[ToqueFlow] La prueba semanal del agente FALLO',\n  cuerpo: [\n    'La prueba semanal manda un mensaje al agente en el sandbox y comprueba que conteste.',\n    '',\n    problemas.join(String.fromCharCode(10)),\n    '',\n    'Lo que contesto: ' + (respuesta || '(nada)'),\n    '',\n    'Con un solo flujo para todos los clientes, esto los afecta a TODOS.',\n    'Antes de tocar nada: node pruebas/todo.cjs',\n  ].join(String.fromCharCode(10)),\n  respuesta: respuesta,\n} }];"
+      }
+    },
+    {
+      "id": "f",
+      "name": "Fallo algo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.avisar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "g",
+      "name": "Avisar",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        680,
+        220
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "jiR95J4fH8tOO5Vv",
+          "name": "SMTP ToqueFlow"
+        }
+      },
+      "parameters": {
+        "fromEmail": "ToqueFlow Alertas <hola@toqueflow.com>",
+        "toEmail": "ing_diegolrc@hotmail.com,feruroc@gmail.com",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.cuerpo }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "i",
+      "name": "Todo bien",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        680,
+        380
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Cada lunes": {
+      "main": [
+        [
+          {
+            "node": "Preparar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A mano": {
+      "main": [
+        [
+          {
+            "node": "Preparar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar": {
+      "main": [
+        [
+          {
+            "node": "Escribirle al agente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escribirle al agente": {
+      "main": [
+        [
+          {
+            "node": "Que contesto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Que contesto": {
+      "main": [
+        [
+          {
+            "node": "Revisar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revisar": {
+      "main": [
+        [
+          {
+            "node": "Fallo algo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallo algo": {
+      "main": [
+        [
+          {
+            "node": "Avisar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Todo bien",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota",
+    "errorWorkflow": "Hjg94IM97CaNuEGp"
+  }
+}
