@@ -226,9 +226,22 @@ const api = async (p) => {
       for (const c of CABECERAS) {
         const re = new RegExp('"name"\\s*:\\s*"' + c + '"\\s*,\\s*"value"\\s*:\\s*"([^"]{16,})"', "i");
         const m = params.match(re);
-        if (m && m[1].indexOf("{{") === -1) {
-          conSecreto.push({ wf: w.name, nodo: n.name, cabecera: c, pista: m[1].slice(0, 6) + "…" });
+        if (!m || m[1].indexOf("{{") !== -1) continue;
+
+        // La llave `anon` de Supabase va en el navegador de cualquiera: es
+        // publica POR DISEÑO y encontrarla aqui no es un hallazgo. Se lee el
+        // rol que trae escrito dentro del propio JWT en vez de suponerlo por
+        // la forma. Sin esto la auditoria cantaba lobo, y una auditoria que
+        // canta lobo se deja de mirar.
+        let esAnon = false;
+        if (m[1].startsWith("eyJ")) {
+          try {
+            esAnon = JSON.parse(Buffer.from(m[1].split(".")[1], "base64").toString()).role === "anon";
+          } catch (e) { esAnon = false; }
         }
+        if (esAnon) continue;
+
+        conSecreto.push({ wf: w.name, nodo: n.name, cabecera: c, pista: m[1].slice(0, 6) + "…" });
       }
     }
   }
