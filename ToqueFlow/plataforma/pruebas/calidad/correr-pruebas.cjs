@@ -58,25 +58,47 @@ function fundir(base, extra) {
 }
 
 (async () => {
-  const c = new Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
-  await c.connect();
+  const abrir = async () => {
+    const cl = new Client({ connectionString: process.env.SUPABASE_DB_URL,
+                            ssl: { rejectUnauthorized: false }, keepAlive: true });
+    // Sin esto, una conexión cortada emite un evento 'error' sin dueño y node
+    // se cae. Se cae ENTERO, a mitad de los escenarios, y el que mira la
+    // salida ve quince ✅ y cree que pasó todo.
+    cl.on('error', () => {});
+    await cl.connect();
+    return cl;
+  };
+  let c = await abrir();
+
+  // Si la conexión se murió mientras esperábamos a Claude, se abre otra y se
+  // reintenta una vez. Una prueba que falla porque se aburrió el socket no
+  // dice nada del producto.
+  const query = async (...a) => {
+    try { return await c.query(...a); }
+    catch (e) {
+      if (!/terminated|ECONNRESET|Connection|closed/i.test(e.message)) throw e;
+      try { await c.end(); } catch (_) {}
+      c = await abrir();
+      return await c.query(...a);
+    }
+  };
 
   // ── De qué se considera verdad ────────────────────────────────────────────
   // Las URLs y los precios que el agente puede decir salen del documento de
   // conocimiento, no de una lista escrita a mano aquí. Si mañana Bejauha sube
   // un precio, esta prueba se entera sola.
-  const doc = (await c.query(
+  const doc = (await query(
     "select texto from public.agent_knowledge_prompt where company_id=$1", [EMPRESA])).rows[0];
   if (!doc) { console.error("Esta empresa no tiene conocimiento cargado. Nada que probar."); process.exit(1); }
 
   const urlsOk    = new Set((doc.texto.match(/https?:\/\/[^\s)"']+/g)    || []).map(u => u.replace(/[.,]$/, "")));
   const preciosOk = new Set((doc.texto.match(/\$\s?[\d][\d.,]{2,}/g)     || []).map(p => p.replace(/[\s$]/g, "")));
 
-  const estadoPrevio = (await c.query(
-    "select activo from public.agent_config where company_id=$1", [EMPRESA])).rows[0];
-  await c.query("update public.agent_config set activo=true where company_id=$1", [EMPRESA]);
+  const estadoPrevio = (await query(
+    "select whatsapp_instance, activo from public.agent_config where company_id=$1", [EMPRESA])).rows;
+  await query("update public.agent_config set activo=true where company_id=$1", [EMPRESA]);
 
-  const costoAntes = Number((await c.query(
+  const costoAntes = Number((await query(
     "select coalesce(sum(cost_usd),0) s from public.ai_usage where company_id=$1", [EMPRESA])).rows[0].s);
 
   console.log("Agente: " + INSTANCIA + " · " + aCorrer.length + " escenarios\n");
@@ -92,17 +114,17 @@ function fundir(base, extra) {
     const fallos = [];
 
     // Cada escenario arranca de cero: sin contacto y sin historial.
-    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
+    await query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
     if (!esReal) {
       // Solo se borra lo inventado. Un contacto real es de un cliente de
       // verdad y borrarlo por correr una prueba seria imperdonable.
-      await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
-      await c.query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
+      await query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
+      await query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
     }
 
     for (let t = 0; t < esc.turnos.length; t++) {
       const turno = esc.turnos[t];
-      const antes = (await c.query(
+      const antes = (await query(
         "select count(*)::int n from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel])).rows[0].n;
 
       const base = {
@@ -125,7 +147,7 @@ function fundir(base, extra) {
       } catch (e) { /* el workflow puede devolver 500; lo que importa es lo que quedó en la base */ }
       await esperar(1500);
 
-      const msgs = (await c.query(
+      const msgs = (await query(
         "select author, body from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2) order by created_at", [EMPRESA, tel])).rows;
       const nuevos = msgs.length - antes;
       const respuesta = (msgs.filter(m => m.author === "bot").pop() || {}).body || "";
@@ -154,7 +176,7 @@ function fundir(base, extra) {
         if (r.includes(plano(s))) fallos.push("turno " + (t + 1) + ": dijo lo que no debía → «" + s + "»");
 
       if (esp.captura) {
-        const ct = (await c.query(
+        const ct = (await query(
           "select full_name, metadata from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel])).rows[0] || {};
         for (const clave of esp.captura) {
           const ok = clave === "nombre" ? !!ct.full_name : !!(ct.metadata || {})[clave];
@@ -193,7 +215,7 @@ function fundir(base, extra) {
     }
   }
 
-  const costoDespues = Number((await c.query(
+  const costoDespues = Number((await query(
     "select coalesce(sum(cost_usd),0) s from public.ai_usage where company_id=$1", [EMPRESA])).rows[0].s);
 
   console.log("\n═══ Resumen ═══");
@@ -211,19 +233,27 @@ function fundir(base, extra) {
     const tel = telefonoDe(i);
     // Aquí ya se saltaron los reales con el `continue` de arriba: todo lo que
     // llega a esta línea es un teléfono inventado por la prueba.
-    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
-    await c.query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
-    await c.query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
+    await query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, tel]);
+    await query("delete from public.message_log where company_id=$1 and contact_id in (select id from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2))", [EMPRESA, tel]);
+    await query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
   }
 
   // De los reales solo se borran los mensajes de prueba: el contacto es de un
   // cliente de verdad y borrarlo por correr una prueba sería imperdonable.
   for (const esc of aCorrer.filter((e) => e.telefono)) {
-    await c.query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, esc.telefono]);
+    await query("delete from public.test_messages where company_id=$1 and public.tf_telefono(telefono)=public.tf_telefono($2)", [EMPRESA, esc.telefono]);
   }
-  if (estadoPrevio && !estadoPrevio.activo)
-    await c.query("update public.agent_config set activo=false where company_id=$1", [EMPRESA]);
+  for (const e of estadoPrevio)
+    if (!e.activo)
+      await query("update public.agent_config set activo=false where company_id=$1 and whatsapp_instance=$2",
+        [EMPRESA, e.whatsapp_instance]);
 
   await c.end();
   process.exit(malos.length ? 1 : 0);
-})().catch(e => { console.error("ERROR " + e.message); process.exit(2); });
+})().catch(e => {
+  // Código 2, no 0. Un banco de pruebas que se cae y sale en verde es peor que
+  // no tener banco: el cron semanal lo reporta como que todo está bien.
+  console.error("\n*** LA CORRIDA SE CAYÓ — los escenarios que faltaban NO se probaron ***");
+  console.error("ERROR " + e.message);
+  process.exit(2);
+});
