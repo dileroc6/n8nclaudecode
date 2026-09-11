@@ -8,6 +8,7 @@
  *   3. nadie ve los pedidos de otra persona
  *   4. «no sé si hay» y «no hay» son respuestas distintas
  *   5. «ya pagué» queda ANOTADO, nunca dado por cierto
+ *   6. el agente ofrece la talla que HAY, y sabe si su dato está viejo
  *
  * La 1 importa más de lo que parece: si el agente pudiera poner el precio,
  * quien escriba «me dijeron que valía 10.000» acabaría con un pedido a 10.000.
@@ -184,6 +185,66 @@ const TEL2 = '573004' + String(Date.now()).slice(-6);
       check(pg3.verificado === true && pg3.repetido === true,
         'y si vuelve a escribir, se le dice que ya está verificado', JSON.stringify(pg3));
     }
+
+    console.log('\n── Variantes: ofrecer la talla que hay, no «sí tenemos» ──');
+    await c.query(`insert into public.productos (company_id, sku, nombre, precio_cop, existencias, origen, padre_sku, variante)
+      values ($1,'CAM','Camiseta de algodón', 55000, null, 'prueba', null, null),
+             ($1,'CAM-M','Camiseta de algodón talla M', 55000, 4, 'prueba', 'CAM', '{"talla":"M"}'),
+             ($1,'CAM-L','Camiseta de algodón talla L', 55000, 0, 'prueba', 'CAM', '{"talla":"L"}'),
+             ($1,'CAM-XL','Camiseta de algodón talla XL', 59000, 7, 'prueba', 'CAM', '{"talla":"XL"}')`, [empresa]);
+
+    const v = await llamar('tf_tool_buscar_catalogo', { instance: INST, telefono: TEL, que: 'camiseta' });
+    const padre = v.productos.find((x) => x.sku === 'CAM');
+    check(padre && padre.presentaciones.length === 3,
+      'el agente ve las tres tallas, no solo «camiseta»',
+      JSON.stringify(padre && padre.presentaciones).slice(0, 220));
+    const laL = padre && padre.presentaciones.find((x) => x.sku === 'CAM-L');
+    check(laL && laL.existencias === 0,
+      'y sabe que de la L no queda ninguna',
+      JSON.stringify(laL) + ' — decir «sí tenemos camisetas» a quien usa L es una venta perdida y un cliente molesto');
+    const laXL = padre && padre.presentaciones.find((x) => x.sku === 'CAM-XL');
+    check(laXL && Number(laXL.precio) === 59000,
+      'cada talla lleva su propio precio', JSON.stringify(laXL));
+
+    const hermana = v.productos.find((x) => x.sku === 'CAM-M');
+    check(hermana && hermana.presentaciones.length === 2,
+      'y desde una talla se ven las otras dos', JSON.stringify(hermana && hermana.presentaciones).slice(0, 200));
+
+    console.log('\n── El agente sabe si su dato está viejo ──');
+    check(v.frescura && v.frescura.estado === 'fresco',
+      'recién cargado, el catálogo está fresco', JSON.stringify(v.frescura));
+    // Se envejece el catálogo a mano: un dato de hace tres semanas.
+    await c.query(`update public.productos set actualizado_at = now() - interval '21 days' where company_id = $1`, [empresa]);
+    await c.query(`insert into public.catalogo_fuente (company_id, nivel, plataforma, frescura_min)
+      values ($1, 'c', 'prueba', 1440) on conflict (company_id) do update set frescura_min = 1440`, [empresa]);
+    const viejo = await llamar('tf_tool_buscar_catalogo', { instance: INST, telefono: TEL, que: 'camiseta' });
+    check(viejo.frescura.estado === 'viejo', 'a las tres semanas dice que está viejo', JSON.stringify(viejo.frescura));
+    check(/viejo/.test(String(viejo.que_decir)),
+      'y le dice al agente que lo advierta en vez de prometer', JSON.stringify(viejo.que_decir));
+
+    await c.query(`update public.catalogo_fuente set nivel = 'a' where company_id = $1`, [empresa]);
+    const vivo = await llamar('tf_tool_buscar_catalogo', { instance: INST, telefono: TEL, que: 'camiseta' });
+    check(vivo.frescura.estado === 'vivo',
+      'con la tienda conectada el dato es «vivo» aunque la copia tenga días',
+      JSON.stringify(vivo.frescura) + ' — si la tienda avisa cuando algo cambia, la fecha de la copia no dice nada');
+
+    console.log('\n── Qué cambió entre armar el pedido y confirmarlo ──');
+    const pedXL = await llamar('tf_tool_crear_pedido', { instance: INST, telefono: TEL,
+      items: [{ sku: 'CAM-XL', cantidad: 5 }] });
+    const idXL = (await uno(`select id from public.pedidos where company_id = $1 and numero = $2`, [empresa, pedXL.numero])).id;
+    const limpio = (await uno('select public.tf_pedido_revisar($1) as r', [idXL])).r;
+    check(limpio.revisar.length === 0, 'recién armado no hay nada que revisar', JSON.stringify(limpio.revisar));
+
+    // Mientras el pedido esperaba, alguien más se llevó el inventario y
+    // subió el precio. Es exactamente lo que pasa en un día normal.
+    await c.query(`update public.productos set existencias = 2, precio_cop = 65000 where company_id = $1 and sku = 'CAM-XL'`, [empresa]);
+    const ojo = (await uno('select public.tf_pedido_revisar($1) as r', [idXL])).r;
+    check(ojo.revisar.length === 1, 'ahora sí hay algo que mirar antes de confirmar', JSON.stringify(ojo.revisar));
+    check(ojo.revisar[0].hay === 2 && ojo.revisar[0].pedidas === 5,
+      'dice que se pidieron 5 y solo quedan 2', JSON.stringify(ojo.revisar[0]));
+    check(Number(ojo.revisar[0].precio_pedido) === 59000 && Number(ojo.revisar[0].precio_hoy) === 65000,
+      'y que el precio se movió desde que se le prometió',
+      JSON.stringify(ojo.revisar[0]) + ' — el pedido conserva lo que se le dijo a la persona');
 
   } finally {
     await c.query("select set_config('request.jwt.claims', '', false)").catch(() => {});
