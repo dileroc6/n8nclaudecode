@@ -1,5 +1,10 @@
-// Prueba las cuatro herramientas POR SU WEBHOOK, que es como las llama el
-// agente. Monta su propia empresa y la borra al final.
+// Prueba las herramientas POR SU WEBHOOK, que es como las llama el agente.
+// Monta su propia empresa y la borra al final.
+//
+// Que una funcion pase en la base no dice que la herramienta funcione: entre
+// las dos estan la firma, el nodo que arma el jsonb y el de Postgres. Ahi es
+// donde se rompen — un nombre con comas, una firma vencida, un parametro que
+// el nodo parte en dos.
 const fs = require('fs');
 const ROOT = 'C:/Proyectos/toque-flow/ToqueFlow/plataforma';
 const env = {};
@@ -49,8 +54,9 @@ const TEL  = '573006' + String(Date.now()).slice(-6);
     const cid = (await uno("insert into public.contacts (company_id, phone, full_name, source) values ($1,$2,'Prueba tools','whatsapp') returning id", [empresa, TEL])).id;
     await c.query('insert into public.contact_saldo (contact_id, company_id, unidades) values ($1,$2,5)', [cid, empresa]);
 
-    console.log('\n-- La firma protege las cuatro --');
-    for (const ruta of ['tool-registrar-consumo','tool-matricular-cliente','tool-recargar-saldo','tool-registrar-reclamo']) {
+    console.log('\n-- La firma las protege todas --');
+    for (const ruta of ['tool-registrar-consumo','tool-matricular-cliente','tool-recargar-saldo','tool-registrar-reclamo',
+                        'tool-buscar-catalogo','tool-crear-pedido','tool-estado-pedido','tool-confirmar-pago']) {
       const sin = await llamar(ruta, { instance: INST, telefono: TEL }, 'firma-mala');
       check(sin.status === 403, ruta + ': sin la firma buena devuelve 403', 'HTTP ' + sin.status);
     }
@@ -73,6 +79,33 @@ const TEL  = '573006' + String(Date.now()).slice(-6);
     const rc = await llamar('tool-registrar-reclamo', { instance: INST, telefono: TEL,
       texto: 'Pedi el lunes, me dijeron martes, y hoy es jueves', sobre: 'pedido' });
     check(res(rc).ok === true && res(rc).numero === 1, 'sale con numero 1 y aguanta las comas', JSON.stringify(rc).slice(0, 200));
+
+    console.log('\n-- Tienda: buscar, pedir y consultar --');
+    await c.query(`insert into public.productos (company_id, sku, nombre, descripcion, precio_cop, existencias, origen)
+      values ($1,'W-1','Aceite de coco, prensado en frío','Frasco de 250 ml', 38000, 7, 'prueba'),
+             ($1,'W-2','Aceite esencial de lavanda',null, 52000, null, 'prueba')`, [empresa]);
+
+    const bc = await llamar('tool-buscar-catalogo', { instance: INST, telefono: TEL, que: 'aceite' });
+    check(res(bc).ok === true && res(bc).encontrados === 2, 'encuentra los dos aceites', JSON.stringify(bc).slice(0, 220));
+    check(res(bc).catalogo_al != null, 'y dice de cuándo es el catálogo', JSON.stringify(bc).slice(0, 220));
+
+    // El nombre lleva comas a propósito: es lo que parte el nodo de Postgres
+    // cuando los parámetros no viajan como un solo jsonb.
+    const cp = await llamar('tool-crear-pedido', { instance: INST, telefono: TEL,
+      dicho: 'quiero dos de coco, por favor', items: [{ sku: 'W-1', cantidad: 2, precio_cop: 9 }] });
+    check(res(cp).ok === true && res(cp).total === 76000,
+      'el precio sale del catálogo, no del modelo (2 × 38.000)', JSON.stringify(cp).slice(0, 220));
+    check(res(cp).aplicado === false, 'y el pedido queda armado, no confirmado', JSON.stringify(cp).slice(0, 220));
+
+    const ep = await llamar('tool-estado-pedido', { instance: INST, telefono: TEL });
+    check(res(ep).tiene === true && res(ep).pedidos.length === 1, 'quien pidió ve su pedido', JSON.stringify(ep).slice(0, 220));
+
+    const cf = await llamar('tool-confirmar-pago', { instance: INST, telefono: TEL,
+      referencia: '4471', dicho: 'ya pagué, mando el soporte' });
+    check(res(cf).ok === true && res(cf).pago_estado === 'reportado',
+      'el pago queda anotado', JSON.stringify(cf).slice(0, 220));
+    check(res(cf).verificado === false,
+      'y viene marcado como NO verificado', JSON.stringify(cf).slice(0, 220));
 
   } finally {
     if (empresa) await c.query('delete from public.companies where id = $1', [empresa]);

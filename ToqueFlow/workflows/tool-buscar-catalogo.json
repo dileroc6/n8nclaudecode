@@ -1,0 +1,95 @@
+{
+  "name": "ToqueFlow - Tool Buscar en el catálogo",
+  "nodes": [
+    {
+      "id": "entrada",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "VAQkH3v2R6czijkV",
+          "name": "Toque - Firma del agente 2026-08-28"
+        }
+      },
+      "notes": "Precio y existencias SALEN DEL CATALOGO. El agente no los recuerda ni los calcula.\nDevuelve tambien de cuando es el catalogo: sin esa fecha el agente afirmaria\nexistencias viejas como si fueran de ahora.\nexistencias null = «no se»; existencias 0 = «no hay». Son distintas.",
+      "notesInFlow": false,
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tool-buscar-catalogo",
+        "responseMode": "lastNode",
+        "authentication": "headerAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "extraer",
+      "name": "Extraer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Lo que manda el agente, mas de que instancia viene y a quien atiende.\n// NUNCA recibe el company_id: se deriva adentro de la base. Si una\n// herramienta aceptara la empresa del payload, bastaria un error del agente\n// para tocarle los datos a otro cliente.\nconst b = $input.first().json.body || $input.first().json;\n\n// Todo viaja como UN jsonb. El nodo de Postgres parte los parametros por\n// coma, y por aqui pasan nombres de producto escritos por una persona.\nconst payload = Object.assign({}, b);\npayload.instance = String(b.instance || '');\npayload.telefono = String(b.telefono || '').replace(/[^0-9]/g, '');\n\nreturn [{ json: { payload: JSON.stringify(payload) } }];"
+      }
+    },
+    {
+      "id": "ejecutar",
+      "name": "Ejecutar",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        40,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ybgnIi1YfqZ3UpVX",
+          "name": "Toque - Supabase Postgres (n8n_worker)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select public.tf_tool_buscar_catalogo($1::jsonb) as resultado;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload ] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Extraer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer": {
+      "main": [
+        [
+          {
+            "node": "Ejecutar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "timezone": "America/Bogota"
+  }
+}
