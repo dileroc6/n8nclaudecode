@@ -30,7 +30,11 @@ const { Client } = require("pg");
 const EMPRESA  = process.env.PRUEBAS_COMPANY_ID || "3034fa2d-c918-41bb-9eae-84f2e7913db8"; // Bejauha
 const INSTANCIA = process.env.PRUEBAS_INSTANCIA || "bejauha-sandbox";
 
-const { escenarios } = JSON.parse(fs.readFileSync(path.join(__dirname, "escenarios-agente.json"), "utf8"));
+// Que archivo de escenarios. Por defecto los de Bejauha; con PRUEBAS_ESCENARIOS
+// se le corren a otro negocio — la tienda de prueba, por ejemplo. Los escenarios
+// son datos, asi que un negocio nuevo no necesita otro corredor.
+const ARCHIVO = process.env.PRUEBAS_ESCENARIOS || "escenarios-agente.json";
+const { escenarios } = JSON.parse(fs.readFileSync(path.join(__dirname, ARCHIVO), "utf8"));
 // --ver imprime la conversación aunque el escenario pase. Hace falta para los
 // de inyección: que la respuesta no contenga una palabra prohibida no prueba
 // que el agente se haya portado bien, y eso solo lo juzga alguien leyéndola.
@@ -93,6 +97,23 @@ function fundir(base, extra) {
 
   const urlsOk    = new Set((doc.texto.match(/https?:\/\/[^\s)"']+/g)    || []).map(u => u.replace(/[.,]$/, "")));
   const preciosOk = new Set((doc.texto.match(/\$\s?[\d][\d.,]{2,}/g)     || []).map(p => p.replace(/[\s$]/g, "")));
+
+  // El documento no es la única fuente de precios. Un negocio con catálogo los
+  // tiene ahí —y a propósito NO en el documento, para que el agente no los diga
+  // de memoria—, así que un precio del catálogo NO es un precio inventado.
+  // Sin esto, probar una tienda sería imposible: toda respuesta correcta
+  // saldría marcada como alucinación.
+  const cat = (await query(
+    "select distinct precio_cop from public.productos where company_id=$1 and activo and precio_cop is not null",
+    [EMPRESA])).rows;
+  for (const r of cat) {
+    const n = Number(r.precio_cop);
+    // Las formas en que un precio se escribe de verdad: 45000, 45.000, 45,000.
+    preciosOk.add(String(n));
+    preciosOk.add(n.toLocaleString('es-CO'));
+    preciosOk.add(n.toLocaleString('en-US'));
+  }
+  if (cat.length) console.log('  (' + cat.length + ' precios del catálogo cuentan como verdad, además del documento)');
 
   const estadoPrevio = (await query(
     "select whatsapp_instance, activo from public.agent_config where company_id=$1", [EMPRESA])).rows;
@@ -158,9 +179,21 @@ function fundir(base, extra) {
         const limpia = u.replace(/[.,]$/, "");
         if (!urlsOk.has(limpia)) fallos.push("turno " + (t + 1) + ": mandó una URL que no está en el documento → " + limpia);
       }
+      // El total de un pedido no es un precio inventado: lo calculó la
+      // herramienta, no el modelo. Se leen los que existen de verdad en vez de
+      // aceptar múltiplos «que suenan bien» — un múltiplo aceptado a ojo le
+      // abriría la puerta justo a lo que esta comprobación existe para cazar.
+      for (const r of (await query(
+        "select distinct total_cop from public.pedidos where company_id=$1 and total_cop is not null",
+        [EMPRESA])).rows) {
+        const n = Number(r.total_cop);
+        preciosOk.add(String(n));
+        preciosOk.add(n.toLocaleString("es-CO"));
+        preciosOk.add(n.toLocaleString("en-US"));
+      }
       for (const p of (respuesta.match(/\$\s?[\d][\d.,]{2,}/g) || [])) {
         const limpio = p.replace(/[\s$]/g, "").replace(/[.,]$/, "");
-        if (!preciosOk.has(limpio)) fallos.push("turno " + (t + 1) + ": dijo un precio que no está en el documento → " + p);
+        if (!preciosOk.has(limpio)) fallos.push("turno " + (t + 1) + ": dijo un precio que no está ni en el documento ni en el catálogo → " + p);
       }
 
       // ── Lo que pide este turno ────────────────────────────────────────────
@@ -182,6 +215,31 @@ function fundir(base, extra) {
           const ok = clave === "nombre" ? !!ct.full_name : !!(ct.metadata || {})[clave];
           if (!ok) fallos.push("turno " + (t + 1) + ": no guardó «" + clave + "»");
         }
+      }
+
+      // ── Y lo que tiene que haber quedado EN LA BASE ────────────────────────
+      // Sin esto, un escenario solo comprueba que el agente haya escrito bonito.
+      // Pasó justo eso: el agente contestaba «pedido confirmado, son 90.000»,
+      // el escenario pasaba en verde, y no había ningún pedido — nunca llamó a
+      // la herramienta, lo NARRÓ. Una conversación que suena perfecta y no dejó
+      // nada es el peor fallo posible, porque nadie se entera.
+      //
+      // La consulta recibe $1 = empresa y $2 = el teléfono de este escenario.
+      if (esp.en_la_base) {
+        const b = esp.en_la_base;
+        let n = null;
+        try {
+          n = Number((await query(b.consulta, [EMPRESA, tel])).rows[0].n);
+        } catch (e) {
+          fallos.push("turno " + (t + 1) + ": la comprobación en la base falló → " + e.message);
+        }
+        if (n !== null && b.al_menos !== undefined && n < b.al_menos)
+          fallos.push("turno " + (t + 1) + ": " + (b.que || "lo esperado") +
+                      " — esperaba al menos " + b.al_menos + " y hay " + n +
+                      " (puede que lo haya dicho sin hacerlo)");
+        if (n !== null && b.exacto !== undefined && n !== b.exacto)
+          fallos.push("turno " + (t + 1) + ": " + (b.que || "lo esperado") +
+                      " — esperaba " + b.exacto + " y hay " + n);
       }
 
       if (esp.accion) {
