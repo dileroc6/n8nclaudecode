@@ -7,70 +7,49 @@
 
 ---
 
-## La pregunta que define todo: ¿la tienda puede avisar cuando algo cambia?
+## La respuesta corta: ¿con qué tienda funciona?
 
-De ahí salen los tres niveles. No es un detalle técnico: **decide qué puede
-prometer el agente.**
-
-| Nivel | Cómo se entera la plataforma | Qué puede decir el agente |
+| El cliente tiene… | ¿Funciona? | Qué hay que pedirle |
 |---|---|---|
-| **A · Conectada** | la tienda **avisa** cuando cambia precio o inventario | «quedan 12» — y es verdad ahora |
-| **B · Sincronizada** | la plataforma **pregunta** cada cierto rato | «según lo último, quedan 12; confirmo antes de cerrar» |
-| **C · Cargada** | alguien sube el catálogo | «quedan 12 según la última lista» |
+| **WooCommerce** | **Sí** | una llave de API — la genera él en su panel, 2 minutos |
+| **Shopify** | **Sí** | que instale la app de ToqueFlow |
+| **Siigo** | **Sí** | usuario y llave de API de Siigo |
+| **Otra tienda o ERP** | **Sí, si cumple los 3 requisitos** | ver abajo |
+| **Nada — Excel, PDF, la cabeza del dueño** | **Sí** | que nos pase la lista |
 
-**En los tres niveles, antes de armar el pedido se verifica en vivo lo que se
-va a comprometer.** Es el único momento en que la exactitud importa de verdad:
-equivocarse mientras alguien curiosea no cuesta nada; equivocarse al aceptar el
-pedido significa vender lo que no hay.
+**No se promete nada más.** Si aparece un cliente con PrestaShop, Magento o un
+desarrollo propio, la respuesta no es «sí» ni «no» de una: es *«déjame revisar
+tres cosas»*.
+
+### Los 3 requisitos para una plataforma que no está en la lista
+
+1. **Una forma automática de entregar los productos.** Una API, o un archivo
+   CSV/JSON en una URL fija. Si la única forma de sacar el catálogo es que
+   alguien lo exporte a mano cada semana, eso es el último renglón de la tabla,
+   no este.
+2. **Un código estable por producto (SKU).** Es la llave para actualizar sin
+   duplicar. Es el requisito que más se cae, y el que hay que mirar primero.
+3. **Accesible desde internet, con HTTPS.** Un ERP que solo vive en la red
+   interna del cliente no se puede consultar.
+
+Si cumple los tres, se construye el conector y funciona igual que Woo. **Lo que
+cambia es el precio de la primera vez**, porque ese conector no está hecho.
 
 ---
 
-## Nivel A — Conectada (casi tiempo real)
+## Lo único que cambia entre una y otra: qué tan al día está el dato
 
-| Plataforma | Estado | Qué se necesita del cliente |
+No cambia lo que el agente *hace*. Cambia lo que el agente puede **prometer**.
+
+| El cliente tiene… | Cómo se entera la plataforma | Qué dice el agente |
 |---|---|---|
-| **WooCommerce** | soportada al construir el conector | una llave de API (la genera él mismo en su panel, 2 minutos) |
-| **Shopify** | soportada al construir el conector | instalar la app de ToqueFlow en su tienda |
-| **Siigo** | soportada al construir el conector | usuario y llave de API de Siigo |
+| Woo, Shopify, Siigo | la tienda **avisa** cuando algo cambia | «quedan 12» |
+| otra con API | se **pregunta** cada 15 min el inventario, y el catálogo una vez al día | «quedan 12» |
+| nada en línea | alguien subió la lista | «según la última lista, quedan 12» |
 
-**Requisitos que el sitio debe cumplir para entrar aquí:**
-
-1. Tener una **API de productos** que devuelva código, nombre, precio y existencias.
-2. Poder **avisar cuando algo cambia** (webhooks), o dejarse preguntar por lo que cambió desde una fecha.
-3. Que cada producto tenga un **código estable** (SKU). Es la llave: sin él no se puede sincronizar sin duplicar.
-4. Ser accesible desde internet con HTTPS.
-
----
-
-## Nivel B — Sincronizada (preguntando cada rato)
-
-Para tiendas con API pero sin avisos: PrestaShop, Magento, un ERP con API, un
-desarrollo propio.
-
-| Qué se pregunta | Cada cuánto |
-|---|---|
-| existencias | **cada 15 minutos** — es lo único que se mueve solo |
-| precios y productos nuevos | **una vez al día**, de madrugada |
-
-**Requisito mínimo para entrar aquí:** cualquier forma de entregar la lista de
-productos de manera automática — una API, un archivo CSV o JSON en una URL fija,
-o un servicio que la plataforma pueda llamar. Nada más.
-
----
-
-## Nivel C — Cargada (sin tienda en línea)
-
-**No es el caso raro: es el caso común.** La mayoría de las pymes no tiene
-tienda en línea. Tienen un Excel, un catálogo en PDF o el inventario en la
-cabeza del dueño.
-
-| Forma | Cómo |
-|---|---|
-| subir un archivo | Excel o CSV desde el portal |
-| escribir a mano | pantalla de productos en el portal |
-
-**Requisito:** que exista una lista. Si el negocio no sabe qué tiene ni a qué
-precio, Toque Tienda no es lo que necesita todavía.
+Y en los tres casos igual: **ofrecer se hace con la copia; comprometerse se
+confirma.** Equivocarse mientras alguien curiosea no cuesta nada. Equivocarse
+al aceptar el pedido es vender lo que no hay.
 
 ---
 
