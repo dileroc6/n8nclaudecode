@@ -328,6 +328,7 @@ function AdminApp({ profile }) {
   const [saberCo, setSaberCo] = React.useState(null);      // empresa cuyo conocimiento se está editando
   const [catalogo, setCatalogo] = React.useState([]);      // las piezas que ToqueFlow ofrece
   const [matriz, setMatriz] = React.useState([]);          // empresa x pieza, ya cruzado por la vista
+  const [cobro, setCobro] = React.useState([]);            // tienda_cobro, una fila por empresa que vende
   const [resumen, setResumen] = React.useState([]);        // usuarios, productos y consumo por empresa
   const [salud, setSalud] = React.useState([]);            // como va cada empresa: andando, callada, sin estrenar
   const [consumoDet, setConsumoDet] = React.useState([]);  // consumo por producto y mes
@@ -348,7 +349,7 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp, sal] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp, sal, cob] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -365,6 +366,9 @@ function AdminApp({ profile }) {
       // Como va cada empresa. Es una funcion y no una vista porque compara lo
       // de hoy con lo normal de ESA empresa, y eso se calcula, no se guarda.
       sb.rpc('tf_salud'),
+      // Como cobra cada cliente. Se prende por cliente porque cada negocio
+      // cobra distinto, igual que el tono o el horario.
+      sb.from('tienda_cobro').select('*'),
     ]);
     setCompanies(c.data || []);
     setUsers(u.data || []);
@@ -378,6 +382,7 @@ function AdminApp({ profile }) {
     setConsumoDet(cd.data || []);
     setConsumoPlan(cp.data || []);
     setSalud(sal.data || []);
+    setCobro(cob.data || []);
     setLoading(false);
   }, []);
 
@@ -447,6 +452,21 @@ function AdminApp({ profile }) {
     }
     setToast({ type: 'ok', text: silenciar ? 'Avisos silenciados' : 'Avisos encendidos' });
     reload();
+  };
+
+  // Guardar cómo cobra un cliente. Va con upsert porque la fila no existe
+  // hasta que alguien la toca por primera vez, y obligar a «crear» antes de
+  // «configurar» sería una pantalla extra sin ninguna razón.
+  const guardarCobro = async (co, cambios) => {
+    const antes = cobro.find((x) => x.company_id === co.id) || { company_id: co.id };
+    const fila = { ...antes, ...cambios, company_id: co.id, actualizado_at: new Date().toISOString() };
+    setCobro((cs) => {
+      const resto = cs.filter((x) => x.company_id !== co.id);
+      return [...resto, fila];
+    });
+    const { error } = await sb.from('tienda_cobro').upsert(fila, { onConflict: 'company_id' });
+    if (error) { setToast({ type: 'error', text: 'No se pudo guardar: ' + error.message }); reload(); return; }
+    setToast({ type: 'ok', text: 'Guardado' });
   };
 
   const toggleCompany = async (c) => {
@@ -527,6 +547,8 @@ function AdminApp({ profile }) {
                         busy={catBusy}
                         onConfig={(co, ag) => setConfigCo({ co, ag })}
                         onConocimiento={(co, ag) => setSaberCo({ co, ag })}
+                        cobro={cobro.find((x) => x.company_id === fichaCo.id) || null}
+                        onCobro={(cambios) => guardarCobro(fichaCo, cambios)}
                         onCambiar={cambiarPieza}
                         onVolver={() => setFichaCo(null)} />
         ) : (

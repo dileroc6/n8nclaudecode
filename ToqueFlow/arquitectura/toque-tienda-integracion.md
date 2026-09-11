@@ -86,6 +86,27 @@ Se ofrecen las dos, porque en Colombia conviven.
 | Cuánto tarda | segundos | lo que tarde alguien en mirar |
 | Qué necesita el cliente del negocio | cuenta en la pasarela | nada |
 
+## Se prende por cliente, uno, otro o los dos
+
+Ningún negocio cobra de las dos formas por defecto. **Se prende en la consola,
+en la ficha del cliente**, igual que el tono o el horario.
+
+| Si está prendido | El agente… |
+|---|---|
+| solo transferencia | dicta los datos de la cuenta. **No ofrece link: no existe** |
+| solo link | manda el link. **No da datos de cuenta** |
+| los dos | deja que la persona escoja |
+| **ninguno** | **no se inventa nada.** Dice que confirma cómo pagar y escala |
+
+Esa última fila es la que importa. Un agente que se inventa una cuenta bancaria
+es peor que un agente que no sabe: el precio mal dicho se corrige, una
+transferencia a un desconocido no.
+
+Y por lo mismo, **los datos de la cuenta se dictan tal cual**, sin resumir ni
+reordenar. Es la regla del precio subida de gravedad.
+
+---
+
 **En la transferencia el agente recibe el comprobante, lo anota contra el
 pedido y le avisa a quien decida** — no lo da por bueno. Confirmar un pago que
 no entró es despachar mercancía regalada.

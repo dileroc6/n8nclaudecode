@@ -9,6 +9,7 @@
  *   4. «no sé si hay» y «no hay» son respuestas distintas
  *   5. «ya pagué» queda ANOTADO, nunca dado por cierto
  *   6. el agente ofrece la talla que HAY, y sabe si su dato está viejo
+ *   7. no ofrece una forma de pago que el negocio no tiene
  *
  * La 1 importa más de lo que parece: si el agente pudiera poner el precio,
  * quien escriba «me dijeron que valía 10.000» acabaría con un pedido a 10.000.
@@ -245,6 +246,59 @@ const TEL2 = '573004' + String(Date.now()).slice(-6);
     check(Number(ojo.revisar[0].precio_pedido) === 59000 && Number(ojo.revisar[0].precio_hoy) === 65000,
       'y que el precio se movió desde que se le prometió',
       JSON.stringify(ojo.revisar[0]) + ' — el pedido conserva lo que se le dijo a la persona');
+
+    console.log('\n── Cada negocio cobra como cobra ──');
+    // Sin configurar: el agente NO puede sacarse una cuenta de la manga.
+    const sinCobro = await llamar('tf_tool_crear_pedido', { instance: INST, telefono: TEL,
+      items: [{ sku: 'G-100', cantidad: 1 }] });
+    check(sinCobro.cobro && sinCobro.cobro.configurado === false,
+      'sin configurar dice que NO está configurado', JSON.stringify(sinCobro.cobro));
+    check(/NO inventes/.test(String(sinCobro.cobro.que_decir)),
+      'y le prohíbe explícitamente inventarse una cuenta',
+      JSON.stringify(sinCobro.cobro.que_decir) + ' — un agente que se inventa una cuenta bancaria es peor que uno que no sabe');
+
+    // Solo transferencia.
+    await c.query(`insert into public.tienda_cobro (company_id, transferencia, datos_cuenta, avisar_a)
+      values ($1, true, 'Bancolombia ahorros 123-456789-00 a nombre de ZZ Prueba SAS', '573001112233')
+      on conflict (company_id) do update set transferencia = true, link = false`, [empresa]);
+    const soloT = (await uno('select public.tf_cobro_de($1) as r', [empresa])).r;
+    check(JSON.stringify(soloT.metodos) === JSON.stringify(['transferencia']),
+      'con solo transferencia prendida, solo ofrece esa', JSON.stringify(soloT.metodos));
+    check(/NO ofrezcas link/.test(String(soloT.que_decir)),
+      'y le dice que NO ofrezca link de pago',
+      JSON.stringify(soloT.que_decir) + ' — ofrecer un link que no existe es prometer lo que no hay');
+    check(/123-456789-00/.test(String(soloT.datos_cuenta)),
+      'le pasa los datos de la cuenta para dictarlos', JSON.stringify(soloT.datos_cuenta));
+
+    // Solo link: los datos de la cuenta NO deben viajar.
+    await c.query(`update public.tienda_cobro set link = true, transferencia = false where company_id = $1`, [empresa]);
+    const soloL = (await uno('select public.tf_cobro_de($1) as r', [empresa])).r;
+    check(soloL.datos_cuenta === null,
+      'con la transferencia apagada, los datos de la cuenta ni se mandan',
+      JSON.stringify(soloL) + ' — no hay razón para que un número de cuenta circule si no se va a usar');
+
+    // Los dos a la vez.
+    await c.query(`update public.tienda_cobro set link = true, transferencia = true where company_id = $1`, [empresa]);
+    const ambos = (await uno('select public.tf_cobro_de($1) as r', [empresa])).r;
+    check(ambos.metodos.length === 2, 'se pueden prender los dos a la vez', JSON.stringify(ambos.metodos));
+    check(/escoja/.test(String(ambos.que_decir)), 'y ahí sí deja que la persona escoja', JSON.stringify(ambos.que_decir));
+
+    console.log('\n── No se anota un pago de una forma que el negocio no tiene ──');
+    await c.query(`update public.tienda_cobro set link = true, transferencia = false where company_id = $1`, [empresa]);
+    const malMet = await llamar('tf_tool_confirmar_pago', { instance: INST, telefono: TEL,
+      metodo: 'transferencia', referencia: '9999' });
+    check(malMet.ok === false && /no cobra asi/.test(String(malMet.motivo)),
+      'un método apagado se rechaza',
+      JSON.stringify(malMet) + ' — anotar «pagó por transferencia» donde no hay cuenta deja una plata que nadie va a encontrar');
+
+    await c.query(`update public.tienda_cobro set transferencia = true where company_id = $1`, [empresa]);
+    const buenMet = await llamar('tf_tool_confirmar_pago', { instance: INST, telefono: TEL,
+      metodo: 'transferencia', referencia: '8888', comprobante_url: 'https://ejemplo/pantallazo.jpg' });
+    check(buenMet.ok === true, 'y uno prendido sí entra', JSON.stringify(buenMet).slice(0, 200));
+    const guardado = await uno(`select pago_metodo, pago_comprobante_url from public.pedidos
+      where company_id = $1 and pago_estado = 'reportado' order by created_at desc limit 1`, [empresa]);
+    check(guardado.pago_metodo === 'transferencia' && /pantallazo/.test(String(guardado.pago_comprobante_url)),
+      'queda escrito cómo pagó y dónde está el comprobante', JSON.stringify(guardado));
 
   } finally {
     await c.query("select set_config('request.jwt.claims', '', false)").catch(() => {});

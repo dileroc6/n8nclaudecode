@@ -36,8 +36,74 @@ const empMes = (d) => { const x = new Date(d + 'T00:00:00'); return EMP_MES[x.ge
 // sirve para ver si la IA se está comiendo el margen, no para facturar.
 const COP_POR_USD = 4200;
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * Cómo cobra este cliente
+ * ----------------------------------------------------------------------------
+ * Los dos se pueden prender a la vez: hay negocios que dan a escoger. Y si no
+ * hay ninguno prendido, el agente NO se inventa una forma de pago — dice que
+ * confirma cómo pagar y escala. Por eso el aviso de abajo no es decorativo.
+ * ────────────────────────────────────────────────────────────────────────── */
+function EmpCobro({ cobro, onCobro }) {
+  const c = cobro || {};
+  const [cuenta, setCuenta] = React.useState(c.datos_cuenta || '');
+  const [avisar, setAvisar] = React.useState(c.avisar_a || '');
+  React.useEffect(() => { setCuenta(c.datos_cuenta || ''); setAvisar(c.avisar_a || ''); },
+                  [c.datos_cuenta, c.avisar_a]);
+
+  const ninguno = !c.link && !c.transferencia && !c.efectivo;
+  // Un aviso que va a «el equipo» no le llega a nadie. Se exige que se parezca
+  // a un número o a un grupo de WhatsApp.
+  const avisoMalo = avisar.trim() !== '' && !/^[0-9+][0-9\s-]{7,}$|@g\.us$/.test(avisar.trim());
+
+  return (
+    <div className="emp-cobro">
+      <b className="emp-cobro-tit">Cómo cobra</b>
+      <div className="emp-cobro-ops">
+        {[['transferencia', 'Transferencia'], ['link', 'Link de pago'], ['efectivo', 'Efectivo']].map(([k, t]) => (
+          <label key={k} className={'emp-cobro-op' + (c[k] ? ' is-on' : '')}>
+            <input type="checkbox" checked={!!c[k]} onChange={() => onCobro({ [k]: !c[k] })} />
+            <span>{t}</span>
+          </label>
+        ))}
+      </div>
+
+      {ninguno && (
+        <p className="emp-cobro-ojo">
+          Sin ninguna prendida el agente <b>no ofrece forma de pago</b>: dice que confirma
+          cómo pagar y escala. Es a propósito — un agente que se inventa una cuenta bancaria
+          es peor que uno que no sabe.
+        </p>
+      )}
+
+      {c.transferencia && (
+        <label className="emp-cobro-campo">
+          <span>Datos de la cuenta <em>el agente los dicta tal cual, sin resumir</em></span>
+          <textarea rows={2} value={cuenta} onChange={(ev) => setCuenta(ev.target.value)}
+                    onBlur={() => cuenta !== (c.datos_cuenta || '') && onCobro({ datos_cuenta: cuenta })}
+                    placeholder="Bancolombia ahorros 123-456789-00 a nombre de …" />
+        </label>
+      )}
+
+      {(c.transferencia || c.efectivo) && (
+        <label className="emp-cobro-campo">
+          <span>A quién le avisa <em>número de WhatsApp o grupo, no «el equipo»</em></span>
+          <input type="text" value={avisar} onChange={(ev) => setAvisar(ev.target.value)}
+                 onBlur={() => avisar !== (c.avisar_a || '') && onCobro({ avisar_a: avisar })}
+                 placeholder="573001112233" />
+          {avisoMalo && (
+            <i className="emp-cobro-malo">
+              Eso no parece un número ni un grupo. Un aviso que va a una descripción
+              no le llega a nadie, y el cliente se queda esperando.
+            </i>
+          )}
+        </label>
+      )}
+    </div>
+  );
+}
+
 function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet, consumoPlan, runtime, resumen,
-                        onConfig, onConocimiento, onCambiar, onVolver, busy }) {
+                        cobro, onCobro, onConfig, onConocimiento, onCambiar, onVolver, busy }) {
   const [abierto, setAbierto] = React.useState(null);
   // null = todos los meses. Se elige uno pulsando su barra.
   const [mesElegido, setMesElegido] = React.useState(null);
@@ -210,6 +276,10 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                         </p>
                       )}
                     </div>
+                  )}
+
+                  {p.clave === 'paquete-tienda' && (
+                    <EmpCobro cobro={cobro} onCobro={onCobro} />
                   )}
 
                   <div className="emp-cambiar">
