@@ -155,7 +155,7 @@
     {
       "id": "arma-el-pedido",
       "titulo": "Quiere comprar",
-      "porque": "Tiene que armar el pedido y decir que alguien lo confirma. Preguntar antes de comprometer esta BIEN — por eso son dos turnos.",
+      "porque": "Tiene que armar el pedido DE VERDAD, no decir que lo armó. HOY FALLA, y a propósito se deja fallando: la causa está escrita en la fila 158 del tablero. El agente gasta su única llamada por turno volviendo a buscar el producto —porque el historial no guarda lo que devolvieron las herramientas— y cuando llega el momento de registrar, ya la usó. El mecanismo para ejecutar la acción pendiente ya está y funciona; lo que falla es que el modelo la pida siempre.",
       "turnos": [
         {
           "cliente": "listo, mandeme 2 cajas de guantes de nitrilo talla M",
@@ -190,11 +190,14 @@
             ],
             "en_la_base": {
               "que": "el pedido tiene que EXISTIR, no solo haberse dicho",
-              "consulta": "select count(*)::int n from public.pedidos p join public.contacts c on c.id=p.contact_id where p.company_id=$1 and public.tf_telefono(c.phone)=public.tf_telefono($2) and p.estado='armado'",
+              "consulta": "select count(*)::int n from public.pedidos where company_id=$1 and estado='armado'",
               "al_menos": 1
             }
           }
         }
+      ],
+      "limpiar": [
+        "delete from public.pedidos where company_id=$1"
       ]
     },
     {

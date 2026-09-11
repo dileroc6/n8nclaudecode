@@ -143,6 +143,18 @@ function fundir(base, extra) {
       await query("delete from public.contacts where company_id=$1 and public.tf_telefono(phone)=public.tf_telefono($2)", [EMPRESA, tel]);
     }
 
+    // Lo que este escenario necesita borrar ANTES de correr. El corredor no
+    // sabe nada de pedidos ni de citas —eso lo sabe el escenario—, asi que lo
+    // dice el propio escenario en SQL. Recibe $1 = empresa y $2 = telefono.
+    //
+    // Hace falta porque `pedidos.contact_id` es `on delete set null`: al
+    // borrar el contacto de la corrida anterior el pedido sobrevive huerfano,
+    // y la comprobacion siguiente cuenta cosas de ayer.
+    for (const sql of (esc.limpiar || [])) {
+      try { await query(sql, [EMPRESA, tel]); }
+      catch (e) { fallos.push("no pude limpiar antes de empezar → " + e.message); }
+    }
+
     for (let t = 0; t < esc.turnos.length; t++) {
       const turno = esc.turnos[t];
       const antes = (await query(
