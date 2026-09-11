@@ -1,0 +1,412 @@
+<title>Sincronización y cobro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --bg:        #ffffff;
+    --bg-2:      #f4f4f2;
+    --ink:       #0a2230;
+    --mute:      rgba(10,34,48,.62);
+    --line:      rgba(10,34,48,.14);
+    --card:      rgba(10,34,48,.028);
+    --accent:    #d94316;
+    --wash:      rgba(241,90,36,.07);
+    --ok:        #17795a;
+    --mid:       #a06105;
+    --chip:      rgba(10,34,48,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:     #0a2230;
+      --bg-2:   #0f2a3a;
+      --ink:    #e9ecee;
+      --mute:   rgba(233,236,238,.62);
+      --line:   rgba(233,236,238,.16);
+      --card:   rgba(255,255,255,.04);
+      --accent: #ff8a56;
+      --wash:   rgba(255,138,86,.09);
+      --ok:     #5cc79b;
+      --mid:    #e2ad4f;
+      --chip:   rgba(255,255,255,.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:     #0a2230;
+    --bg-2:   #0f2a3a;
+    --ink:    #e9ecee;
+    --mute:   rgba(233,236,238,.62);
+    --line:   rgba(233,236,238,.16);
+    --card:   rgba(255,255,255,.04);
+    --accent: #ff8a56;
+    --wash:   rgba(255,138,86,.09);
+    --ok:     #5cc79b;
+    --mid:    #e2ad4f;
+    --chip:   rgba(255,255,255,.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Sora", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+  }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    margin: 0;
+  }
+
+  h1 { font-size: clamp(30px,5vw,44px); font-weight: 600; letter-spacing: -.022em;
+       line-height: 1.1; text-wrap: balance; margin: 10px 0 0; }
+  h2 { font-size: clamp(21px,3vw,26px); font-weight: 600; letter-spacing: -.015em;
+       line-height: 1.25; text-wrap: balance; margin: 0; }
+  h3 { font-size: 15px; font-weight: 600; margin: 0; }
+
+  p { margin: 0; max-width: 68ch; }
+  .lede { font-size: 17px; color: var(--mute); margin-top: 16px; }
+
+  header { border-bottom: 1px solid var(--line); padding-bottom: 32px; }
+  section { display: flex; flex-direction: column; gap: 20px; }
+  .sec-head { display: flex; flex-direction: column; gap: 8px; }
+
+  figure {
+    margin: 0;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px 18px 14px;
+    overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; min-width: 680px; height: auto; }
+  figcaption {
+    font-size: 13px; color: var(--mute); margin-top: 14px;
+    padding-top: 13px; border-top: 1px solid var(--line); max-width: 74ch;
+  }
+
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); font-weight: 500;
+       font-family: "JetBrains Mono", ui-monospace, monospace; }
+  td:first-child { font-weight: 500; white-space: nowrap; }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .num { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .callout {
+    background: var(--wash);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .callout h3 { color: var(--accent); }
+  .callout p { font-size: 14.5px; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); gap: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); border-radius: 8px;
+    padding: 15px 16px 17px; display: flex; flex-direction: column; gap: 7px;
+  }
+  .card p { font-size: 13.5px; color: var(--mute); }
+  .tag { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10.5px;
+         letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+
+  footer { border-top: 1px solid var(--line); padding-top: 24px; font-size: 13px; color: var(--mute); }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Toque Tienda</p>
+    <h1>Cómo se mantiene al día y cómo se confirma un pago</h1>
+    <p class="lede">Dos flujos, paso a paso. El primero contesta «¿cada cuánto se
+    sincroniza?». El segundo, «¿quién dice que el pago entró?».</p>
+  </header>
+
+  <!-- ════════════════════ FLUJO 1 ════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Flujo 1</p>
+      <h2>La sincronización son cuatro momentos, no uno</h2>
+      <p>Y sí: las tres primeras conviven. No es que una reemplace a la otra.</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 920 330" role="img"
+           aria-label="Los cuatro momentos de la sincronización: carga inicial una vez, aviso instantáneo cuando algo cambia, barrido de seguridad cada 15 minutos y cada noche, y confirmación en el momento de pedir.">
+        <defs>
+          <marker id="f1a" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- la línea del tiempo -->
+        <line x1="115" y1="74" x2="805" y2="74" stroke="currentColor" stroke-width="1" opacity=".28"/>
+
+        <!-- estación 1 -->
+        <circle cx="115" cy="74" r="6" fill="currentColor" opacity=".8"/>
+        <text x="115" y="46" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.4" fill="currentColor" opacity=".6">UNA VEZ</text>
+        <rect x="15" y="100" width="200" height="160" rx="8" fill="currentColor" opacity=".045"/>
+        <rect x="15" y="100" width="200" height="160" rx="8" fill="none" stroke="currentColor" opacity=".18"/>
+        <text x="32" y="128" font-size="14" font-weight="600" fill="currentColor">El día que se conecta</text>
+        <text x="32" y="156" font-size="12.5" fill="currentColor" opacity=".72">Se trae el catálogo</text>
+        <text x="32" y="176" font-size="12.5" fill="currentColor" opacity=".72">completo: productos,</text>
+        <text x="32" y="196" font-size="12.5" fill="currentColor" opacity=".72">precios, tallas,</text>
+        <text x="32" y="216" font-size="12.5" fill="currentColor" opacity=".72">existencias.</text>
+        <text x="32" y="243" font-size="12" font-style="italic" fill="currentColor" opacity=".5">Pasa una sola vez.</text>
+
+        <!-- estación 2 -->
+        <circle cx="345" cy="74" r="6" fill="#d94316"/>
+        <text x="345" y="46" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.4" fill="#d94316">AL INSTANTE</text>
+        <rect x="245" y="100" width="200" height="160" rx="8" fill="#d94316" opacity=".07"/>
+        <rect x="245" y="100" width="200" height="160" rx="8" fill="none" stroke="#d94316" opacity=".45"/>
+        <text x="262" y="128" font-size="14" font-weight="600" fill="currentColor">Algo cambia allá</text>
+        <text x="262" y="156" font-size="12.5" fill="currentColor" opacity=".72">La tienda avisa sola.</text>
+        <text x="262" y="176" font-size="12.5" fill="currentColor" opacity=".72">Solo lo que cambió:</text>
+        <text x="262" y="196" font-size="12.5" fill="currentColor" opacity=".72">«la talla XL bajó a 2».</text>
+        <text x="262" y="243" font-size="12" font-style="italic" fill="currentColor" opacity=".5">Segundos.</text>
+
+        <!-- estación 3 -->
+        <circle cx="575" cy="74" r="6" fill="currentColor" opacity=".8"/>
+        <text x="575" y="46" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.4" fill="currentColor" opacity=".6">15 MIN · CADA NOCHE</text>
+        <rect x="475" y="100" width="200" height="160" rx="8" fill="currentColor" opacity=".045"/>
+        <rect x="475" y="100" width="200" height="160" rx="8" fill="none" stroke="currentColor" opacity=".18"/>
+        <text x="492" y="128" font-size="14" font-weight="600" fill="currentColor">El barrido</text>
+        <text x="492" y="156" font-size="12.5" fill="currentColor" opacity=".72">La plataforma pregunta</text>
+        <text x="492" y="176" font-size="12.5" fill="currentColor" opacity=".72">«¿me perdí algo?».</text>
+        <text x="492" y="196" font-size="12.5" fill="currentColor" opacity=".72">Existencias cada 15 min,</text>
+        <text x="492" y="216" font-size="12.5" fill="currentColor" opacity=".72">todo una vez al día.</text>
+        <text x="492" y="243" font-size="12" font-style="italic" fill="currentColor" opacity=".5">Red de seguridad.</text>
+
+        <!-- estación 4 -->
+        <circle cx="805" cy="74" r="6" fill="#17795a"/>
+        <text x="805" y="46" text-anchor="middle" font-size="11" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.4" fill="#17795a">EN EL MOMENTO</text>
+        <rect x="705" y="100" width="200" height="160" rx="8" fill="#17795a" opacity=".07"/>
+        <rect x="705" y="100" width="200" height="160" rx="8" fill="none" stroke="#17795a" opacity=".45"/>
+        <text x="722" y="128" font-size="14" font-weight="600" fill="currentColor">Van a pedir</text>
+        <text x="722" y="156" font-size="12.5" fill="currentColor" opacity=".72">Se confirma lo que se</text>
+        <text x="722" y="176" font-size="12.5" fill="currentColor" opacity=".72">va a comprometer,</text>
+        <text x="722" y="196" font-size="12.5" fill="currentColor" opacity=".72">y nada más.</text>
+        <text x="722" y="243" font-size="12" font-style="italic" fill="currentColor" opacity=".5">El único que importa.</text>
+
+        <!-- el ciclo que se repite -->
+        <path d="M 345 285 C 345 312, 575 312, 575 285" fill="none" stroke="currentColor"
+              stroke-width="1.2" opacity=".4" marker-end="url(#f1a)"/>
+        <text x="460" y="322" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".55">
+          estos dos se repiten para siempre</text>
+      </svg>
+      <figcaption>
+        <strong>Por qué el barrido existe aunque la tienda avise.</strong> Los avisos se pierden:
+        el sitio estuvo caído treinta segundos, la petición expiró, alguien editó el producto
+        directo en la base. Si la plataforma solo escuchara avisos, ese producto se quedaría
+        con el dato viejo <em>para siempre</em>, y nadie se enteraría. El barrido es lo que cierra
+        esa puerta.
+      </figcaption>
+    </figure>
+
+    <div class="cards">
+      <div class="card">
+        <span class="tag">Tu pregunta</span>
+        <h3>¿Una al inicio?</h3>
+        <p>Sí, una sola vez: el día que se conecta la tienda. Se trae todo.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Tu pregunta</span>
+        <h3>¿Y luego la tienda avisa?</h3>
+        <p>Sí, cuando la tienda sabe hacerlo — Woo y Shopify sí. Avisa solo lo que cambió, en segundos.</p>
+      </div>
+      <div class="card">
+        <span class="tag">Tu pregunta</span>
+        <h3>¿Y además una diaria?</h3>
+        <p>Sí. Y cada 15 minutos solo las existencias, que es lo único que se mueve solo.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h3>Si la tienda no sabe avisar</h3>
+      <p>Se cae el momento 2 y quedan los otros tres. Funciona igual — lo que cambia es
+      que un cambio puede tardar hasta 15 minutos en llegar, en vez de segundos. Por eso
+      el agente dice «según lo último que tengo» en vez de prometer.</p>
+    </div>
+  </section>
+
+  <!-- ════════════════════ FLUJO 2 ════════════════════ -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Flujo 2</p>
+      <h2>El cobro: los dos caminos empiezan y terminan igual</h2>
+      <p>Lo que cambia está en la mitad — y es <strong>quién puede verificar</strong>.</p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 920 700" role="img"
+           aria-label="Los dos caminos del cobro. Empiezan igual: el cliente pide y el agente arma el pedido. Con link de pago, la tienda genera el link, el cliente paga y la pasarela confirma sola en segundos. Con transferencia, el cliente manda el comprobante, el agente lo anota sin darlo por bueno, y una persona lo verifica. Los dos terminan con el agente diciendo que quedó confirmado.">
+        <defs>
+          <marker id="f2a" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- comienzo compartido -->
+        <rect x="250" y="20" width="420" height="48" rx="8" fill="currentColor" opacity=".05"/>
+        <rect x="250" y="20" width="420" height="48" rx="8" fill="none" stroke="currentColor" opacity=".2"/>
+        <text x="460" y="49" text-anchor="middle" font-size="13.5" fill="currentColor">
+          El cliente: «quiero 2 camisetas talla M»</text>
+
+        <line x1="460" y1="68" x2="460" y2="88" stroke="currentColor" stroke-width="1.2"
+              opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="250" y="94" width="420" height="48" rx="8" fill="currentColor" opacity=".05"/>
+        <rect x="250" y="94" width="420" height="48" rx="8" fill="none" stroke="currentColor" opacity=".2"/>
+        <text x="460" y="123" text-anchor="middle" font-size="13.5" fill="currentColor">
+          El agente arma el pedido n.º 8 — $110.000</text>
+
+        <!-- bifurcación -->
+        <path d="M 460 142 L 460 162 L 230 162 L 230 192" fill="none" stroke="currentColor"
+              stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+        <path d="M 460 142 L 460 162 L 690 162 L 690 192" fill="none" stroke="currentColor"
+              stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <!-- ── columna izquierda: link ── -->
+        <text x="230" y="215" text-anchor="middle" font-size="11.5" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.6" fill="#17795a">LINK DE PAGO</text>
+
+        <rect x="40" y="232" width="380" height="56" rx="8" fill="#17795a" opacity=".07"/>
+        <rect x="40" y="232" width="380" height="56" rx="8" fill="none" stroke="#17795a" opacity=".38"/>
+        <text x="58" y="255" font-size="12.5" fill="currentColor">Se crea el pedido en la tienda como pendiente.</text>
+        <text x="58" y="274" font-size="12.5" font-weight="600" fill="currentColor">La tienda devuelve el link de pago.</text>
+
+        <line x1="230" y1="288" x2="230" y2="306" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="40" y="312" width="380" height="40" rx="8" fill="#17795a" opacity=".07"/>
+        <rect x="40" y="312" width="380" height="40" rx="8" fill="none" stroke="#17795a" opacity=".38"/>
+        <text x="58" y="337" font-size="12.5" fill="currentColor">El agente le manda el link. El cliente paga.</text>
+
+        <line x1="230" y1="352" x2="230" y2="370" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="40" y="376" width="380" height="40" rx="8" fill="#17795a" opacity=".07"/>
+        <rect x="40" y="376" width="380" height="40" rx="8" fill="none" stroke="#17795a" opacity=".38"/>
+        <text x="58" y="401" font-size="12.5" fill="currentColor">La pasarela le avisa a la tienda.</text>
+
+        <line x1="230" y1="416" x2="230" y2="434" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="40" y="440" width="380" height="40" rx="8" fill="#17795a" opacity=".07"/>
+        <rect x="40" y="440" width="380" height="40" rx="8" fill="none" stroke="#17795a" opacity=".38"/>
+        <text x="58" y="465" font-size="12.5" fill="currentColor">La tienda le avisa a la plataforma.</text>
+
+        <text x="230" y="512" text-anchor="middle" font-size="13" font-weight="600" fill="#17795a">
+          Lo verificó una máquina</text>
+        <text x="230" y="532" text-anchor="middle" font-size="12" fill="currentColor" opacity=".6">
+          segundos · nadie tuvo que mirar nada</text>
+
+        <!-- ── columna derecha: transferencia ── -->
+        <text x="690" y="215" text-anchor="middle" font-size="11.5" font-family="JetBrains Mono, monospace"
+              letter-spacing="1.6" fill="#a06105">TRANSFERENCIA</text>
+
+        <rect x="500" y="232" width="380" height="40" rx="8" fill="#a06105" opacity=".07"/>
+        <rect x="500" y="232" width="380" height="40" rx="8" fill="none" stroke="#a06105" opacity=".38"/>
+        <text x="518" y="257" font-size="12.5" fill="currentColor">El agente le pasa los datos de la cuenta.</text>
+
+        <line x1="690" y1="272" x2="690" y2="290" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="500" y="296" width="380" height="40" rx="8" fill="#a06105" opacity=".07"/>
+        <rect x="500" y="296" width="380" height="40" rx="8" fill="none" stroke="#a06105" opacity=".38"/>
+        <text x="518" y="321" font-size="12.5" fill="currentColor">Transfiere y manda el pantallazo.</text>
+
+        <line x1="690" y1="336" x2="690" y2="354" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="500" y="360" width="380" height="56" rx="8" fill="#a06105" opacity=".1"/>
+        <rect x="500" y="360" width="380" height="56" rx="8" fill="none" stroke="#a06105" opacity=".55"/>
+        <text x="518" y="383" font-size="12.5" font-weight="600" fill="currentColor">El agente lo ANOTA contra el pedido.</text>
+        <text x="518" y="402" font-size="12.5" fill="currentColor">No lo da por bueno. No puede.</text>
+
+        <line x1="690" y1="416" x2="690" y2="434" stroke="currentColor" stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="500" y="440" width="380" height="56" rx="8" fill="#a06105" opacity=".07"/>
+        <rect x="500" y="440" width="380" height="56" rx="8" fill="none" stroke="#a06105" opacity=".38"/>
+        <text x="518" y="463" font-size="12.5" fill="currentColor">Le llega al admin o al grupo.</text>
+        <text x="518" y="482" font-size="12.5" fill="currentColor">Una persona mira y confirma.</text>
+
+        <text x="690" y="528" text-anchor="middle" font-size="13" font-weight="600" fill="#a06105">
+          Lo verificó una persona</text>
+        <text x="690" y="548" text-anchor="middle" font-size="12" fill="currentColor" opacity=".6">
+          lo que tarde alguien en mirarlo</text>
+
+        <!-- convergencia -->
+        <path d="M 230 552 L 230 592 L 460 592 L 460 610" fill="none" stroke="currentColor"
+              stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+        <path d="M 690 568 L 690 592 L 460 592 L 460 610" fill="none" stroke="currentColor"
+              stroke-width="1.2" opacity=".45" marker-end="url(#f2a)"/>
+
+        <rect x="230" y="616" width="460" height="56" rx="8" fill="currentColor" opacity=".06"/>
+        <rect x="230" y="616" width="460" height="56" rx="8" fill="none" stroke="currentColor" opacity=".28"/>
+        <text x="460" y="640" text-anchor="middle" font-size="13.5" font-weight="600" fill="currentColor">
+          El agente: «Listo, su pedido n.º 8 quedó confirmado»</text>
+        <text x="460" y="660" text-anchor="middle" font-size="12" fill="currentColor" opacity=".6">
+          la misma frase — pero nunca fue el agente quien lo decidió</text>
+      </svg>
+      <figcaption>
+        <strong>La diferencia no es de confianza, es de capacidad.</strong> Una pasarela
+        <em>puede</em> comprobar que la plata entró. Una conversación no: un pantallazo se edita
+        en treinta segundos. Por eso el agente, en los dos caminos, llega hasta anotar — y
+        la palabra «confirmado» la pone algo que sí verificó.
+      </figcaption>
+    </figure>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>&nbsp;</th><th>Link de pago</th><th>Transferencia</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Quién confirma</td><td>la pasarela, sola</td><td>una persona del negocio</td></tr>
+          <tr><td>Cuánto tarda</td><td class="num">segundos</td><td>lo que tarde en mirarlo</td></tr>
+          <tr><td>Trabajo del dueño</td><td>ninguno</td><td>mirar y darle confirmar</td></tr>
+          <tr><td>Qué necesita</td><td>cuenta en la pasarela</td><td>nada</td></tr>
+          <tr><td>Toca la tienda</td><td>sí — se crea el pedido allá</td><td>solo al final, si se quiere</td></tr>
+          <tr><td>Si es solo lectura</td><td>no se puede</td><td><strong>sí funciona</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>Lo que hay que decidir por cliente</h3>
+      <p>No es «cuál es mejor»: es cuál usa ese negocio. Muchas pymes colombianas cobran
+      por transferencia y no tienen pasarela. Se ofrecen las dos y el cliente prende la que
+      use — igual que el tono o el horario.</p>
+    </div>
+  </section>
+
+  <footer>
+    ToqueFlow · Toque Tienda · los dos flujos, 10 de septiembre de 2026<br>
+    Detalle escrito: <span class="num">ToqueFlow/arquitectura/toque-tienda-integracion.md</span>
+  </footer>
+
+</div>
