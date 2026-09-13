@@ -67,3 +67,37 @@ usaba es peor que la puerta abierta.
 
 El detalle crudo, con rutas y fechas, está en
 [`workflows/inventario-webhooks.json`](../workflows/inventario-webhooks.json).
+
+---
+
+## Al 13 de septiembre: de 28 a 14, y la puerta principal cerrada
+
+**Se cerró `toque-events`**, que es la que importaba: por ahí entra TODO lo
+que la plataforma le manda a n8n —campañas, pago fallido, mensajes de prueba— y
+estaba abierta a internet. El contrato decía que validaba la firma; no la
+validaba.
+
+Cerrarla salió barato porque **el emisor ya la mandaba**:
+`tf_dispatch_n8n_event()` pone la cabecera `X-Toque-Signature` en cada
+evento desde siempre. Solo faltaba exigirla del otro lado, así que no hubo que
+coordinar con nadie ni tocar Evolution.
+
+Comprobado de las dos formas, que es como se comprueba una puerta:
+
+| Prueba | Resultado |
+|---|---|
+| llamarla sin firma | **403** — no entra |
+| encolar un evento de verdad y ver si llega | **llegó, con éxito** — el outbox sigue vivo |
+
+**Y el número estaba inflado.** Tres de los que contaba —los `toque-*-test`—
+tienen el nodo webhook **deshabilitado**: nunca estuvieron abiertos. A esos handlers
+se entra como sub-flujo desde el receptor, que es justo el diseño correcto: una
+sola puerta, y ahora con llave.
+
+Quedan **14**, todas en flujos viejos de clientes, y siguen dependiendo de las
+mismas decisiones (filas 25 y 26). Lo que no cambia es el criterio: cerrarlas en
+bloque es peor que la puerta abierta.
+
+**De paso:** la auditoría destapó que las cuatro herramientas de Toque Tienda
+no avisaban si fallaban. Ya avisan. Un flujo que falla en silencio es como llevó
+FerreteríaYa 18 días caída sin que nadie lo supiera.
