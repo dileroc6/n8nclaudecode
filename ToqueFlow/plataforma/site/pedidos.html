@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pedidos — ToqueFlow</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0a2230; --mute:#5b6b75; --line:#e2e6e9; --orange:#f15a24; --bg:#f6f7f8; --card:#fff; --green:#1f8a5b; --amber:#b9770e; --red:#c1272d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sora",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+
+  .tool-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  .tool-top .brand b { font-size:15px; }
+  .tool-top .brand span { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); display:block; }
+  .tool-top .who { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .tool-top a.back { color:var(--orange); text-decoration:none; font-size:13px; }
+
+  .wrap { max-width:1000px; margin:0 auto; padding:22px 22px 80px; display:flex; flex-direction:column; gap:18px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .tile .n { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tile .l { font-size:12px; color:var(--mute); margin-top:2px; }
+  .tile.ojo .n { color:var(--orange); }
+
+  .views { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .viewtab { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:9px 22px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+  .viewtab.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .viewtab .c { font-family:"JetBrains Mono",monospace; font-size:12px; opacity:.65; margin-left:6px; }
+
+  .lista { display:flex; flex-direction:column; gap:12px; }
+  .ped { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+  .ped.urge { border-left:3px solid var(--orange); }
+
+  .ped-top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .ped-num { font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--mute); }
+  .ped-quien { font-weight:600; }
+  .ped-tel { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .ped-total { margin-left:auto; font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .chip { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--mute); background:#fafbfb; }
+  .chip.ok { color:var(--green); border-color:#bfe3d2; background:#f2fbf7; }
+  .chip.esp { color:var(--amber); border-color:#f0dcae; background:#fdf8ee; }
+  .chip.mal { color:var(--red); border-color:#f2cdcf; background:#fdf4f4; }
+
+  .lineas { font-size:13.5px; color:var(--mute); display:flex; flex-direction:column; gap:3px; }
+  .lineas b { color:var(--ink); font-weight:500; }
+  .dicho { font-size:13px; color:var(--mute); font-style:italic; border-left:2px solid var(--line); padding-left:10px; }
+
+  .ojo { background:#fdf8ee; border:1px solid #f0dcae; border-radius:10px; padding:11px 13px; font-size:13px; display:flex; flex-direction:column; gap:5px; }
+  .ojo b { color:var(--amber); }
+
+  .acciones { display:flex; gap:8px; flex-wrap:wrap; padding-top:2px; }
+  .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:8px 15px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+  .btn:hover { border-color:var(--ink); }
+  .btn.p { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .btn.d { color:var(--red); }
+  .btn:disabled { opacity:.5; cursor:default; }
+
+  .vacio { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:38px 22px; text-align:center; color:var(--mute); font-size:14px; }
+  .vacio b { display:block; color:var(--ink); font-size:15px; margin-bottom:5px; }
+
+  .msg { border-radius:10px; padding:11px 14px; font-size:13.5px; display:none; }
+  .msg.show { display:block; }
+  .msg.ok { background:#f2fbf7; color:var(--green); border:1px solid #bfe3d2; }
+  .msg.error { background:#fdf4f4; color:var(--red); border:1px solid #f2cdcf; }
+</style>
+</head>
+<body>
+
+<div class="tool-top">
+  <div class="brand"><b id="brand-company">—</b><span>Pedidos y pagos</span></div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="who" id="who"></span>
+    <a class="back" href="dashboard.html">← Volver</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="msg" class="msg"></div>
+
+  <div class="tiles">
+    <div class="tile ojo"><div class="n" id="t-armados">—</div><div class="l">esperan que los confirmes</div></div>
+    <div class="tile ojo"><div class="n" id="t-pagos">—</div><div class="l">pagos por verificar</div></div>
+    <div class="tile"><div class="n" id="t-confirmados">—</div><div class="l">confirmados</div></div>
+    <div class="tile"><div class="n" id="t-mes">—</div><div class="l">vendido este mes</div></div>
+  </div>
+
+  <div class="views" id="views"></div>
+
+  <div class="lista" id="lista"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js?v=8374ba77"></script>
+<script src="auth.js?v=6a51d295"></script>
+<script>
+(async function () {
+  const A = window.TF_AUTH;
+  const profile = await A.guard({});
+  if (!profile) return;
+  const sb = A.sb;
+  const company = window.TF_COMPANY || profile.company || {};
+  document.getElementById('brand-company').textContent = company.name || company.slug || '—';
+  document.getElementById('who').textContent = profile.email || '';
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+  const plata = (n) => n == null ? '—' : '$' + Number(n).toLocaleString('es-CO');
+  const cuando = (d) => {
+    if (!d) return '';
+    const min = Math.floor((Date.now() - new Date(d)) / 60000);
+    if (min < 1) return 'ahora';
+    if (min < 60) return 'hace ' + min + ' min';
+    const h = Math.floor(min / 60);
+    if (h < 24) return 'hace ' + h + (h === 1 ? ' hora' : ' horas');
+    const d2 = Math.floor(h / 24);
+    return 'hace ' + d2 + (d2 === 1 ? ' día' : ' días');
+  };
+
+  let PEDIDOS = [], LINEAS = {}, REVISION = {};
+  let view = 'confirmar';
+
+  function aviso(t, texto) {
+    const m = $('msg');
+    m.className = 'msg show ' + t;
+    m.textContent = texto;
+    if (t === 'ok') setTimeout(() => { m.className = 'msg'; }, 4000);
+  }
+
+  async function cargar() {
+    // El nombre y el teléfono viven en `contacts`, no en el pedido: se traen
+    // en la misma consulta. Un pedido sin contacto —la persona se borró— sigue
+    // saliendo, con el nombre en blanco: esconderlo sería peor.
+    const { data, error } = await sb.from('pedidos')
+      .select('*, contacto:contacts(full_name, phone)')
+      .order('created_at', { ascending: false }).limit(200);
+    if (error) { aviso('error', 'No se pudieron cargar los pedidos: ' + error.message); return; }
+    PEDIDOS = (data || []).map((p) => Object.assign({}, p, {
+      persona:  p.contacto && p.contacto.full_name,
+      telefono: p.contacto && p.contacto.phone,
+    }));
+
+    // Las líneas de todos de una vez: una consulta por pedido haría veinte
+    // viajes para pintar una pantalla.
+    LINEAS = {};
+    if (PEDIDOS.length) {
+      const { data: ls } = await sb.from('pedido_lineas')
+        .select('*').in('pedido_id', PEDIDOS.map((p) => p.id));
+      for (const l of (ls || [])) (LINEAS[l.pedido_id] = LINEAS[l.pedido_id] || []).push(l);
+    }
+
+    // Qué cambió entre armar y confirmar. Solo para los que esperan decisión:
+    // es justo lo que hay que mirar antes de decir que sí, y no tiene sentido
+    // calcularlo para los ya resueltos.
+    REVISION = {};
+    for (const p of PEDIDOS.filter((x) => x.estado === 'armado')) {
+      const { data: r } = await sb.rpc('tf_pedido_revisar', { p_pedido: p.id });
+      if (r && r.ok && Array.isArray(r.revisar) && r.revisar.length) REVISION[p.id] = r.revisar;
+    }
+
+    pintar();
+  }
+
+  const enMes = (p) => {
+    const d = new Date(p.created_at), h = new Date();
+    return d.getMonth() === h.getMonth() && d.getFullYear() === h.getFullYear();
+  };
+
+  const VISTAS = {
+    confirmar: { label: 'Por confirmar', filtro: (p) => p.estado === 'armado' },
+    pagos:     { label: 'Pagos por verificar', filtro: (p) => p.pago_estado === 'reportado' },
+    todos:     { label: 'Todos', filtro: () => true },
+  };
+
+  function pintar() {
+    const armados = PEDIDOS.filter(VISTAS.confirmar.filtro).length;
+    const pagos   = PEDIDOS.filter(VISTAS.pagos.filtro).length;
+    $('t-armados').textContent = armados;
+    $('t-pagos').textContent = pagos;
+    $('t-confirmados').textContent = PEDIDOS.filter((p) => p.estado === 'confirmado' || p.estado === 'entregado').length;
+    $('t-mes').textContent = plata(PEDIDOS
+      .filter((p) => enMes(p) && p.estado !== 'rechazado')
+      .reduce((s, p) => s + Number(p.total_cop || 0), 0));
+
+    $('views').innerHTML = Object.entries(VISTAS).map(([k, v]) => {
+      const n = PEDIDOS.filter(v.filtro).length;
+      return '<button class="viewtab' + (view === k ? ' on' : '') + '" data-v="' + k + '">' +
+             esc(v.label) + '<span class="c">' + n + '</span></button>';
+    }).join('');
+    for (const b of document.querySelectorAll('.viewtab'))
+      b.onclick = () => { view = b.dataset.v; pintar(); };
+
+    const lista = PEDIDOS.filter(VISTAS[view].filtro);
+    if (!lista.length) {
+      $('lista').innerHTML = '<div class="vacio">' + (
+        view === 'confirmar' ? '<b>No hay nada esperando</b>Cuando el agente arme un pedido, aparece aquí para que usted lo confirme.'
+        : view === 'pagos'   ? '<b>Ningún pago por verificar</b>Cuando alguien diga que pagó, aparece aquí con lo que haya mandado.'
+        : '<b>Todavía no hay pedidos</b>Los pedidos que arme el agente por WhatsApp se ven aquí.') + '</div>';
+      return;
+    }
+    $('lista').innerHTML = lista.map(tarjeta).join('');
+    for (const b of document.querySelectorAll('[data-accion]')) b.onclick = accion;
+  }
+
+  function tarjeta(p) {
+    const ls = LINEAS[p.id] || [];
+    const rev = REVISION[p.id];
+    const urge = p.estado === 'armado' || p.pago_estado === 'reportado';
+
+    const estadoChip =
+      p.estado === 'armado'     ? '<span class="chip esp">esperando que lo confirme</span>' :
+      p.estado === 'confirmado' ? '<span class="chip ok">confirmado</span>' :
+      p.estado === 'entregado'  ? '<span class="chip ok">entregado</span>' :
+                                  '<span class="chip mal">rechazado</span>';
+
+    const pagoChip =
+      p.pago_estado === 'verificado' ? '<span class="chip ok">pago verificado</span>' :
+      p.pago_estado === 'reportado'  ? '<span class="chip esp">dice que pagó — sin verificar</span>' :
+      p.pago_estado === 'rechazado'  ? '<span class="chip mal">pago rechazado</span>' : '';
+
+    const comprobante = (p.pago_comprobante_url || p.pago_comprobante_wa_id)
+      ? '<span class="chip">mandó soporte</span>' : '';
+
+    return '<div class="ped' + (urge ? ' urge' : '') + '">' +
+      '<div class="ped-top">' +
+        '<span class="ped-num">#' + esc(p.numero) + '</span>' +
+        '<span class="ped-quien">' + esc(p.persona || 'Sin nombre') + '</span>' +
+        '<span class="ped-tel">' + esc(p.telefono || '') + '</span>' +
+        '<span class="ped-tel">' + esc(cuando(p.created_at)) + '</span>' +
+        '<span class="ped-total">' + plata(p.total_cop) + '</span>' +
+      '</div>' +
+      '<div>' + estadoChip + ' ' + pagoChip + ' ' + comprobante + '</div>' +
+      (ls.length ? '<div class="lineas">' + ls.map((l) =>
+        '<div><b>' + esc(l.cantidad) + ' × ' + esc(l.nombre) + '</b> — ' + plata(l.precio_cop) + ' c/u</div>').join('') + '</div>' : '') +
+      (p.dicho ? '<div class="dicho">«' + esc(p.dicho) + '»</div>' : '') +
+      (p.pago_referencia ? '<div class="lineas">Referencia que dictó: <b>' + esc(p.pago_referencia) + '</b></div>' : '') +
+      (rev ? '<div class="ojo"><b>Mírelo antes de confirmar</b>' + rev.map((r) => {
+          const bits = [];
+          if (r.hay != null && r.pedidas != null && r.hay < r.pedidas)
+            bits.push('se pidieron ' + r.pedidas + ' y quedan ' + r.hay);
+          if (r.precio_hoy != null && r.precio_pedido != null && Number(r.precio_hoy) !== Number(r.precio_pedido))
+            bits.push('el precio pasó de ' + plata(r.precio_pedido) + ' a ' + plata(r.precio_hoy));
+          if (r.hay == null && r.precio_hoy == null) bits.push('ya no está en el catálogo');
+          return '<div>' + esc(r.nombre || r.sku) + ': ' + esc(bits.join(' · ')) + '</div>';
+        }).join('') + '</div>' : '') +
+      acciones(p) +
+    '</div>';
+  }
+
+  function acciones(p) {
+    const b = [];
+    if (p.estado === 'armado') {
+      b.push('<button class="btn p" data-accion="confirmar" data-id="' + p.id + '">Confirmar pedido</button>');
+      b.push('<button class="btn d" data-accion="rechazar" data-id="' + p.id + '">Rechazar</button>');
+    } else if (p.estado === 'confirmado') {
+      b.push('<button class="btn" data-accion="entregado" data-id="' + p.id + '">Marcar entregado</button>');
+    }
+    if (p.pago_estado === 'reportado') {
+      b.push('<button class="btn p" data-accion="pago-ok" data-id="' + p.id + '">El pago entró</button>');
+      b.push('<button class="btn d" data-accion="pago-no" data-id="' + p.id + '">No entró</button>');
+    }
+    return b.length ? '<div class="acciones">' + b.join('') + '</div>' : '';
+  }
+
+  async function accion(ev) {
+    const btn = ev.currentTarget;
+    const id = btn.dataset.id, qué = btn.dataset.accion;
+    for (const x of document.querySelectorAll('[data-accion]')) x.disabled = true;
+
+    let r, error;
+    if (qué === 'pago-ok' || qué === 'pago-no') {
+      const nota = qué === 'pago-no'
+        ? window.prompt('¿Por qué no entró?\n(queda escrito con la fecha)', '')
+        : null;
+      if (qué === 'pago-no' && nota === null) { pintar(); return; }
+      ({ data: r, error } = await sb.rpc('tf_pago_verificar',
+        { p_pedido: id, p_ok: qué === 'pago-ok', p_nota: nota }));
+    } else {
+      const estado = qué === 'confirmar' ? 'confirmado' : qué === 'rechazar' ? 'rechazado' : 'entregado';
+      const nota = estado === 'rechazado'
+        ? window.prompt('¿Por qué se rechaza?\n(queda escrito con la fecha)', '')
+        : null;
+      if (estado === 'rechazado' && nota === null) { pintar(); return; }
+      ({ data: r, error } = await sb.rpc('tf_pedido_resolver',
+        { p_pedido: id, p_estado: estado, p_nota: nota }));
+    }
+
+    if (error || (r && r.ok === false)) {
+      aviso('error', 'No se pudo: ' + (error ? error.message : r.motivo));
+      pintar();
+      return;
+    }
+    aviso('ok', 'Listo.');
+    await cargar();
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

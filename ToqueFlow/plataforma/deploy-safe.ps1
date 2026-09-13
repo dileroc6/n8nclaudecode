@@ -77,7 +77,8 @@ function Test-Live {
     'index.html','dashboard.html','admin.html','login.html','nosotros.html',
     'rappi-bogota.html','rappi-medellin.html',              # FerreteriaYa
     'sm-grand/ocupacion.html',                              # SM Grand Hotel
-    'contactos.html','campanas.html','modo-prueba.html'     # Bejauha
+    'contactos.html','campanas.html','modo-prueba.html',    # Bejauha
+    'pedidos.html'                                          # Toque Tienda
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()
