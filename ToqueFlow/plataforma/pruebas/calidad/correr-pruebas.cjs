@@ -151,7 +151,7 @@ function fundir(base, extra) {
     // borrar el contacto de la corrida anterior el pedido sobrevive huerfano,
     // y la comprobacion siguiente cuenta cosas de ayer.
     for (const sql of (esc.limpiar || [])) {
-      try { await query(sql, [EMPRESA, tel]); }
+      try { await query(sql, sql.includes("$2") ? [EMPRESA, tel] : [EMPRESA]); }
       catch (e) { fallos.push("no pude limpiar antes de empezar → " + e.message); }
     }
 
@@ -241,7 +241,10 @@ function fundir(base, extra) {
         const b = esp.en_la_base;
         let n = null;
         try {
-          n = Number((await query(b.consulta, [EMPRESA, tel])).rows[0].n);
+          // Postgres exige el numero EXACTO de parametros: mandar $2 a una
+          // consulta que solo usa $1 revienta. Se mira cual pide.
+          const args = b.consulta.includes("$2") ? [EMPRESA, tel] : [EMPRESA];
+          n = Number((await query(b.consulta, args)).rows[0].n);
         } catch (e) {
           fallos.push("turno " + (t + 1) + ": la comprobación en la base falló → " + e.message);
         }
