@@ -96,7 +96,11 @@ function fundir(base, extra) {
   if (!doc) { console.error("Esta empresa no tiene conocimiento cargado. Nada que probar."); process.exit(1); }
 
   const urlsOk    = new Set((doc.texto.match(/https?:\/\/[^\s)"']+/g)    || []).map(u => u.replace(/[.,]$/, "")));
-  const preciosOk = new Set((doc.texto.match(/\$\s?[\d][\d.,]{2,}/g)     || []).map(p => p.replace(/[\s$]/g, "")));
+  // Con $ y sin él: el documento dice «Domicilio: 8.000 pesos», sin signo, y
+  // marcar eso como precio inventado acusaba al agente de decir justo lo que
+  // el negocio escribió.
+  const preciosOk = new Set(
+    (doc.texto.match(/\$?\s?\d{1,3}(?:[.,]\d{3})+/g) || []).map(p => p.replace(/[\s$]/g, "")));
 
   // El documento no es la única fuente de precios. Un negocio con catálogo los
   // tiene ahí —y a propósito NO en el documento, para que el agente no los diga
@@ -199,6 +203,19 @@ function fundir(base, extra) {
         "select distinct total_cop from public.pedidos where company_id=$1 and total_cop is not null",
         [EMPRESA])).rows) {
         const n = Number(r.total_cop);
+        preciosOk.add(String(n));
+        preciosOk.add(n.toLocaleString("es-CO"));
+        preciosOk.add(n.toLocaleString("en-US"));
+      }
+      // Un total es la suma de cosas reales, no un precio inventado: «el
+      // martillo $32.000 y el domicilio $8.000, total $40.000» es exactamente
+      // lo que uno quiere que diga. Se aceptan las sumas de DOS precios ya
+      // válidos — sigue cazando lo que importa, que es un precio que no sale
+      // de ninguna parte: un martillo a 10.000 no es la suma de nada.
+      const partidas = [...preciosOk].map(x => Number(String(x).replace(/[.,]/g, ""))).filter(n => n > 0);
+      // sumas legitimas: dos partidas reales, nada mas.
+      for (const a of partidas) for (const b of partidas) {
+        const n = a + b;
         preciosOk.add(String(n));
         preciosOk.add(n.toLocaleString("es-CO"));
         preciosOk.add(n.toLocaleString("en-US"));
