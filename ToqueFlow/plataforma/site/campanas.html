@@ -292,12 +292,13 @@
   let countTimer = null;
   function updateCount() { clearTimeout(countTimer); countTimer = setTimeout(doCount, 250); }
   async function doCount() {
-    let q = sb.from('contacts').select('id', { count:'exact', head:true }).eq('company_id', companyId);
-    if (sel.status.size)  q = q.in('status', [...sel.status]);
-    if (sel.stage.size)   q = q.in('lead_stage', [...sel.stage]);
-    if (sel.service.size) q = q.in('service_type', [...sel.service]);
-    const { count, error } = await q;
-    lastMatchCount = error ? null : (count ?? 0);
+    // Se le pregunta a la MISMA función que usa el envío. Contarlo aquí por
+    // separado es como el número de la vista previa deja de coincidir con el
+    // de los que reciben — y esta versión ni descontaba las bajas.
+    const { data, error } = await sb.rpc('tf_campana_destinatarios', {
+      p_company: companyId, p_filtros: buildFilters(), p_cantidad: null,
+    });
+    lastMatchCount = error ? null : ((data || []).length);
     document.getElementById('match-count').textContent = lastMatchCount == null ? '—' : lastMatchCount + ' contactos';
     updateRitmo();
   }
