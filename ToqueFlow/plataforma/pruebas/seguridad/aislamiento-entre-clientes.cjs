@@ -1,4 +1,7 @@
 // ============================================================================
+// Ojo con `process.exit()` DENTRO del try: se salta el `finally`, y el
+// `finally` es el que borra la empresa y los usuarios que esta prueba creó.
+// Por eso aquí se usa `throw`.
 // ¿Puede un cliente ver los datos de otro?
 // ----------------------------------------------------------------------------
 // `aislamiento-rls.cjs` prueba al desconocido: alguien sin sesión. Esto prueba
@@ -87,7 +90,7 @@ const svc = async (metodo, ruta, cuerpo, extra) => {
     const email = "zz-vecino-" + sello + "@toqueflow.com";
     const pass = "Zz" + Math.random().toString(36).slice(2) + "!Aa9";
     const u = await svc("POST", "/auth/v1/admin/users", { email, password: pass, email_confirm: true });
-    if (!u.ok || !u.data.id) { console.error("no pude crear el usuario: " + JSON.stringify(u.data).slice(0, 200)); process.exit(2); }
+    if (!u.ok || !u.data.id) { throw new Error("no pude crear el usuario: " + JSON.stringify(u.data).slice(0, 200)); }
     uid = u.data.id;
     await svc("PATCH", "/rest/v1/profiles?id=eq." + uid,
       { role: "member", status: "active", company_id: A.id, full_name: "Vecino de prueba" });
@@ -96,7 +99,7 @@ const svc = async (metodo, ruta, cuerpo, extra) => {
       method: "POST", headers: { apikey: ANON, "Content-Type": "application/json" },
       body: JSON.stringify({ email, password: pass }),
     })).json();
-    if (!ses.access_token) { console.error("no pude iniciar sesión: " + JSON.stringify(ses).slice(0, 200)); process.exit(2); }
+    if (!ses.access_token) { throw new Error("no pude iniciar sesión: " + JSON.stringify(ses).slice(0, 200)); }
 
     const comoVecino = async (ruta) => {
       const r = await fetch(URL + "/rest/v1/" + ruta, {

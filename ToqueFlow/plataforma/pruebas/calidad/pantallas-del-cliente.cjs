@@ -1,4 +1,7 @@
 // ============================================================================
+// Ojo con `process.exit()` DENTRO del try: se salta el `finally`, y el
+// `finally` es el que borra la empresa y los usuarios que esta prueba creó.
+// Por eso aquí se usa `throw`.
 // Las cuatro pantallas que faltaban: dashboard, ajustes, perfil y modo prueba
 // ----------------------------------------------------------------------------
 // Hasta ahora de estas solo se comprobaba que COMPILARAN. Compilar dice que la
@@ -110,12 +113,12 @@ const filas = (r) => Array.isArray(r.data) ? r.data : [];
     const a1 = await admin('POST', 'users', { email: MAIL_A, password: PASS, email_confirm: true });
     const a2 = await admin('POST', 'users', { email: MAIL_B, password: PASS, email_confirm: true });
     uidA = a1 && a1.id; uidB = a2 && a2.id;
-    if (!uidA || !uidB) { console.error('no pude crear los usuarios: ' + JSON.stringify(a1)); process.exit(2); }
+    if (!uidA || !uidB) { throw new Error('no pude crear los usuarios: ' + JSON.stringify(a1)); }
     await c.query("update public.profiles set role='member', status='active', company_id=$1, full_name='Ana de A' where id=$2", [empA, uidA]);
     await c.query("update public.profiles set role='member', status='active', company_id=$1, full_name='Beto de B' where id=$2", [empB, uidB]);
 
     const tA = await entrar(MAIL_A), tB = await entrar(MAIL_B);
-    if (!tA || !tB) { console.error('no pude iniciar sesión'); process.exit(2); }
+    if (!tA || !tB) { throw new Error('no pude iniciar sesión'); }
 
     // ── DASHBOARD ─────────────────────────────────────────────────────────
     console.log('\n── dashboard: la puerta de entrada del cliente ──');

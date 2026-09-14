@@ -1,4 +1,7 @@
 // ============================================================================
+// Ojo con `process.exit()` DENTRO del try: se salta el `finally`, y el
+// `finally` es el que borra la empresa y los usuarios que esta prueba creó.
+// Por eso aquí se usa `throw`.
 // La config mala de un cliente no puede tumbar al otro
 // ----------------------------------------------------------------------------
 // Hay UN solo flujo de n8n para todos los clientes. La pregunta que esta prueba
@@ -57,7 +60,7 @@ const esperar = (ms) => new Promise((s) => setTimeout(s, ms));
 
     const receptor = (await api('/workflows?limit=250')).data
       .find((w) => w.name === 'Toque - Receptor de Eventos (n8n)');
-    if (!receptor) { console.error('no encontré el receptor'); process.exit(2); }
+    if (!receptor) { throw new Error('no encontré el receptor'); }
 
     const antes = ((await api('/executions?workflowId=' + receptor.id + '&limit=1')).data || [])[0];
     const marca = antes ? antes.id : null;

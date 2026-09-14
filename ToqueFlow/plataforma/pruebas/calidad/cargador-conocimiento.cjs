@@ -87,7 +87,7 @@ const SITIOS = process.argv.slice(2).length ? process.argv.slice(2) : [
     console.log("❌ No pude leer el rastreador de index.ts: " + e.message);
     console.log("   (si la función cambió de forma, hay que ajustar esta prueba —");
     console.log("    a propósito: es la señal de que el código real se movió)");
-    process.exit(1);
+    throw new Error("la prueba se rindió (codigo 1)");
   }
   console.log("Rastreador leído de la función de verdad.\n");
 

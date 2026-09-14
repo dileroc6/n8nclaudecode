@@ -1,4 +1,7 @@
 // ============================================================================
+// Ojo con `process.exit()` DENTRO del try: se salta el `finally`, y el
+// `finally` es el que borra la empresa y los usuarios que esta prueba creó.
+// Por eso aquí se usa `throw`.
 // ¿Funciona la pantalla de campañas, de verdad?
 // ----------------------------------------------------------------------------
 // Es la pantalla de más riesgo del portal: un error aquí **le escribe a
@@ -89,12 +92,12 @@ const rest = async (token, metodo, ruta, cuerpo, extra) => {
     const a1 = await admin('POST', 'users', { email: MAIL_A, password: PASS, email_confirm: true });
     const a2 = await admin('POST', 'users', { email: MAIL_B, password: PASS, email_confirm: true });
     uidA = a1 && a1.id; uidB = a2 && a2.id;
-    if (!uidA || !uidB) { console.error('no pude crear los usuarios: ' + JSON.stringify(a1) + ' | ' + JSON.stringify(a2)); process.exit(2); }
+    if (!uidA || !uidB) { throw new Error('no pude crear los usuarios: ' + JSON.stringify(a1) + ' | ' + JSON.stringify(a2)); }
     await c.query("update public.profiles set role='member', status='active', company_id=$1 where id=$2", [empA, uidA]);
     await c.query("update public.profiles set role='member', status='active', company_id=$1 where id=$2", [empB, uidB]);
 
     const tA = await entrar(MAIL_A), tB = await entrar(MAIL_B);
-    if (!tA || !tB) { console.error('no pude iniciar sesión'); process.exit(2); }
+    if (!tA || !tB) { throw new Error('no pude iniciar sesión'); }
 
     console.log('\n── El segmentador cuenta SOLO lo suyo ──');
     // Tal cual la pantalla: count exacto, head, filtrado por empresa.

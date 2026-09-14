@@ -1,4 +1,7 @@
 // ============================================================================
+// Ojo con `process.exit()` DENTRO del try: se salta el `finally`, y el
+// `finally` es el que borra la empresa y los usuarios que esta prueba creó.
+// Por eso aquí se usa `throw`.
 // ¿La consola de verdad guarda cómo cobra un cliente?
 // ----------------------------------------------------------------------------
 // Corre las MISMAS consultas que hace la pantalla, con una sesión real de super
@@ -84,7 +87,7 @@ const rest = async (token, metodo, ruta, cuerpo, extra) => {
     const a1 = await admin('POST', 'users', { email: EMAIL_ADMIN, password: PASS, email_confirm: true });
     const a2 = await admin('POST', 'users', { email: EMAIL_OTRO,  password: PASS, email_confirm: true });
     uidAdmin = a1 && a1.id; uidOtro = a2 && a2.id;
-    if (!uidAdmin || !uidOtro) { console.error('no pude crear los usuarios de prueba'); process.exit(2); }
+    if (!uidAdmin || !uidOtro) { throw new Error('no pude crear los usuarios de prueba'); }
 
     await c.query("update public.profiles set role='super_admin', status='active' where id=$1", [uidAdmin]);
     // El otro es un miembro normal de la empresa B. Es el que no debe ver lo de A.
@@ -92,7 +95,7 @@ const rest = async (token, metodo, ruta, cuerpo, extra) => {
 
     const tAdmin = await entrar(EMAIL_ADMIN);
     const tOtro  = await entrar(EMAIL_OTRO);
-    if (!tAdmin || !tOtro) { console.error('no pude iniciar sesión'); process.exit(2); }
+    if (!tAdmin || !tOtro) { throw new Error('no pude iniciar sesión'); }
 
     console.log('\n── Lo que hace la pantalla al prender una casilla ──');
     // Exactamente el upsert del componente.
