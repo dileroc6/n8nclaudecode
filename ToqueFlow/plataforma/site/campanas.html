@@ -123,7 +123,53 @@
       <div class="step-h"><span class="step-n">1</span> ¿A quién contactar? <span class="step-sub">— elige uno o más filtros</span></div>
       <div class="field"><label>Estado</label><div class="checklist" id="f-status"></div></div>
       <div class="field"><label>Temperatura (lead)</label><div class="checklist" id="f-stage"></div></div>
-      <div class="field" style="margin-bottom:0;"><label>Tipo de servicio</label><div class="checklist" id="f-service"></div></div>
+      <div class="field"><label>Tipo de servicio</label><div class="checklist" id="f-service"></div></div>
+
+      <details id="f-mas" style="border-top:1px solid var(--line);padding-top:12px;">
+        <summary style="cursor:pointer;font-size:13.5px;font-weight:600;">Más filtros</summary>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+
+          <label class="check-item"><input type="checkbox" id="f-sin-cita" />
+            <span>No tiene ninguna cita agendada</span></label>
+
+          <label class="check-item"><input type="checkbox" id="f-falto" />
+            <span>Faltó a una cita en los últimos
+              <input type="number" id="f-falto-dias" value="60" min="1" max="3650"
+                     style="width:64px;padding:2px 6px;font-family:inherit;" /> días</span></label>
+
+          <label class="check-item"><input type="checkbox" id="f-callado" />
+            <span>Lleva sin hablar con el negocio más de
+              <input type="number" id="f-callado-dias" value="90" min="1" max="3650"
+                     style="width:64px;padding:2px 6px;font-family:inherit;" /> días</span></label>
+
+          <div class="field" style="margin:0;">
+            <label>Por un dato suyo</label>
+            <div class="row" style="gap:8px;flex-wrap:wrap;">
+              <select id="f-campo" style="max-width:220px;"><option value="">— ninguno —</option></select>
+              <input type="text" id="f-campo-valor" placeholder="vale lo que escribas aquí"
+                     style="flex:1;min-width:180px;" />
+            </div>
+          </div>
+
+          <div class="field" style="margin:0;">
+            <label>Por una fecha guardada en un dato suyo</label>
+            <div class="row" style="gap:8px;flex-wrap:wrap;">
+              <select id="f-fecha" style="max-width:220px;"><option value="">— ninguna —</option></select>
+              <span class="muted" style="font-size:13px;">hace más de</span>
+              <input type="number" id="f-fecha-dias" value="7" min="1" max="3650"
+                     style="width:64px;padding:2px 6px;font-family:inherit;" />
+              <span class="muted" style="font-size:13px;">días</span>
+            </div>
+          </div>
+
+          <p class="muted" style="font-size:12.5px;margin:2px 0 0;line-height:1.5;">
+            Los datos propios los define cada negocio en su base de contactos. Con
+            «fecha guardada» se arma, por ejemplo, <b>a quién le mandé un
+            presupuesto hace más de una semana y no ha contestado</b>.
+          </p>
+        </div>
+      </details>
+
       <div class="row" style="margin-top:14px;">
         <span class="muted">Contactos que coinciden:</span>
         <span class="count-pill" id="match-count">—</span>
@@ -269,6 +315,14 @@
   }
   renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
 
+  // Cualquier cambio en los filtros de más recuenta, igual que las casillas de
+  // arriba. Un filtro que no mueve el número de destinatarios parece roto.
+  ['f-sin-cita','f-falto','f-falto-dias','f-callado','f-callado-dias',
+   'f-campo','f-campo-valor','f-fecha','f-fecha-dias'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(el.type === 'number' || el.type === 'text' ? 'input' : 'change', updateCount);
+  });
+
   // Qué vende este negocio se averigua mirando su base, no suponiéndolo. Se
   // hace después de pintar para que la pantalla no espere por esta consulta.
   (async () => {
@@ -280,13 +334,55 @@
     renderChecklist('service','f-service');
   })();
 
+  // Lo que la campaña traía y esta pantalla todavía no sabe pintar. Se guarda
+  // y se devuelve tal cual: una pantalla vieja que abre una campaña nueva no
+  // puede borrarle los filtros sin decir nada.
+  let filtrosAjenos = {};
+  const MIOS = ['status','lead_stage','service_type','campos','sin_campo',
+                'creado','ultimo_contacto','campo_fecha','sin_cita_futura','no_asistio'];
+
   function buildFilters() {
-    const f = {};
+    const f = Object.assign({}, filtrosAjenos);
+    const $v = (id) => document.getElementById(id);
+    const num = (id, x) => Math.max(1, parseInt($v(id).value, 10) || x);
+
     if (sel.status.size)  f.status       = [...sel.status];
     if (sel.stage.size)   f.lead_stage   = [...sel.stage];
     if (sel.service.size) f.service_type = [...sel.service];
+
+    if ($v('f-sin-cita').checked) f.sin_cita_futura = true;
+    if ($v('f-falto').checked)    f.no_asistio = { hace_menos_de_dias: num('f-falto-dias', 60) };
+    if ($v('f-callado').checked)  f.ultimo_contacto = { hace_mas_de_dias: num('f-callado-dias', 90) };
+
+    const campo = $v('f-campo').value;
+    const valor = $v('f-campo-valor').value.trim();
+    if (campo && valor) f.campos = { [campo]: [valor] };
+
+    const fecha = $v('f-fecha').value;
+    if (fecha) f.campo_fecha = { clave: fecha, hace_mas_de_dias: num('f-fecha-dias', 7) };
+
     return f;
   }
+
+  // Los datos propios los define cada negocio. Se leen de su tabla, no de una
+  // lista escrita aquí: una lista escrita aquí es la que no tiene el campo del
+  // cliente nuevo.
+  (async () => {
+    const { data } = await sb.from('contact_campos')
+      .select('clave,etiqueta,tipo').eq('company_id', companyId).order('orden');
+    const campos = data || [];
+    if (!campos.length) return;
+    const pon = (id, filtro) => {
+      const s = document.getElementById(id);
+      campos.filter(filtro).forEach((c) => {
+        const o = document.createElement('option');
+        o.value = c.clave; o.textContent = c.etiqueta || c.clave;
+        s.appendChild(o);
+      });
+    };
+    pon('f-campo', () => true);
+    pon('f-fecha', (c) => c.tipo === 'fecha');
+  })();
 
   // ── Conteo en vivo de contactos que coinciden ──
   let countTimer = null;
@@ -355,12 +451,16 @@
   updateMode();
 
   // ── Ver a quiénes se enviará (todos los que coinciden) ──
+  // La MISMA función que cuenta arriba y que usa el envío. Antes esto
+  // consultaba `contacts` por su cuenta con los tres filtros viejos y no
+  // descontaba las bajas: la lista enseñaba gente que había pedido no recibir,
+  // y no coincidía con el número de arriba.
   async function recipientsQuery() {
-    let q = sb.from('contacts').select('full_name,phone,service_type,status').eq('company_id', companyId).order('full_name', { ascending:true });
-    if (sel.status.size)  q = q.in('status', [...sel.status]);
-    if (sel.stage.size)   q = q.in('lead_stage', [...sel.stage]);
-    if (sel.service.size) q = q.in('service_type', [...sel.service]);
-    return await q;
+    const r = await sb.rpc('tf_campana_destinatarios', {
+      p_company: companyId, p_filtros: buildFilters(), p_cantidad: null,
+    });
+    if (r.data) r.data.sort((a, b) => String(a.full_name || '').localeCompare(String(b.full_name || '')));
+    return r;
   }
   document.getElementById('btn-who').onclick = async () => {
     document.getElementById('who-list').innerHTML = '<span class="muted">Cargando…</span>';
@@ -435,10 +535,12 @@
     document.getElementById('c-msg').value = c.message_template || '';
     document.getElementById('c-freq').value = c.frequency || 'una_vez';
     sendMode = 'prueba'; updateMode();
-    sel.status = new Set((c.filters && c.filters.status) || []);
-    sel.stage = new Set((c.filters && c.filters.lead_stage) || []);
-    sel.service = new Set((c.filters && c.filters.service_type) || []);
+    const F = c.filters || {};
+    sel.status = new Set(F.status || []);
+    sel.stage = new Set(F.lead_stage || []);
+    sel.service = new Set(F.service_type || []);
     renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+    cargarFiltrosDeMas(F);
     if (c.scheduled_at) {
       whenMode = 'programar';
       document.getElementById('c-sched').value = String(c.scheduled_at).slice(0, 16);
@@ -453,6 +555,44 @@
     doCount();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setNotice('ok', 'Editando "' + c.name + '". Ajusta lo que quieras y ejecuta. (El modo prueba está desmarcado = envío real.)');
+  }
+
+  // Vuelve a poner en pantalla los filtros de más de una campaña guardada.
+  // Sin esto, abrir una campaña para editarla le borraba en silencio todo lo
+  // que esta pantalla no sabía pintar, y al guardar se iba de verdad.
+  function cargarFiltrosDeMas(F) {
+    const $v = (id) => document.getElementById(id);
+    const marca = (id, on) => { if ($v(id)) $v(id).checked = !!on; };
+    const pon   = (id, v)  => { if ($v(id) && v != null) $v(id).value = v; };
+
+    marca('f-sin-cita', F.sin_cita_futura);
+
+    const fal = F.no_asistio;
+    marca('f-falto', fal && fal !== false);
+    if (fal && typeof fal === 'object' && fal.hace_menos_de_dias) pon('f-falto-dias', fal.hace_menos_de_dias);
+
+    const uc = F.ultimo_contacto;
+    marca('f-callado', uc && uc.hace_mas_de_dias);
+    if (uc && uc.hace_mas_de_dias) pon('f-callado-dias', uc.hace_mas_de_dias);
+
+    const campos = F.campos || {};
+    const claves = Object.keys(campos);
+    pon('f-campo', claves[0] || '');
+    pon('f-campo-valor', claves.length ? [].concat(campos[claves[0]])[0] || '' : '');
+
+    const cf = F.campo_fecha || {};
+    pon('f-fecha', cf.clave || '');
+    if (cf.hace_mas_de_dias) pon('f-fecha-dias', cf.hace_mas_de_dias);
+
+    // Y lo que esta pantalla no conoce se guarda para devolverlo intacto.
+    filtrosAjenos = {};
+    for (const k of Object.keys(F)) if (!MIOS.includes(k)) filtrosAjenos[k] = F[k];
+
+    // Si trae algo de más, que se vea: un filtro activo escondido detrás de un
+    // «Más filtros» cerrado es como se manda una campaña a quien no se quería.
+    const hayDeMas = F.sin_cita_futura || F.no_asistio || F.ultimo_contacto ||
+                     F.campo_fecha || claves.length;
+    if (hayDeMas && $v('f-mas')) $v('f-mas').open = true;
   }
 
   // Encola el evento ejecutar_campana en el outbox (RLS permite este evento al member).
@@ -644,6 +784,7 @@
     document.getElementById('sched-wrap').style.display = 'none';
     updateMode();
     sel.status.clear(); sel.stage.clear(); sel.service.clear();
+    cargarFiltrosDeMas({});
     renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
     doCount();
   }

@@ -40,6 +40,10 @@
 -- Idempotente.
 -- ============================================================================
 
+-- Cambia lo que devuelve, asi que hay que tirarla antes: Postgres no deja
+-- cambiarle el tipo de retorno a una funcion con «create or replace».
+drop function if exists public.tf_campana_destinatarios(uuid, jsonb, int);
+
 create or replace function public.tf_campana_destinatarios(
   p_company  uuid,
   p_filtros  jsonb,
@@ -49,8 +53,9 @@ returns table (
   id         uuid,
   full_name  text,
   phone      text,
-  status     text,
-  lead_stage text
+  status       text,
+  lead_stage   text,
+  service_type text
 )
 language plpgsql
 stable
@@ -89,7 +94,7 @@ begin
   end if;
 
   return query
-  select c.id, c.full_name, c.phone, c.status, c.lead_stage
+  select c.id, c.full_name, c.phone, c.status, c.lead_stage, c.service_type
   from public.contacts c
   where c.company_id = p_company
     and nullif(btrim(coalesce(c.phone, '')), '') is not null
