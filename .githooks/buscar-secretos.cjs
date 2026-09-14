@@ -39,6 +39,16 @@ const PATRONES = [
   // valor largo en vez de una referencia `${VARIABLE}`.
   { que: "un campo de llave con un valor literal en vez de una variable",
     re: /"[A-Z_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z_]*"\s*:\s*"(?!\$\{)[^"\s]{20,}"/ },
+
+  // Y lo mismo dentro de CÓDIGO, que es por donde se escapó el secreto del
+  // receptor: `const SECRET='tqf-…'` no tiene forma de llave conocida, así que
+  // ninguno de los patrones de arriba lo veía — y viajó dentro de un workflow
+  // de n8n exportado al repo, que es público.
+  //
+  // Un secreto no se reconoce por su forma. Se reconoce por el nombre que le
+  // pone quien lo escribe.
+  { que: "un secreto escrito a mano dentro de código (const SECRET = '…')",
+    re: /\b[A-Za-z_]*(?:SECRET|TOKEN|APIKEY|API_KEY|PASSWORD|PASSWD|FIRMA)[A-Za-z_]*\s*[:=]\s*\\?['"`](?!\$\{|process\.env|\$env|<|…|\.\.\.)[^'"`\s\\]{12,}\\?['"`]/i },
 ];
 
 // ── Lo que no se revisa, y por qué ──────────────────────────────────────────
@@ -48,6 +58,9 @@ const NO_REVISAR = [
   ".githooks/buscar-secretos.cjs",
   "pruebas/auditoria-secretos.cjs",
   "pruebas/seguridad/auditoria-secretos.cjs",
+  // La prueba que comprueba que este buscador sabe fallar: lleva dentro ocho
+  // ejemplos con forma de secreto, todos inventados, y se marcaría sola.
+  "pruebas/seguridad/el-buscador-sabe-fallar.cjs",
   "package-lock.json",
 ];
 
