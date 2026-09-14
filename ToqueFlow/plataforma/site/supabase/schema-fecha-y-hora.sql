@@ -129,7 +129,7 @@ declare
   v_tomados  int;
   v_id       uuid;
 begin
-  select ac.company_id, coalesce(co.metadata->>'zona_horaria', 'America/Bogota')
+  select ac.company_id, public.tf_zona(ac.company_id)
     into v_company, v_tz
   from public.agent_config ac
   join public.companies co on co.id = ac.company_id
@@ -243,7 +243,7 @@ declare
   v_antes    text;
   v_fecha    text;
 begin
-  select ac.company_id, coalesce(co.metadata->>'zona_horaria', 'America/Bogota')
+  select ac.company_id, public.tf_zona(ac.company_id)
     into v_company, v_tz
   from public.agent_config ac
   join public.companies co on co.id = ac.company_id

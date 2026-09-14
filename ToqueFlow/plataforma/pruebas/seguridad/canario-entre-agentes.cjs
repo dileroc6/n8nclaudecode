@@ -53,8 +53,40 @@ const check = (cond, que, detalle) => {
 (async () => {
   if (!FIRMA) { console.error("falta TOQUE_AGENTE_FIRMA en credentials.env"); process.exit(2); }
 
-  const c = new Client({ connectionString: process.env.SUPABASE_DB_URL, ssl: { rejectUnauthorized: false } });
-  await c.connect();
+  // keepAlive porque esta prueba pasa minutos esperando al agente y el pooler
+  // corta las conexiones ociosas. Sin esto, la prueba moria con «Connection
+  // terminated unexpectedly» y reportaba un fallo de SEGURIDAD por un problema
+  // de red — lo peor que puede decir una prueba, y ademas mentira.
+  const abrir = async () => {
+    const x = new Client({
+      connectionString: process.env.SUPABASE_DB_URL,
+      ssl: { rejectUnauthorized: false },
+      keepAlive: true,
+      connectionTimeoutMillis: 20000,
+      statement_timeout: 30000,
+    });
+    // Sin este oyente, un socket caido tumba el proceso entero antes de que
+    // nadie pueda reconectar ni limpiar.
+    x.on("error", () => {});
+    await x.connect();
+    return x;
+  };
+
+  let cx = await abrir();
+  // `c` se queda como el nombre de siempre, pero ahora reconecta.
+  const c = {
+    query: async (...args) => {
+      try {
+        return await cx.query(...args);
+      } catch (e) {
+        if (!/terminat|ECONNRESET|socket|Connection/i.test(e.message)) throw e;
+        try { await cx.end(); } catch (e2) { /* ya estaba muerta */ }
+        cx = await abrir();
+        return await cx.query(...args);
+      }
+    },
+    end: async () => { try { await cx.end(); } catch (e) { /* ya estaba muerta */ } },
+  };
 
   const ids = [];
   const limpiar = async () => { for (const id of ids) await c.query("delete from public.companies where id=$1", [id]); };

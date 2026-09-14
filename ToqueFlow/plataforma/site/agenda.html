@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agenda — ToqueFlow</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0a2230; --mute:#5b6b75; --line:#e2e6e9; --orange:#f15a24; --bg:#f6f7f8; --card:#fff; --green:#1f8a5b; --amber:#b9770e; --red:#c1272d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sora",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+
+  .tool-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  .tool-top .brand b { font-size:15px; }
+  .tool-top .brand span { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); display:block; }
+  .tool-top .who { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .tool-top a.back { color:var(--orange); text-decoration:none; font-size:13px; }
+
+  .wrap { max-width:1000px; margin:0 auto; padding:22px 22px 80px; display:flex; flex-direction:column; gap:22px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .tile .n { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tile .l { font-size:12px; color:var(--mute); margin-top:2px; line-height:1.35; }
+  .tile.ojo .n { color:var(--orange); }
+
+  h2 { font-size:16px; margin:0 0 3px; }
+  .porque { font-size:13px; color:var(--mute); margin:0 0 12px; line-height:1.5; max-width:62ch; }
+
+  .lista { display:flex; flex-direction:column; gap:10px; }
+  .fila { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .fila.marcada { opacity:.5; }
+  .cuando { font-family:"JetBrains Mono",monospace; font-size:13px; color:var(--mute); min-width:88px; }
+  .quien { font-weight:600; }
+  .serv { font-size:13px; color:var(--mute); }
+  .tel { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .acciones { margin-left:auto; display:flex; gap:8px; }
+
+  .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:8px 15px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+  .btn:hover { border-color:var(--ink); }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .btn.si { color:var(--green); border-color:#bfe3d2; }
+  .btn.si:hover { background:#f2fbf7; border-color:var(--green); }
+  .btn.no { color:var(--red); border-color:#f2cdcf; }
+  .btn.no:hover { background:#fdf4f4; border-color:var(--red); }
+  .btn.p { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  .chip { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; border:1px solid var(--line); color:var(--mute); background:#fafbfb; }
+  .chip.ok { color:var(--green); border-color:#bfe3d2; background:#f2fbf7; }
+  .chip.mal { color:var(--red); border-color:#f2cdcf; background:#fdf4f4; }
+
+  .dias { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; }
+  .dia { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; display:flex; flex-direction:column; gap:5px; }
+  .dia.flojo { border-left:3px solid var(--orange); }
+  .dia .d { font-weight:600; text-transform:capitalize; }
+  .dia .f { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); }
+  .dia .h { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:4px; }
+  .dia .r { font-size:12.5px; color:var(--mute); }
+
+  .nada { background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:22px; text-align:center; color:var(--mute); font-size:14px; }
+  .ofrecer { background:#fdf8ee; border:1px solid #f0dcae; border-radius:12px; padding:14px 16px; font-size:13.5px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; line-height:1.5; }
+  .ofrecer b { color:var(--amber); }
+  .ofrecer .btn { margin-left:auto; }
+
+  .msg { display:none; padding:11px 14px; border-radius:10px; font-size:13.5px; }
+  .msg.show { display:block; }
+  .msg.ok { background:#f2fbf7; border:1px solid #bfe3d2; color:var(--green); }
+  .msg.error { background:#fdf4f4; border:1px solid #f2cdcf; color:var(--red); }
+
+  .zona { font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--mute); }
+</style>
+</head>
+<body>
+
+<div class="tool-top">
+  <div class="brand"><b id="brand-company">—</b><span>Agenda</span></div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="who" id="who"></span>
+    <a class="back" href="dashboard.html">← Volver</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="msg" class="msg"></div>
+
+  <div class="tiles">
+    <div class="tile ojo"><div class="n" id="t-marcar">—</div><div class="l">esperan que digas si vinieron</div></div>
+    <div class="tile"><div class="n" id="t-falto">—</div><div class="l">te dejaron plantado (30 días)</div></div>
+    <div class="tile"><div class="n" id="t-pct">—</div><div class="l">de las citas marcadas</div></div>
+    <div class="tile ojo"><div class="n" id="t-huecos">—</div><div class="l">horas libres en los próximos días</div></div>
+  </div>
+
+  <section>
+    <h2>¿Vino?</h2>
+    <p class="porque">
+      Estas citas ya pasaron y nadie ha dicho qué ocurrió. La plataforma no lo
+      puede saber sola —nadie hace check-in, el agente no está en la sala— y dar
+      una por asistida porque pasó la hora sería inventarse un dato que después
+      sale en un informe como si fuera cierto. Dos clics, y a cambio sabes
+      cuánto te cuestan los plantones y a quién escribirle.
+    </p>
+    <div class="lista" id="por-marcar"></div>
+  </section>
+
+  <section>
+    <h2>Los próximos días</h2>
+    <p class="porque">
+      Una hora libre no se vende dos veces: si el martes a las 4 no entra nadie,
+      esa hora no se recupera. Es la pérdida más silenciosa de un negocio con
+      agenda, porque nadie factura un hueco y por eso nadie lo mira.
+      <span class="zona" id="zona"></span>
+    </p>
+    <div class="dias" id="dias"></div>
+    <div id="ofrecer"></div>
+  </section>
+
+  <section>
+    <h2>Lo que viene</h2>
+    <p class="porque">Las próximas citas, en tu hora.</p>
+    <div class="lista" id="proximas"></div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js?v=8374ba77"></script>
+<script src="auth.js?v=6a51d295"></script>
+<script>
+(async function () {
+  const A = window.TF_AUTH;
+  const profile = await A.guard({});
+  if (!profile) return;
+  const sb = A.sb;
+  const company = window.TF_COMPANY || profile.company || {};
+  const companyId = company.id || profile.company_id;
+  document.getElementById('brand-company').textContent = company.name || company.slug || '—';
+  document.getElementById('who').textContent = profile.email || '';
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+
+  function aviso(t, texto) {
+    const m = $('msg');
+    m.className = 'msg show ' + t;
+    m.textContent = texto;
+    if (t === 'ok') setTimeout(() => { m.className = 'msg'; }, 4000);
+  }
+
+  let ZONA = null;
+
+  // La hora SIEMPRE en la del negocio. Una clínica en Madrid mirando su agenda
+  // en hora de Bogotá no reconoce ni una sola de sus citas.
+  const hora = (iso) => {
+    try {
+      return new Date(iso).toLocaleString('es', {
+        timeZone: ZONA || undefined, weekday: 'short', day: '2-digit',
+        month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false,
+      });
+    } catch (e) { return new Date(iso).toLocaleString('es'); }
+  };
+
+  // ── ¿Vino? ────────────────────────────────────────────────────────────────
+  async function cargarPorMarcar() {
+    const { data, error } = await sb.rpc('tf_citas_por_marcar', { p_company: companyId, p_dias: 14 });
+    const cont = $('por-marcar');
+    if (error) { cont.innerHTML = '<div class="nada">No se pudieron cargar: ' + esc(error.message) + '</div>'; return; }
+    const filas = data || [];
+    $('t-marcar').textContent = filas.length;
+
+    if (!filas.length) {
+      cont.innerHTML = '<div class="nada">Nada pendiente. Todas las citas de las últimas dos semanas están marcadas.</div>';
+      return;
+    }
+    cont.innerHTML = filas.map((f) => (
+      '<div class="fila" data-id="' + esc(f.id) + '">' +
+        '<span class="cuando">' + esc(f.cuando) + '</span>' +
+        '<span class="quien">' + esc(f.contacto) + '</span>' +
+        '<span class="serv">' + esc(f.servicio || '') + '</span>' +
+        '<span class="tel">' + esc(f.telefono || '') + '</span>' +
+        '<span class="acciones">' +
+          '<button class="btn si" data-vino="1">Sí vino</button>' +
+          '<button class="btn no" data-vino="0">No vino</button>' +
+        '</span>' +
+      '</div>'
+    )).join('');
+
+    cont.querySelectorAll('button[data-vino]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        const fila = b.closest('.fila');
+        fila.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+        const { data: r, error: e } = await sb.rpc('tf_marcar_asistencia', {
+          p_cita: fila.dataset.id, p_vino: b.dataset.vino === '1',
+        });
+        if (e || (r && r.ok === false)) {
+          aviso('error', 'No se pudo: ' + (e ? e.message : r.motivo));
+          fila.querySelectorAll('button').forEach((x) => { x.disabled = false; });
+          return;
+        }
+        fila.classList.add('marcada');
+        fila.querySelector('.acciones').innerHTML =
+          '<span class="chip ' + (b.dataset.vino === '1' ? 'ok">vino' : 'mal">no vino') + '</span>';
+        $('t-marcar').textContent = Math.max(0, Number($('t-marcar').textContent || 1) - 1);
+        cargarResumen();
+      });
+    });
+  }
+
+  // ── Lo que cuesta ─────────────────────────────────────────────────────────
+  async function cargarResumen() {
+    const { data, error } = await sb.rpc('tf_asistencia_resumen', { p_company: companyId, p_dias: 30 });
+    if (error || !data || data.ok === false) return;
+    $('t-falto').textContent = data.falto;
+    // Sin citas marcadas no hay porcentaje. Poner 0% diría «no te deja
+    // plantado nadie», que no es lo mismo que «todavía no se sabe».
+    $('t-pct').textContent = data.porcentaje_planton == null ? '—' : data.porcentaje_planton + '%';
+    $('t-pct').parentElement.querySelector('.l').textContent =
+      data.porcentaje_planton == null ? 'sin citas marcadas todavía' : 'de las citas marcadas te dejaron plantado';
+  }
+
+  // ── Los huecos ────────────────────────────────────────────────────────────
+  async function cargarHuecos() {
+    const { data, error } = await sb.rpc('tf_huecos_pronto', { p_company: companyId, p_dias: 3, p_servicio: null });
+    const cont = $('dias');
+    if (error || !data || data.ok === false) {
+      cont.innerHTML = '<div class="nada">' +
+        (error ? esc(error.message) : 'Todavía no hay horarios de atención configurados.') + '</div>';
+      $('t-huecos').textContent = '—';
+      return;
+    }
+    ZONA = data.zona;
+    $('zona').textContent = '· hora de ' + data.zona;
+
+    const dias = data.dias || [];
+    const total = dias.reduce((s, d) => s + d.huecos, 0);
+    $('t-huecos').textContent = total;
+
+    if (!dias.length) {
+      cont.innerHTML = '<div class="nada">No queda ni una hora libre en los próximos días. Eso es bueno.</div>';
+      $('ofrecer').innerHTML = '';
+      return;
+    }
+
+    // Un día se marca cuando está mayormente vacío. El corte es sobre el propio
+    // día, no un número fijo: seis huecos en una agenda de siete es un día
+    // perdido, y en una de treinta es una mañana normal.
+    const peor = Math.max.apply(null, dias.map((d) => d.huecos));
+    cont.innerHTML = dias.map((d) => (
+      '<div class="dia' + (d.huecos >= peor ? ' flojo' : '') + '">' +
+        '<span class="d">' + esc(d.dia) + '</span>' +
+        '<span class="f">' + esc(d.fecha) + '</span>' +
+        '<span class="h">' + d.huecos + '</span>' +
+        '<span class="r">' + (d.huecos === 1 ? 'hora libre' : 'horas libres') +
+          ', de ' + esc(d.primera) + ' a ' + esc(d.ultima) + '</span>' +
+      '</div>'
+    )).join('');
+
+    $('ofrecer').innerHTML = data.a_quien_ofrecer > 0
+      ? '<div class="ofrecer"><span>Tienes <b>' + total + ' ' +
+          (total === 1 ? 'hora libre' : 'horas libres') + '</b> y <b>' + data.a_quien_ofrecer +
+          '</b> ' + (data.a_quien_ofrecer === 1 ? 'persona' : 'personas') +
+          ' sin próxima cita a ' + (data.a_quien_ofrecer === 1 ? 'quien' : 'quienes') + ' ofrecérselas.</span>' +
+          '<a class="btn p" href="campanas.html">Escribirles →</a></div>'
+      : '';
+  }
+
+  // ── Lo que viene ──────────────────────────────────────────────────────────
+  async function cargarProximas() {
+    const { data, error } = await sb.from('appointments')
+      .select('id, servicio, inicio, estado, contacto:contacts(full_name, phone)')
+      .eq('company_id', companyId).neq('estado', 'cancelada')
+      .gt('inicio', new Date().toISOString())
+      .order('inicio', { ascending: true }).limit(25);
+    const cont = $('proximas');
+    if (error) { cont.innerHTML = '<div class="nada">' + esc(error.message) + '</div>'; return; }
+    if (!(data || []).length) {
+      cont.innerHTML = '<div class="nada">No hay citas agendadas todavía.</div>';
+      return;
+    }
+    cont.innerHTML = data.map((a) => (
+      '<div class="fila">' +
+        '<span class="cuando">' + esc(hora(a.inicio)) + '</span>' +
+        '<span class="quien">' + esc((a.contacto && a.contacto.full_name) || 'Sin nombre') + '</span>' +
+        '<span class="serv">' + esc(a.servicio || '') + '</span>' +
+        '<span class="tel">' + esc((a.contacto && a.contacto.phone) || '') + '</span>' +
+      '</div>'
+    )).join('');
+  }
+
+  // Los huecos van primero: son los que traen la zona horaria, y sin ella «lo
+  // que viene» se pintaría en la hora del navegador de quien mira.
+  await cargarHuecos();
+  await Promise.all([cargarPorMarcar(), cargarResumen(), cargarProximas()]);
+})();
+</script>
+</body>
+</html>

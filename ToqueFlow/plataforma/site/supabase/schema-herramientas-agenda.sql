@@ -44,7 +44,7 @@ declare
   v_libre   json;
   v_huecos  json;
 begin
-  select ac.company_id, coalesce(co.metadata->>'zona_horaria', 'America/Bogota')
+  select ac.company_id, public.tf_zona(ac.company_id)
     into v_company, v_tz
   from public.agent_config ac
   join public.companies co on co.id = ac.company_id
@@ -89,134 +89,15 @@ comment on function public.tf_tool_ver_disponibilidad(text, text, int) is
 
 
 -- ── 2. Agendar ───────────────────────────────────────────────────────────────
-create or replace function public.tf_tool_agendar_cita(p_payload jsonb)
-returns json
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company  uuid;
-  v_tz       text;
-  v_tel      text := public.tf_telefono(p_payload->>'telefono');
-  v_contact  public.contacts%rowtype;
-  v_srv      public.agenda_servicios%rowtype;
-  v_inicio   timestamptz;
-  v_fin      timestamptz;
-  v_cupos    int;
-  v_tomados  int;
-  v_id       uuid;
-begin
-  select ac.company_id, coalesce(co.metadata->>'zona_horaria', 'America/Bogota')
-    into v_company, v_tz
-  from public.agent_config ac
-  join public.companies co on co.id = ac.company_id
-  where ac.whatsapp_instance = p_payload->>'instance';
-
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  -- El servicio marca la duración. Sin servicio no se agenda: «una cita» sin
-  -- saber de qué no le sirve a nadie, y el negocio no puede prepararla.
-  select * into v_srv from public.agenda_servicios
-  where company_id = v_company and activo and lower(nombre) = lower(btrim(p_payload->>'servicio'));
-  if not found then
-    return json_build_object('ok', false, 'motivo', 'no ofrecemos ese servicio',
-      'servicios', (select coalesce(json_agg(nombre order by orden), '[]'::json)
-                    from public.agenda_servicios where company_id = v_company and activo));
-  end if;
-
-  begin
-    v_inicio := (p_payload->>'inicio')::timestamptz;
-  exception when others then
-    return json_build_object('ok', false, 'motivo', 'no entendi la fecha y hora');
-  end;
-  if v_inicio is null then
-    return json_build_object('ok', false, 'motivo', 'falta la fecha y hora');
-  end if;
-  if v_inicio < now() then
-    return json_build_object('ok', false, 'motivo', 'esa hora ya paso');
-  end if;
-
-  v_fin := v_inicio + make_interval(mins => v_srv.minutos);
-
-  -- ── El candado ────────────────────────────────────────────────────────────
-  -- Serializa a todos los que intenten agendar en ESTA empresa. Se libera solo
-  -- al terminar la transacción. Sin esto, dos conversaciones simultáneas
-  -- pueden meter dos citas en el último cupo — y el segundo llega y no lo
-  -- pueden atender.
-  perform pg_advisory_xact_lock(hashtextextended(v_company::text, 0));
-
-  -- ¿Sigue libre? Se comprueba AQUÍ, no antes: entre la pregunta del agente y
-  -- esta línea cabe otra cita.
-  select f.cupos into v_cupos
-  from public.agenda_franjas f
-  where f.company_id = v_company
-    and f.activa
-    and extract(dow from timezone(v_tz, v_inicio))::int = f.dia
-    and timezone(v_tz, v_inicio)::time >= f.desde
-    and timezone(v_tz, v_fin)::time    <= f.hasta
-  limit 1;
-
-  if v_cupos is null then
-    return json_build_object('ok', false, 'motivo', 'a esa hora el negocio no atiende');
-  end if;
-
-  if exists (
-    select 1 from public.agenda_bloqueos b
-    where b.company_id = v_company and b.desde < v_fin and b.hasta > v_inicio
-  ) then
-    return json_build_object('ok', false, 'motivo', 'ese dia el negocio esta cerrado');
-  end if;
-
-  select coalesce(sum(coalesce(sv.ocupa, 1))::int, 0) into v_tomados
-  from public.appointments a
-  left join public.agenda_servicios sv
-    on sv.company_id = a.company_id and lower(sv.nombre) = lower(a.servicio)
-  where a.company_id = v_company
-    and a.estado <> 'cancelada'
-    and a.inicio < v_fin and a.fin > v_inicio;
-
-  if v_tomados + v_srv.ocupa > v_cupos then
-    return json_build_object('ok', false, 'motivo', 'esa hora se acaba de ocupar',
-      'sugerencia', 'ofrecele otra hora de las que quedan libres');
-  end if;
-
-  -- ── La persona ────────────────────────────────────────────────────────────
-  select * into v_contact from public.contacts
-  where company_id = v_company and public.tf_telefono(phone) = v_tel;
-
-  if not found then
-    insert into public.contacts (company_id, phone, full_name, status, metadata)
-    values (v_company, p_payload->>'telefono',
-            nullif(btrim(coalesce(p_payload->>'nombre', '')), ''),
-            'prospecto', jsonb_build_object('origen', 'agente'))
-    returning * into v_contact;
-  elsif v_contact.full_name is null and nullif(btrim(coalesce(p_payload->>'nombre','')), '') is not null then
-    update public.contacts set full_name = btrim(p_payload->>'nombre')
-     where id = v_contact.id returning * into v_contact;
-  end if;
-
-  insert into public.appointments (company_id, contact_id, servicio, inicio, fin, estado, origen, notas)
-  values (v_company, v_contact.id, v_srv.nombre, v_inicio, v_fin, 'confirmada', 'agente',
-          nullif(btrim(coalesce(p_payload->>'notas', '')), ''))
-  returning id into v_id;
-
-  return json_build_object(
-    'ok', true,
-    'cita_id', v_id,
-    'servicio', v_srv.nombre,
-    -- Escrita en la hora del negocio, para que el agente la repita tal cual.
-    'cuando', public.tf_fecha_es(v_inicio, v_tz),
-    'nombre', v_contact.full_name
-  );
-end;
-$fn$;
-
-comment on function public.tf_tool_agendar_cita(jsonb) is
-  'Agenda una cita comprobando la disponibilidad AL ESCRIBIR, con candado por empresa: entre lo que el agente ofrece y lo que escribe cabe otra cita, y dos personas en el mismo cupo significa alguien que llega y no lo pueden atender.';
+-- tf_tool_agendar_cita NO se define aqui: vive en schema-fecha-y-hora.sql.
+--
+-- Estaba definida en los dos archivos, con cuerpos distintos. Reaplicar los
+-- esquemas en un orden u otro decidia en silencio cual de las dos corria — y
+-- eso rompio la herramienta de verdad: la version de aqui pedia un timestamp ISO y la buena pide fecha y hora por
+-- separado, asi que el agente contestaba «no se pudo por un error tecnico».
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila.
 
 
 -- ── 3. Permisos ──────────────────────────────────────────────────────────────

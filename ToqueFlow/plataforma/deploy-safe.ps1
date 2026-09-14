@@ -78,7 +78,8 @@ function Test-Live {
     'rappi-bogota.html','rappi-medellin.html',              # FerreteriaYa
     'sm-grand/ocupacion.html',                              # SM Grand Hotel
     'contactos.html','campanas.html','modo-prueba.html',    # Bejauha
-    'pedidos.html'                                          # Toque Tienda
+    'pedidos.html',                                         # Toque Tienda
+    'agenda.html'                                           # Toque Agenda
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()

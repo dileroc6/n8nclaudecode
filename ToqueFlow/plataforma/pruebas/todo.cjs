@@ -42,6 +42,8 @@ const ORDEN = {
     "cliente-tono",
     "cliente-conocimiento",
     "canario-entre-agentes",
+    "de-quien-es",
+    "segmentar-no-se-cuela",
   ],
   calidad: [
     "compila-jsx",
@@ -56,6 +58,9 @@ const ORDEN = {
     "agendar-cita",
     "agente-agenda",
     "recordatorio-cita",
+    "asistencia-y-huecos",
+    "segmentar-campana",
+    "tools-por-webhook",
   ],
 };
 

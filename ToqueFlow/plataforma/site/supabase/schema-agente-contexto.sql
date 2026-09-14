@@ -106,7 +106,7 @@ begin
     'empresa', v_rt.empresa, 'agente', v_rt.agente, 'company_slug', v_rt.company_slug,
     -- La fecha de hoy, en la hora del negocio. Sin esto el modelo calcula
     -- «el miércoles» contra una fecha inventada, y agenda en el año pasado.
-    'hoy', to_char(timezone(coalesce((select metadata->>'zona_horaria' from public.companies where id = v_rt.company_id), 'America/Bogota'), now()),
+    'hoy', to_char(timezone(public.tf_zona(v_rt.company_id), now()),
                    'YYYY-MM-DD"T"HH24:MI:SS'),
     'config', json_build_object(
       'identidad', v_rt.identidad,

@@ -152,7 +152,7 @@ declare
   v_paso  interval;
   v_libre json;
 begin
-  select coalesce(metadata->>'zona_horaria', 'America/Bogota') into v_tz
+  select public.tf_zona(id) into v_tz
   from public.companies where id = p_company;
   if v_tz is null then
     return json_build_object('ok', false, 'motivo', 'empresa desconocida');

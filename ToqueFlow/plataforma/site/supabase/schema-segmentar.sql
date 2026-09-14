@@ -26,6 +26,8 @@
 --                   que hace posible «el presupuesto lleva 7 días sin respuesta»
 --   sin_cita_futura los que no tienen cita agendada. Es la mitad de «llenar
 --                   los huecos de mañana»
+--   no_asistio      los que dejaron plantado al negocio. Con ventana, porque
+--                   escribirle a quien faltó hace dos años no es seguimiento
 --
 -- LO QUE NO SE NEGOCIA
 --
@@ -64,7 +66,7 @@ begin
   -- que sin esto un cliente autenticado pasaba el id de otra empresa y recibía
   -- su lista de contactos con nombre y teléfono. El company_id se comprueba,
   -- nunca se acepta.
-  if not public.tf_campana_destinatarios_guardia(p_company) then
+  if not public.tf_es_mia(p_company) then
     return;
   end if;
 
@@ -80,7 +82,7 @@ begin
     or v_f ? 'ultimo_contacto'
     or v_f ? 'campo_fecha'
     or coalesce((v_f->>'sin_cita_futura')::boolean, false)
-    or coalesce((v_f->>'no_asistio')::boolean, false);
+    or (v_f ? 'no_asistio' and v_f->'no_asistio' <> 'false'::jsonb);
 
   if not v_hay then
     return;   -- nadie, a propósito
@@ -150,9 +152,16 @@ begin
           select 1 from public.appointments a
           where a.contact_id = c.id and a.estado <> 'cancelada' and a.inicio > now()))
 
-    and (not coalesce((v_f->>'no_asistio')::boolean, false) or exists (
+    -- Los que dejaron plantado al negocio. Acepta `true` —cualquiera, alguna
+    -- vez— o `{ hace_menos_de_dias: N }`. Casi siempre se quiere lo segundo:
+    -- escribirle a quien falto hace dos anos no es un seguimiento.
+    and (not (v_f ? 'no_asistio') or v_f->'no_asistio' = 'false'::jsonb or exists (
           select 1 from public.appointments a
-          where a.contact_id = c.id and a.estado = 'no_asistio'))
+          where a.contact_id = c.id and a.estado = 'no_asistio'
+            and (jsonb_typeof(v_f->'no_asistio') <> 'object'
+                 or not (v_f->'no_asistio' ? 'hace_menos_de_dias')
+                 or a.inicio >= now() - make_interval(
+                      days => (v_f->'no_asistio'->>'hace_menos_de_dias')::int))))
 
     -- ── Las bajas, siempre ─────────────────────────────────────────────────
     -- Fuera del filtro a propósito: no es una opción que se pueda desmarcar.

@@ -70,7 +70,7 @@ declare
 begin
   for r in
     select a.*, ac.id as agent_id, ac.whatsapp_instance, co.name as empresa, co.slug,
-           coalesce(co.metadata->>'zona_horaria', 'America/Bogota') as tz,
+           public.tf_zona(co.id) as tz,
            c.full_name, c.phone
     from public.appointments a
     join public.agent_config ac on ac.company_id = a.company_id and ac.activo
@@ -175,7 +175,7 @@ declare
   v_cita    public.appointments%rowtype;
   v_tel     text := public.tf_telefono(p_payload->>'telefono');
 begin
-  select ac.company_id, coalesce(co.metadata->>'zona_horaria', 'America/Bogota')
+  select ac.company_id, public.tf_zona(ac.company_id)
     into v_company, v_tz
   from public.agent_config ac
   join public.companies co on co.id = ac.company_id

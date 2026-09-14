@@ -390,7 +390,9 @@ begin
       'cantidad', r.quantity,
       'frecuencia', r.frequency,
       'batch_size', r.batch_size,
-      'programado_para', to_char(r.scheduled_at at time zone 'America/Bogota', 'YYYY-MM-DD"T"HH24:MI:SS') || '-05:00',
+      'programado_para', to_char(timezone(public.tf_zona(r.company_id), r.scheduled_at),
+                            'YYYY-MM-DD"T"HH24:MI:SS'),
+      'zona', public.tf_zona(r.company_id),
       'test', false
     ));
     step := case r.frequency when 'diaria' then interval '1 day' when 'semanal' then interval '7 days' else null end;

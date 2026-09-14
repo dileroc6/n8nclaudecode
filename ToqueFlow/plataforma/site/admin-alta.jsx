@@ -20,6 +20,24 @@
 
 const ALTA_PASOS = ['La empresa', 'Quién la usa', 'Qué contrata', 'El agente', 'Listo'];
 
+// La zona horaria decide a qué hora abre la agenda, cuándo sale un
+// recordatorio y qué significa «mañana a las 4». Se pregunta en el alta porque
+// después nadie se acuerda de que existe — y el día que entra un cliente fuera
+// de Colombia, toda su agenda aparece corrida sin que nada falle a la vista.
+const ALTA_ZONAS = [
+  ['America/Bogota',      'Colombia (Bogotá)'],
+  ['America/Mexico_City', 'México (Ciudad de México)'],
+  ['Europe/Madrid',       'España (Madrid)'],
+  ['America/Lima',        'Perú (Lima)'],
+  ['America/Santiago',    'Chile (Santiago)'],
+  ['America/Argentina/Buenos_Aires', 'Argentina (Buenos Aires)'],
+  ['America/Guayaquil',   'Ecuador (Guayaquil)'],
+  ['America/Panama',      'Panamá'],
+  ['America/Caracas',     'Venezuela (Caracas)'],
+  ['America/New_York',    'EE. UU. — este (Nueva York)'],
+  ['America/Los_Angeles', 'EE. UU. — oeste (Los Ángeles)'],
+];
+
 function slugAlta(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -42,7 +60,7 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
   const [creada, setCreada] = React.useState(null);
 
   const [f, setF] = React.useState({
-    nombre: '', ciudad: '',
+    nombre: '', ciudad: '', zona: 'America/Bogota',
     correo: '', nombreUsuario: '',
     piezas: {},                       // clave -> true
     tono: '', negocio: '',
@@ -78,7 +96,8 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
     try {
       const slug = slugAlta(f.nombre) + '-' + Date.now().toString(36).slice(-4);
       const { data: empresa, error: e1 } = await sb.from('companies')
-        .insert({ name: f.nombre.trim(), city: f.ciudad.trim() || null, slug, status: 'active' })
+        .insert({ name: f.nombre.trim(), city: f.ciudad.trim() || null, slug, status: 'active',
+                  metadata: { zona_horaria: f.zona } })
         .select().single();
       if (e1) throw new Error('No se pudo crear la empresa: ' + e1.message);
 
@@ -115,6 +134,10 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
           // de probarlo. Un alta que deja un bot contestando de una no es
           // rápida, es peligrosa.
           status: 'próximamente', type: c.tipo, kind: c.clave,
+          // Que pantalla abre la card lo sabe la pieza del catalogo. Antes lo
+          // escribia a mano cada seed de cliente, asi que un alta hecha por la
+          // consola dejaba cards que no abrian nada.
+          tool_url: c.tool_url || null,
         }));
       if (filas.length) {
         const { error: e2 } = await sb.from('flows').insert(filas);
@@ -175,6 +198,15 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
             <div className="form-field"><label>ciudad (opcional)</label>
               <input type="text" value={f.ciudad} placeholder="Bogotá"
                      onChange={(e) => set('ciudad', e.target.value)} /></div>
+            <div className="form-field"><label>¿en qué horario vive el negocio?</label>
+              <select value={f.zona} onChange={(e) => set('zona', e.target.value)}>
+                {ALTA_ZONAS.map(([z, n]) => <option key={z} value={z}>{n}</option>)}
+              </select></div>
+            <p className="adm-hint">
+              Toda la agenda se calcula en la hora del negocio: a qué hora abre,
+              cuándo sale un recordatorio y qué significa «mañana a las 4». Si
+              queda mal, nada falla a la vista — simplemente todo pasa a otra hora.
+            </p>
             <p className="adm-hint">
               La empresa es una sola. Si tiene varias sedes, se agregan después —
               no hace falta crear una empresa por ciudad.
