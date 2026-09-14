@@ -171,8 +171,20 @@ delante.
 | Cero vacío — las horas que van a quedar libres | ✅ *(14-sep)* |
 | Los que no vinieron | ✅ *(14-sep)* |
 | Propuestas sin respuesta | ✅ *(14-sep)* |
+| El aviso diario por correo | ✅ *(14-sep)* |
 
-**Completo y liberado: 3 de 3.**
+**Completo y liberado: 4 de 4.**
+
+**Y llega solo.** Esto es lo que separa un servicio de una pantalla: cada mañana —la del
+negocio, no la de un servidor en Ohio— sale un correo a las personas de la empresa con lo
+que hay para recuperar y el enlace para hacerlo. Un negocio con pacientes en la sala no
+entra al portal a mirar.
+
+Tres reglas que deciden si ese correo se lee o se aprende a ignorar: **no se repite si no
+cambió nada** (salvo que pasen 7 días, para que un problema parado tampoco desaparezca en
+silencio), **si no hay nada que recuperar no escribe**, y **no lleva dentro el teléfono ni
+el nombre de ningún paciente** — es un aviso interno, y un dato de paciente ahí es una fuga
+esperando a que alguien reenvíe el correo.
 
 **Lo que vende:** las tres pérdidas que **no aparecen en ningún informe**. Nadie factura
 un hueco, ni al que no vino, ni la propuesta que nunca se contestó — y por eso nadie las

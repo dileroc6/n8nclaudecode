@@ -1,0 +1,81 @@
+{
+  "name": "Toque - Handler Aviso Rescate",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "Entrada",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n2",
+      "name": "Armar el correo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Del receptor llega la FILA ENTERA del outbox: { event, payload }. Leer\n// `$json` directamente deja todos los numeros en undefined y el correo sale\n// con el asunto generico y el cuerpo vacio — que es peor que no mandarlo,\n// porque parece que el sistema funciona.\nconst e = $json.payload || $json;\nconst h = e.huecos || {};\nconst partes = [];\nif (h.horas > 0 && h.a_quien_ofrecer > 0) partes.push(h.horas + (h.horas === 1 ? ' hora libre' : ' horas libres'));\nif (e.plantones > 0) partes.push(e.plantones + (e.plantones === 1 ? ' que no volvió' : ' que no volvieron'));\nif (e.propuestas > 0) partes.push(e.propuestas + (e.propuestas === 1 ? ' propuesta sin respuesta' : ' propuestas sin respuesta'));\n\n// El asunto lleva los números. Un asunto genérico se archiva sin abrir, y\n// entonces da igual lo bueno que sea el cuerpo.\nconst asunto = partes.length\n  ? 'ToqueFlow · ' + partes.join(' · ')\n  : 'ToqueFlow · hay algo por recuperar';\n\nconst cuerpo = [\n  'Hola,',\n  '',\n  'Esto es lo que hoy se puede recuperar en ' + (e.empresa || 'tu negocio') + ':',\n  '',\n  (e.resumen || '').split('\\n').map(l => '  · ' + l).join('\\n'),\n  '',\n  'Cada una tiene su botón en el portal, con el mensaje ya redactado:',\n  e.enlace || 'https://toqueflow.com/agenda.html',\n  '',\n  'Nada sale hasta que tú le des a enviar.',\n  '',\n  '—',\n  'Este aviso solo llega cuando hay algo que hacer y cambió desde la última vez.',\n].join('\\n');\n\nconst para = (e.para || []).filter(Boolean).join(',');\n// Sin nadie a quien escribirle no se manda nada. Intentarlo revienta el\n// flujo y dispara la alerta de averia por lo que es un dato incompleto.\nif (!para) return [];\nreturn [{ json: { asunto, cuerpo, para } }];"
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Enviar",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "ToqueFlow <hola@toqueflow.com>",
+        "toEmail": "={{ $json.para }}",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.cuerpo }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "name": "SMTP ToqueFlow"
+        }
+      },
+      "webhookId": "3c7cc2bf-4ec9-4fd4-9474-206a11d1a4ef"
+    }
+  ],
+  "connections": {
+    "Entrada": {
+      "main": [
+        [
+          {
+            "node": "Armar el correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar el correo": {
+      "main": [
+        [
+          {
+            "node": "Enviar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "Hjg94IM97CaNuEGp"
+  }
+}
