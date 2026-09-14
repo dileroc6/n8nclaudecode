@@ -91,8 +91,11 @@ Frontend HTML/CSS/JS puro (sin framework, sin CMS), desplegado estático en Host
 | [dashboard.html](ToqueFlow/plataforma/site/dashboard.html) | cards de sus flows (tabla `flows`; `tool_url` abre la herramienta) |
 | [contactos.html](ToqueFlow/plataforma/site/contactos.html) | base de datos: ver, filtrar, agregar, editar, importar (sin borrar) |
 | [campanas.html](ToqueFlow/plataforma/site/campanas.html) | segmentar, redactar, programar y medir campañas |
+| [pedidos.html](ToqueFlow/plataforma/site/pedidos.html) | pedidos que armó el agente y pagos por verificar — **avisa qué cambió antes de confirmar** |
 | [modo-prueba.html](ToqueFlow/plataforma/site/modo-prueba.html) | sandbox: probar flujos reales sin WhatsApp real |
 | [admin.html](ToqueFlow/plataforma/site/admin.html) | administración (superadmin ToqueFlow) |
+
+**Las 8 tienen prueba real** —sesión de verdad y RLS puesto, no solo «compila»—: `pruebas/calidad/pantalla-*.cjs`, `pantallas-del-cliente.cjs`, `consola-*.cjs` y `cliente-*.cjs`.
 
 Guía de la plataforma: [ToqueFlow/plataforma/CLAUDE.md](ToqueFlow/plataforma/CLAUDE.md)
 
@@ -142,6 +145,16 @@ Dónde mirar:
 
 ### Skills de n8n
 - Ruta: `n8n-skills/` — 7 skills: Expression Syntax, MCP Tools Expert, Workflow Patterns, Validation Expert, Node Configuration, Code JavaScript, Code Python.
+
+### Skills propios — `.claude/skills/`
+
+Encodan lo que cuesta aprender a golpes. **Úsalos antes de improvisar el camino.**
+
+| Skill | Cuándo |
+|---|---|
+| `deploy-toqueflow` | publicar el sitio o el portal |
+| `nueva-herramienta` | darle una capacidad nueva al agente |
+| `migracion-supabase` | tocar el esquema de la base |
 
 ---
 

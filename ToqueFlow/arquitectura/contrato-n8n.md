@@ -9,6 +9,15 @@
 - Egreso único: la plataforma inserta una fila en **`n8n_events`** (outbox); un **Database Webhook (pg_net)** hace `POST` al receptor de n8n.
 - **URL receptor:** `https://n8n.srv1398596.hstgr.cloud/webhook/toque-events`
 - **Header:** `X-Toque-Signature: <secreto compartido>` (bearer estático en el piloto; a HMAC después). n8n rechaza lo que no coincida.
+
+  > ⚠️ **Esto era aspiracional hasta el 13-sep-2026.** El emisor mandaba la
+  > cabecera desde siempre, pero el receptor **no la comprobaba**: la puerta
+  > principal de la plataforma estuvo abierta a internet. Ya está cerrada, y
+  > comprobado de las dos formas — sin firma da **403**, y un evento encolado de
+  > verdad llega con éxito.
+  >
+  > Vale como recordatorio de que **un contrato escrito no es un contrato
+  > cumplido**. Si un documento dice que algo se valida, hay que probarlo.
 - **Envelope (anidado):**
   ```json
   { "event":"<tipo>", "event_id":"<uuid n8n_events.id>", "company_id":"<uuid>", "company_slug":"bejauha",
