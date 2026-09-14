@@ -54,9 +54,20 @@ const TEL  = '573006' + String(Date.now()).slice(-6);
     const cid = (await uno("insert into public.contacts (company_id, phone, full_name, source) values ($1,$2,'Prueba tools','whatsapp') returning id", [empresa, TEL])).id;
     await c.query('insert into public.contact_saldo (contact_id, company_id, unidades) values ($1,$2,5)', [cid, empresa]);
 
+    // Una agenda para probar el pin: miércoles de 9 a 12, dos cupos, y un
+    // servicio de una hora. Con dos cupos se puede mover una cita sin que se
+    // bloquee a sí misma, que es el caso que importa.
+    await c.query("insert into public.agenda_franjas (company_id, dia, desde, hasta, cupos) values ($1,3,'09:00','12:00',2)", [empresa]);
+    await c.query("insert into public.agenda_servicios (company_id, nombre, minutos) values ($1,'Valoración',60)", [empresa]);
+    const proxMiercoles = () => { const d = new Date(); d.setHours(0,0,0,0);
+      do { d.setDate(d.getDate() + 1); } while (d.getDay() !== 3); return d; };
+    const MIE = proxMiercoles();
+    const aLas = (h) => { const d = new Date(MIE); d.setHours(h, 0, 0, 0); return d.toISOString(); };
+
     console.log('\n-- La firma las protege todas --');
     for (const ruta of ['tool-registrar-consumo','tool-matricular-cliente','tool-recargar-saldo','tool-registrar-reclamo',
-                        'tool-buscar-catalogo','tool-crear-pedido','tool-estado-pedido','tool-confirmar-pago']) {
+                        'tool-buscar-catalogo','tool-crear-pedido','tool-estado-pedido','tool-confirmar-pago',
+                        'tool-ver-disponibilidad','tool-agendar-cita','tool-confirmar-cita','tool-reagendar-cita']) {
       const sin = await llamar(ruta, { instance: INST, telefono: TEL }, 'firma-mala');
       check(sin.status === 403, ruta + ': sin la firma buena devuelve 403', 'HTTP ' + sin.status);
     }
@@ -106,6 +117,42 @@ const TEL  = '573006' + String(Date.now()).slice(-6);
       'el pago queda anotado', JSON.stringify(cf).slice(0, 220));
     check(res(cf).verificado === false,
       'y viene marcado como NO verificado', JSON.stringify(cf).slice(0, 220));
+
+    console.log('\n-- Agenda --');
+    const disp = await llamar('tool-ver-disponibilidad', { instance: INST, servicio: 'Valoración', dias: 14 });
+    check(res(disp).ok === true && res(disp).horas_libres.length >= 3,
+      'ofrece las horas libres del miércoles', JSON.stringify(disp).slice(0, 220));
+
+    const ag = await llamar('tool-agendar-cita', { instance: INST, telefono: TEL,
+      servicio: 'Valoración', inicio: aLas(10), nombre: 'Prueba tools' });
+    check(res(ag).ok === true, 'agenda la cita', JSON.stringify(ag).slice(0, 220));
+    // El HECHO, no las palabras: la cita tiene que existir en la base.
+    const hay = await uno("select count(*)::int n from public.appointments where company_id=$1 and estado<>'cancelada'", [empresa]);
+    check(hay.n === 1, 'y la cita EXISTE en la base, no solo en la respuesta', JSON.stringify(hay));
+
+    console.log('\n-- Mover, que es lo que pide la gente --');
+    const mv = await llamar('tool-reagendar-cita', { instance: INST, telefono: TEL, nuevo_inicio: aLas(11) });
+    check(res(mv).ok === true && res(mv).movida === true, 'mueve la cita a otra hora', JSON.stringify(mv).slice(0, 220));
+
+    const donde = await uno("select inicio, confirmada_por_cliente, recordatorio_enviado_at from public.appointments where company_id=$1 and estado<>'cancelada'", [empresa]);
+    const hora = new Date(donde.inicio).toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit', hour12: false });
+    check(hora === '11:00', 'y quedó a la hora nueva de verdad', 'quedó a las ' + hora);
+    // Se movió: lo que había confirmado era la otra hora, y el recordatorio de
+    // la nueva todavía no ha salido.
+    check(donde.confirmada_por_cliente === null && donde.recordatorio_enviado_at === null,
+      'moverla borra la confirmación y el recordatorio de la hora vieja', JSON.stringify(donde));
+
+    const sigue = await uno("select count(*)::int n from public.appointments where company_id=$1 and estado<>'cancelada'", [empresa]);
+    check(sigue.n === 1, 'y NO se duplicó: sigue habiendo UNA cita', JSON.stringify(sigue));
+
+    const fuera = await llamar('tool-reagendar-cita', { instance: INST, telefono: TEL, nuevo_inicio: aLas(20) });
+    check(res(fuera).ok === false, 'no la mueve a una hora en que el negocio no atiende', JSON.stringify(fuera).slice(0, 220));
+    const quieta = await uno("select inicio from public.appointments where company_id=$1 and estado<>'cancelada'", [empresa]);
+    check(new Date(quieta.inicio).getTime() === new Date(donde.inicio).getTime(),
+      'y al fallar la deja donde estaba, no la pierde', 'se movió igual');
+
+    const cc = await llamar('tool-confirmar-cita', { instance: INST, telefono: TEL, viene: true });
+    check(res(cc).ok === true && res(cc).confirmada === true, 'confirma que viene', JSON.stringify(cc).slice(0, 220));
 
   } finally {
     if (empresa) await c.query('delete from public.companies where id = $1', [empresa]);

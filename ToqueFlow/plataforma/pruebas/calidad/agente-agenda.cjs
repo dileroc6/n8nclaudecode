@@ -63,7 +63,7 @@ const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
     await c.query(`insert into agent_config (company_id, nombre, activo, whatsapp_instance, identidad, herramientas)
       values ($1, 'Recepción', true, $2,
         jsonb_build_object('negocio','Estética Aurora','tono','Cercano y directo, de tú. Sin emojis.'),
-        array['ver-disponibilidad','agendar-cita'])`, [emp, INSTANCIA]);
+        array['paquete-agenda'])`, [emp, INSTANCIA]);
 
     await c.query(`insert into agent_knowledge (company_id, tipo, origen, titulo, contenido, activo, orden)
       values ($1,'manual','prueba','Qué hacemos y cuánto vale',
@@ -132,11 +132,12 @@ const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
     // ── 2. Elegir una y que quede agendada ─────────────────────────────────
     const r2 = await decir("perfecto, agendame a las 10 de la mañana. me llamo Marcela Ríos");
     const cita = (await c.query(
-      `select a.inicio, a.servicio, a.estado, c.full_name
+      `select a.id, a.inicio, a.servicio, a.estado, c.full_name
          from appointments a left join contacts c on c.id = a.contact_id
         where a.company_id=$1 order by a.created_at desc limit 1`, [emp])).rows[0];
 
     check(!!cita, "la cita queda REALMENTE en la base, no solo dicha en el chat", "no hay ninguna cita");
+    const idMarcela = cita && cita.id;
     if (cita) {
       const hora = new Date(cita.inicio).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hour12: false });
       check(hora === "10:00", "a la hora que pidió el cliente, no a otra", "quedó a las " + hora);
@@ -167,8 +168,49 @@ const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
     check(/9|11|otra hora|disponible|libre|ocupad|lleno|no hay/.test(t3),
       "le ofrece otra hora o le dice que esa se llenó", r3.slice(0, 200));
 
-    // ── 4. Un servicio que no existe ───────────────────────────────────────
-    const r4 = await decir("y hacen masajes descontracturantes? me agendas uno el miércoles");
+    // ── 4. «No puedo, ¿me lo cambias?» ─────────────────────────────────────
+    // El caso que más plata mueve en una clínica, y el que más fácil sale mal:
+    // si el modelo elige confirmar_cita con «no», CANCELA — y el paciente se
+    // queda sin cita cuando lo que quería era moverla.
+    // Su cita, por id. No «la última creada»: la prueba inserta un relleno
+    // para llenar el segundo cupo y esa es más nueva.
+    const antesDeMover = (await c.query(
+      "select inicio from appointments where id=$1", [idMarcela])).rows[0];
+
+    // Se dice de quién es la cita a propósito: el turno anterior habló de Paula,
+    // y «me lo puedes pasar» a secas es ambiguo hasta para una persona. Lo que
+    // se prueba es que sepa MOVER en vez de cancelar, no que adivine de quién.
+    const r5 = await decir("dejemos lo de Paula. la mía, la de Marcela a las 10, me la puedes pasar a las 11?");
+
+    // Todas las citas, no solo la última creada: si el agente agendó una nueva
+    // en vez de mover la que había, hay que verlo.
+    const todas = (await c.query(
+      "select id, inicio, estado, created_at, metadata->>'movida_desde' as movida_desde from appointments where company_id=$1 order by created_at", [emp])).rows;
+    if (VER) {
+      console.log("     citas en la base: " + todas.length);
+      todas.forEach((x) => console.log("       " + new Date(x.inicio).toLocaleString("es-CO", { timeZone: "America/Bogota" }) +
+        "  " + x.estado + (x.movida_desde ? "  (movida)" : "")));
+    }
+
+    const trasMover = (await c.query(
+      "select inicio, estado from appointments where id=$1", [idMarcela])).rows[0];
+
+    check(trasMover.estado !== 'cancelada',
+      "NO cancela la cita cuando la persona pide cambiarla",
+      "quedó en estado «" + trasMover.estado + "» — el paciente se quedó sin cita");
+
+    const hora = trasMover.inicio && new Date(trasMover.inicio).toLocaleTimeString("es-CO",
+      { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hour12: false });
+    check(hora === "11:00", "la mueve a la hora que pidió",
+      "quedó a las " + hora + " (antes: " + (antesDeMover &&
+        new Date(antesDeMover.inicio).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hour12: false }) + ")"));
+
+    const t5 = plano(r5);
+    check(/11/.test(t5) && !/cancel/.test(t5),
+      "y se lo dice sin hablar de cancelar", r5.slice(0, 200));
+
+    // ── 5. Un servicio que no existe ───────────────────────────────────────
+    const r4 = await decir("y hacen masajes descontracturantes? me agendas uno el jueves");
     const t4 = plano(r4);
     check(!/masaje.*(agendad|quedo|listo)/.test(t4), "no agenda un servicio que el negocio no ofrece", r4.slice(0, 200));
     check(/limpieza|depilaci|no (lo )?(ofrec|tenemos|hacemos)|no manejamos/.test(t4),

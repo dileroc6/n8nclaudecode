@@ -186,11 +186,17 @@ const comoAnon = async (metodo, ruta, cuerpo) => {
   // Lo que solo LEE se mira aparte y con la cabeza: una constante no es una
   // fuga; una lista de contactos si.
   const anonFn = (await c.query(`
-    select p.proname as fn, p.provolatile as vol, p.prosecdef as definer
+    select p.proname as fn, p.provolatile as vol, p.prosecdef as definer,
+           (select e.extname from pg_depend d join pg_extension e on e.oid = d.refobjid
+             where d.objid = p.oid and d.deptype = 'e' limit 1) as extension
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'execute')
       and p.prokind = 'f' and p.prorettype <> 'trigger'::regtype
-    order by p.proname`)).rows;
+    order by p.proname`)).rows
+    // Lo que instala una extensión (pg_trgm, pgcrypto…) no es nuestro: no toca
+    // datos de nadie y quitarle permisos rompe la extensión. `set_limit` de
+    // pg_trgm ajusta el umbral de la búsqueda y nada más.
+    .filter((f) => !f.extension);
 
   const escritoras = anonFn.filter((f) => f.vol === 'v');
   if (!escritoras.length) ok("anon no puede ejecutar ninguna función que escriba");
@@ -230,8 +236,19 @@ const comoAnon = async (metodo, ruta, cuerpo) => {
       select table_name from information_schema.role_table_grants
       where grantee = 'n8n_worker' and privilege_type = 'DELETE' and table_schema = 'public'
       order by table_name`)).rows.map((r) => r.table_name);
-    if (!borra.length) ok("no puede borrar en ninguna tabla");
-    for (const t of borra) {
+    // La regla es que el worker no borra. Hay UNA excepción, escrita aquí
+    // para que se pueda discutir: `tf_agente_averiguado_guardar` reemplaza lo
+    // que el agente averiguó de una persona, y reemplazar es borrar y volver a
+    // escribir. Si aparece otra tabla en esta lista, es un hallazgo de verdad.
+    const PUEDE_BORRAR = {
+      agente_averiguado: "tf_agente_averiguado_guardar reemplaza lo averiguado de un contacto",
+    };
+    const borraMal = borra.filter((t) => !PUEDE_BORRAR[t]);
+    for (const t of borra.filter((t) => PUEDE_BORRAR[t])) {
+      console.log("  ℹ️  puede DELETE en " + t + " — " + PUEDE_BORRAR[t]);
+    }
+    if (!borraMal.length) ok("no borra en ninguna tabla que no deba");
+    for (const t of borraMal) {
       mal("puede DELETE en " + t);
       anota("alta", "n8n_worker borra en " + t, "Un workflow equivocado borra datos de un cliente que paga.");
     }

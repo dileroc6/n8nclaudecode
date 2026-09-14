@@ -109,7 +109,14 @@ Para clínicas, spas, talleres, consultorios — cualquiera que trabaje con cita
 |---|---|
 | Ver disponibilidad | ✅ |
 | Agendar la cita | ✅ |
-| Recordatorio de cita | ⬜ falta construirla |
+| Recordatorio de cita | ✅ *(3-sep)* |
+| Confirmar la cita | ✅ *(3-sep)* |
+
+**Completo y liberado: 4 de 4.** El recordatorio sale por un cron cada 5 minutos —en la
+hora del negocio, nunca dos veces, nunca una cita ya pasada— y `confirmar-cita` cierra el
+círculo: cuando la persona contesta, el agente marca si viene, **y si dice que no, la hora
+se libera para venderla otra vez**. Recordar sin poder confirmar deja al negocio igual de
+a ciegas, por eso las dos piezas entraron juntas al mismo pin.
 
 **Lo que vende:** la conversación termina con la cita puesta, no con un «escríbenos para
 agendar» — que es donde se cae la mitad.
