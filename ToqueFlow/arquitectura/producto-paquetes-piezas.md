@@ -22,7 +22,7 @@ dependen, y eso no lo dice el nombre: lo dice la hoja de precios.
 | Nivel | Qué es | Quién lo ve | Ejemplos |
 |---|---|---|---|
 | **Placa base** *(producto)* | Lo que se contrata. Se vende sola | Se vende | Toque Atiende · Toque Imprime · Toque Escribe |
-| **Pin** *(paquete)* | Lo que se le suma según el negocio | Se vende, colgado | Toque Agenda · Toque Recargas · Toque Tienda |
+| **Pin** *(paquete)* | Lo que se le suma según el negocio | Se vende, colgado | Toque Agenda · Toque Recargas · Toque Tienda · Toque Rescata |
 | **Pieza** *(herramienta)* | Lo que el agente llama por dentro | No se vende suelta | `agendar-cita`, `recargar-saldo` |
 
 Nadie compra «`ver-disponibilidad`». Compra **que agende**. El pin es la caja en la que se
@@ -96,7 +96,7 @@ producto principal**, y el que compra el portal ya no compra el agente.
 
 ## Los pines
 
-Los tres cuestan **$250.000 al mes** y **ninguno cobra implementación**. Que el precio sea
+Los cuatro cuestan **$250.000 al mes** y **ninguno cobra implementación**. Que el precio sea
 igual no es pereza: no se ha vendido ni un pin todavía, así que cualquier diferencia hoy
 sería inventada. Un solo número que Ferney no tiene que calcular vale más que una
 optimización adivinada. Se parte cuando haya datos.
@@ -158,6 +158,41 @@ plataforma, no por cliente**. La primera tienda WooCommerce cuesta construirla; 
 ya está hecha. Se cobran **$800.000 por única vez** al primer cliente de cada plataforma, y
 va como línea aparte y explicada en la propuesta: *«conexión con su plataforma»*. Esa es la
 diferencia entre producto y consultoría, y cambia cómo se cobra.
+
+### 🔁 Toque Rescata
+
+Para cualquiera que ya tenga agenda y esté perdiendo plata sin verlo. **Es el primer pin
+que no le suma herramientas al agente**: sus tres piezas no son cosas que el agente llame
+en una conversación, son cosas que la plataforma mira por su cuenta y le pone al negocio
+delante.
+
+| | Estado |
+|---|---|
+| Cero vacío — las horas que van a quedar libres | ✅ *(14-sep)* |
+| Los que no vinieron | ✅ *(14-sep)* |
+| Propuestas sin respuesta | ✅ *(14-sep)* |
+
+**Completo y liberado: 3 de 3.**
+
+**Lo que vende:** las tres pérdidas que **no aparecen en ningún informe**. Nadie factura
+un hueco, ni al que no vino, ni la propuesta que nunca se contestó — y por eso nadie las
+mira. Un negocio que ve «6 horas libres mañana y 40 personas sin cita» hace algo; el mismo
+negocio sin verlo, no.
+
+**Requiere Toque Agenda.** Dos de sus tres piezas no significan nada sin ella: no hay
+huecos que llenar ni citas a las que faltar. La tercera funciona sola, pero venderlo a
+quien no tiene agenda sería entregar un tercio.
+
+**Lo que no hace, a propósito:** no manda nada solo. Detectar es barato y no se equivoca;
+escribirle a cuarenta personas porque un cálculo vio un día flojo es como se gana un baneo.
+Deja la campaña armada con el filtro correcto y el mensaje propuesto — **enviarla sigue
+siendo del negocio**. Es la misma regla del `confirmar_envio`.
+
+**Lo que hay que configurar:** cuál de sus campos guarda la fecha de la propuesta. Es suyo
+y cada negocio lo llama distinto —presupuesto, cotización, propuesta— y adivinarlo por el
+nombre es como se termina persiguiendo a quien no tocaba. Mientras no se configure, esa
+tarjeta dice **«falta configurarlo»**, nunca «0»: un cero ahí le diría al negocio que no
+tiene nada pendiente cuando nadie ha mirado.
 
 ---
 

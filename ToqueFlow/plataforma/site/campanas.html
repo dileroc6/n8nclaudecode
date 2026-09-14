@@ -334,6 +334,98 @@
     renderChecklist('service','f-service');
   })();
 
+  // ── Toque Rescata: llegar con la campaña ya armada ──────────────────────
+  // El filtro y el mensaje se proponen; el negocio los cambia y le da a enviar.
+  // Armar y enviar son dos actos distintos a propósito: una automatización que
+  // manda sola por un cálculo es como se gana un baneo de WhatsApp.
+  const RESCATES = {
+    huecos: {
+      titulo: 'Horas libres de esta semana',
+      filtros: () => ({ sin_cita_futura: true }),
+      mensaje: 'Hola {nombre}, nos quedaron algunos espacios libres esta semana. ' +
+               '¿Te sirve que te agendemos? Contame qué día te queda mejor.',
+    },
+    plantones: {
+      titulo: 'Los que no vinieron',
+      filtros: () => ({ no_asistio: { hace_menos_de_dias: 90 }, sin_cita_futura: true }),
+      mensaje: 'Hola {nombre}, no pudimos verte la última vez y queremos dejarte ' +
+               'otro espacio. ¿Qué día te queda bien?',
+    },
+    propuestas: {
+      // El campo lo eligió el negocio: una clínica lo llama «presupuesto», un
+      // taller «cotización». Si no lo eligió, no hay nada que armar.
+      titulo: 'Propuestas sin respuesta',
+      filtros: (cfg) => cfg && cfg.campo
+        ? { campo_fecha: { clave: cfg.campo, hace_mas_de_dias: cfg.dias || 7 } }
+        : null,
+      mensaje: 'Hola {nombre}, te pasamos una propuesta hace unos días y ' +
+               'queríamos saber si te quedó alguna duda. Con gusto la revisamos juntos.',
+    },
+  };
+
+  async function armarRescate(clave) {
+    const R = RESCATES[clave];
+    if (!R) return;
+    let cfg = null;
+    if (clave === 'propuestas') {
+      const { data } = await sb.rpc('tf_rescate_pendiente', { p_company: companyId, p_dias: 3 });
+      cfg = data && data.propuestas && data.propuestas.configurado ? data.propuestas : null;
+      if (!cfg) {
+        setNotice('error', 'Falta decir qué campo guarda la fecha de la propuesta. ' +
+          'Se elige en la base de contactos, creando un campo de tipo fecha.');
+        return;
+      }
+    }
+    const F = R.filtros(cfg);
+    if (!F) return;
+
+    document.getElementById('c-name').value = R.titulo;
+    document.getElementById('c-msg').value = R.mensaje;
+    sel.status.clear(); sel.stage.clear(); sel.service.clear();
+    renderChecklist('status','f-status'); renderChecklist('stage','f-stage'); renderChecklist('service','f-service');
+    cargarFiltrosDeMas(F);
+    // Nace en modo prueba, como todo. Llegar aquí con un envío real preparado
+    // sería la peor manera de estrenar el paquete.
+    sendMode = 'prueba'; updateMode();
+    updateCount();
+    setNotice('ok', R.titulo + ': el filtro ya está puesto y el mensaje es un borrador. ' +
+      'Cámbialo a tu manera y míralo en el chat de prueba antes de enviarlo de verdad.');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // En qué hora vive este negocio. Toda fecha que se teclea o que se pinta en
+  // esta pantalla es su hora de pared, no la del navegador de quien mira ni la
+  // de la base. Se pregunta una vez.
+  let ZONA = null;
+  (async () => {
+    const { data } = await sb.rpc('tf_zona', { p_company: companyId });
+    ZONA = data || null;
+    // Lo ya pintado se repinta: la lista carga antes que esto.
+    if (typeof loadList === 'function') { try { loadList(); } catch (e) {} }
+  })();
+
+  // Se llega desde la agenda con «?rescate=huecos». Va después de que la
+  // pantalla esté montada: armar un filtro sobre controles que aún no existen
+  // los deja a medias sin decir nada.
+  (() => {
+    const q = new URLSearchParams(location.search).get('rescate');
+    if (q && RESCATES[q]) setTimeout(() => armarRescate(q), 0);
+  })();
+
+  // Un instante -> «2026-09-20 09:00» en la hora del negocio. Antes esto era
+  // `String(x).slice(0, 16)`, que corta lo que Supabase devuelve — y Supabase
+  // lo devuelve en UTC.
+  const enHoraDelNegocio = (iso) => {
+    if (!iso) return '';
+    try {
+      const p = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: ZONA || undefined, year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      }).formatToParts(new Date(iso)).reduce((a, x) => (a[x.type] = x.value, a), {});
+      return p.year + '-' + p.month + '-' + p.day + ' ' + p.hour + ':' + p.minute;
+    } catch (e) { return String(iso).slice(0, 16).replace('T', ' '); }
+  };
+
   // Lo que la campaña traía y esta pantalla todavía no sabe pintar. Se guarda
   // y se devuelve tal cual: una pantalla vieja que abre una campaña nueva no
   // puede borrarle los filtros sin decir nada.
@@ -482,10 +574,23 @@
   let editingCampaignId = null; // si != null, estamos editando una campaña existente
   const BATCH = 5;              // lote fijo (anti-baneo)
 
-  function readForm() {
+  async function readForm() {
     const schedVal = document.getElementById('c-sched').value; // "YYYY-MM-DDTHH:MM"
     // programar solo si NO es modo prueba (las de prueba se ejecutan al instante)
-    const scheduled_at = (whenMode === 'programar' && schedVal && sendMode === 'real') ? schedVal + ':00-05:00' : null; // hora Colombia
+    // La conversión la hace la base, que es la que sabe en qué zona vive el
+    // negocio. Pegarle '-05:00' a mano aquí es correcto solo mientras todos los
+    // clientes estén en Colombia.
+    let scheduled_at = null;
+    if (whenMode === 'programar' && schedVal && sendMode === 'real') {
+      const [f, h] = schedVal.split('T');
+      const { data, error } = await sb.rpc('tf_campana_momento',
+        { p_company: companyId, p_fecha: f, p_hora: h });
+      if (error || !data) {
+        setNotice('error', 'No se pudo entender esa fecha y hora.');
+        return null;
+      }
+      scheduled_at = data;
+    }
     return {
       name: document.getElementById('c-name').value.trim(),
       filters: buildFilters(),
@@ -497,15 +602,22 @@
     };
   }
 
-  // Próxima ocurrencia (ahora + intervalo) en ISO con hora Colombia -05:00.
+  // Próxima ocurrencia: ahora + el intervalo.
+  //
+  // No hace falta zona ninguna. «Dentro de un día» es un INSTANTE, y un
+  // instante no necesita que nadie diga en qué horario vive: dentro de 24 horas
+  // en el negocio serán las mismas del reloj que ahora.
+  //
+  // Antes esto armaba la fecha con las piezas del reloj de QUIEN mira
+  // —`getHours()`— y le pegaba '-05:00' al final. O sea que una campaña diaria
+  // programada desde un navegador que no estuviera en Colombia se corría de
+  // sitio en cada repetición.
   function nextOccurrenceISO(freq) {
-    const d = new Date(Date.now() + (freq === 'diaria' ? 86400000 : 604800000));
-    const p = (n) => String(n).padStart(2, '0');
-    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '-05:00';
+    return new Date(Date.now() + (freq === 'diaria' ? 86400000 : 604800000)).toISOString();
   }
 
   async function saveCampaign(requireSchedule) {
-    const form = readForm();
+    const form = await readForm();
     if (!form.name) { setNotice('error', 'Ponle un nombre a la campaña.'); return null; }
     if (!form.message_template) { setNotice('error', 'Escribe el mensaje.'); return null; }
     if (requireSchedule && whenMode === 'programar' && !form.scheduled_at) { setNotice('error', 'Elige la fecha y hora de envío, o cambia a "Ahora".'); return null; }
@@ -543,7 +655,9 @@
     cargarFiltrosDeMas(F);
     if (c.scheduled_at) {
       whenMode = 'programar';
-      document.getElementById('c-sched').value = String(c.scheduled_at).slice(0, 16);
+      // El campo espera «YYYY-MM-DDTHH:MM» en hora de pared. Rellenarlo con lo
+      // que devuelve Supabase —UTC— es lo que corría la campaña en cada edición.
+      document.getElementById('c-sched').value = enHoraDelNegocio(c.scheduled_at).replace(' ', 'T');
       document.getElementById('sched-wrap').style.display = 'block';
     } else {
       whenMode = 'ahora';
@@ -668,7 +782,7 @@
     } else if (programada) {
       // Programada: NO se dispara ahora; el sistema la envía a la hora (scheduler).
       await sb.from('campaigns').update({ status: 'activa' }).eq('id', c.id);
-      const f = String(c.scheduled_at).slice(0, 16).replace('T', ' a las ');
+      const f = enHoraDelNegocio(c.scheduled_at).replace(' ', ' a las ');
       setNotice('ok', 'Campaña programada para el ' + f + ' (hora Colombia). El sistema la enviará sola a esa hora.');
       resetForm(); loadList();
     } else {
@@ -718,7 +832,7 @@
       const seg = Object.entries(c.filters || {}).map(([k, v]) => (SEGLBL[k]||k) + ': ' + (Array.isArray(v) ? v.map(disp).join('/') : disp(v))).join(' · ') || 'todos los contactos';
       const msg = (c.message_template || '').replace(/\s+/g, ' ').trim();
       const msgPrev = msg ? (msg.length > 100 ? msg.slice(0, 100) + '…' : msg) : '(sin mensaje)';
-      const cuando = c.scheduled_at ? 'Próxima ejecución: ' + String(c.scheduled_at).slice(0, 16).replace('T', ' ') : 'Envío inmediato';
+      const cuando = c.scheduled_at ? 'Próxima ejecución: ' + enHoraDelNegocio(c.scheduled_at) : 'Envío inmediato';
       const created = c.created_at ? 'creada el ' + String(c.created_at).slice(0, 10) : '';
       const div = document.createElement('div');
       div.className = 'citem';
