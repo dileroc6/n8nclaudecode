@@ -111,8 +111,17 @@ Para clínicas, spas, talleres, consultorios — cualquiera que trabaje con cita
 | Agendar la cita | ✅ |
 | Recordatorio de cita | ✅ *(3-sep)* |
 | Confirmar la cita | ✅ *(3-sep)* |
+| Mover la cita | ✅ *(14-sep)* |
+| **Que el negocio la configure solo** | ✅ *(17-sep)* |
 
-**Completo y liberado: 4 de 4.** El recordatorio sale por un cron cada 5 minutos —en la
+**Completo y liberado, y por fin entregable.** Hasta el 17-sep este pin se vendía como listo
+y **no había ninguna pantalla que llenara sus horarios**: solo las pruebas tocaban
+`agenda_franjas`. Un cliente lo compraba, el alta le creaba la tarjeta, y la agenda quedaba
+vacía hasta que alguien entrara a la base a mano — lo contrario de un producto estándar, y
+la razón por la que «11 a 14 horas por cliente» no era un número real. Ahora el negocio pone
+sus horarios, sus servicios, sus días cerrados y su recordatorio desde Ajustes.
+
+El recordatorio sale por un cron cada 5 minutos —en la
 hora del negocio, nunca dos veces, nunca una cita ya pasada— y `confirmar-cita` cierra el
 círculo: cuando la persona contesta, el agente marca si viene, **y si dice que no, la hora
 se libera para venderla otra vez**. Recordar sin poder confirmar deja al negocio igual de

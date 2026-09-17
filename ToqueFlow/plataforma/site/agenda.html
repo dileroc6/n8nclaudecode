@@ -245,7 +245,10 @@
     const cont = $('dias');
     if (error || !data || data.ok === false) {
       cont.innerHTML = '<div class="nada">' +
-        (error ? esc(error.message) : 'Todavía no hay horarios de atención configurados.') + '</div>';
+        (error ? esc(error.message)
+               : 'Todavía no has dicho a qué horas atiendes, así que tu asistente no puede ' +
+                 'ofrecer ninguna. <a href="ajustes.html" style="color:var(--orange);font-weight:600;">' +
+                 'Configúralo aquí →</a>') + '</div>';
       $('t-huecos').textContent = '—';
       return;
     }
@@ -318,7 +321,9 @@
             : 'Todos tus contactos ya tienen cita. Nada que ofrecer por ahora.',
           h.horas > 0 && h.a_quien_ofrecer > 0 ? 'campanas.html?rescate=huecos' : null,
           'Ofrecerlas')
-      : tarjeta(null, 'horas libres', 'Falta decir a qué horas atiende el negocio para poder mirar su agenda.', null, ''));
+      : tarjeta(null, 'horas libres',
+          'Falta decir a qué horas atiendes para poder mirar tu agenda. ' +
+          '<a href="ajustes.html" style="color:var(--orange);font-weight:600;">Configúralo →</a>', null, ''));
 
     // 2. Los plantones.
     partes.push(tarjeta(pl.cuantos,
@@ -341,7 +346,9 @@
           pr.cuantos > 0 ? 'campanas.html?rescate=propuestas' : null,
           'Recordárselas')
       : tarjeta(null, 'propuestas sin respuesta',
-          'Falta decir qué campo guarda la fecha de la propuesta. Se crea en <a href="contactos.html" style="color:var(--orange);">tu base de contactos</a> como un campo de tipo fecha.',
+          'Falta decir qué campo guarda la fecha de la propuesta. Se elige en ' +
+          '<a href="ajustes.html" style="color:var(--orange);font-weight:600;">Ajustes</a>, ' +
+          'y el campo se crea en <a href="contactos.html" style="color:var(--orange);">tu base de contactos</a>.',
           null, ''));
 
     cont.innerHTML = partes.join('');

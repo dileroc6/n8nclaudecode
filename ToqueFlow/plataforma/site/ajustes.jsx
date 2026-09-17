@@ -320,6 +320,23 @@ function Toggle({ on, onClick }) {
 function AjustesApp() {
   React.useEffect(() => { applyDefaultTokens(); }, []);
 
+  // Qué pines tiene, para no enseñarle configuración de algo que no contrató.
+  // Se mira `agent_config.herramientas`, que es la misma fuente que usa
+  // «Qué tienes contratado»: dos formas de responder lo mismo se separan solas.
+  const [tiene, setTiene] = React.useState(null);
+  const companyId = (window.TF_COMPANY || {}).id || null;
+  React.useEffect(() => {
+    sb.from('agent_config').select('herramientas').then(({ data }) => {
+      const todas = new Set();
+      for (const a of data || []) for (const h of a.herramientas || []) todas.add(h);
+      setTiene(todas);
+    });
+  }, []);
+  const conAgenda = !!tiene && ['paquete-agenda', 'agendar-cita', 'ver-disponibilidad']
+    .some((k) => tiene.has(k));
+  const conRescata = !!tiene && ['paquete-rescata', 'huecos-agenda', 'seguimiento-propuestas']
+    .some((k) => tiene.has(k));
+
   const [tog, setTog] = React.useState({
     wa: true, mail: true, resumen: true, alertas: true, marketing: false, twofa: true,
   });
@@ -352,6 +369,10 @@ function AjustesApp() {
         <p className="set-managed-note">// ¿necesitas un flow nuevo o cambiar uno existente? lo coordina tu equipo de ToqueFlow.</p>
 
         <QueTienes />
+
+        {companyId && (
+          <CuandoAtiendes companyId={companyId} tieneAgenda={conAgenda} tieneRescata={conRescata} />
+        )}
 
         <QueSabe />
 
