@@ -40,8 +40,19 @@ declare
   v_tiene   boolean;
   v_tel     text := public.tf_telefono(p_telefono);
 begin
+  -- Un agente APAGADO sigue teniendo contexto EN MODO PRUEBA.
+  --
+  -- El alta crea el agente apagado a proposito: encenderlo es un acto aparte,
+  -- despues de probarlo en el sandbox. Pero con `and activo` a secas, un agente
+  -- apagado no tenia contexto — o sea que **no se podia probar antes de
+  -- encenderlo**, que es exactamente lo que el producto promete. La unica forma
+  -- de estrenar un cliente era encenderle el agente a ciegas.
+  --
+  -- El candado que importa no se toca: en modo NO prueba sigue exigiendo
+  -- `activo`, asi que un agente apagado nunca contesta un WhatsApp real. Y la
+  -- instancia del alta (`<slug>-sandbox`) ni siquiera existe en Evolution.
   select * into v_rt from public.agent_runtime
-  where whatsapp_instance = p_instance and activo;
+  where whatsapp_instance = p_instance and (activo or p_test);
   if not found then return null; end if;
 
   select * into v_contact from public.contacts

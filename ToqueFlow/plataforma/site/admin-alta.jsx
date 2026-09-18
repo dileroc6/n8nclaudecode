@@ -157,7 +157,19 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
           enrutamiento: { reglas: f.escalar.trim() ? [{ si: f.escalar.trim(), accion: 'notificar_humano', destino: 'equipo' }] : [] },
           limites: { nunca: f.nunca.split('\n').map((x) => x.trim()).filter(Boolean), escalar_si: ['se molesta o repite la misma queja'] },
           agenda: { modo: 'ninguna' },
-          herramientas: catalogo.filter((c) => c.tipo === 'herramienta' && f.piezas[c.clave]).map((c) => c.clave),
+          // Lo que va SIEMPRE con el producto, mas las claves de los paquetes
+          // que contrato. Se guardan las claves de paquete y no sus piezas: la
+          // base las expande al usarlas, asi que el dia que un paquete crezca
+          // el cliente lo hereda sin que nadie le toque la configuracion.
+          //
+          // Antes esto filtraba por `tipo === 'herramienta'`, y el asistente de
+          // alta no ofrece piezas sueltas — solo paquetes. La lista salia
+          // siempre vacia: el agente podia hablar y nada mas.
+          herramientas: Array.from(new Set([
+            ...((catalogo.find((c) => c.clave === 'agente-atencion') || {}).incluye || []),
+            ...catalogo.filter((c) => f.piezas[c.clave] && (c.tipo === 'paquete' || c.tipo === 'herramienta'))
+                       .map((c) => c.clave),
+          ])),
         });
         if (e3) throw new Error('La empresa quedó pero el agente no: ' + e3.message);
       }

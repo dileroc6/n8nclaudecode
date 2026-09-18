@@ -41,7 +41,7 @@ Plantilla lista en [estrategia/plantilla-propuesta.md](estrategia/plantilla-prop
 | 13 | Fijar el precio y no moverlo | $1.200.000 + $600.000/mes, sin excepciones, los primeros tres clientes | Ambos |
 | 14 | Definir el techo de una demo gratis | Pediste un día (8 h). Con la agenda de ustedes eso es dos tercios de una semana | Ambos |
 | 15 | Armar la lista del segmento | Clínicas estéticas, odontológicas y spas de Bogotá. Los contactos de Ferney son el canal, no un segmento aparte | Ferney |
-| 16 | Cronometrar el próximo cliente, hora por hora | Es la hipótesis que decide si esto es negocio o empleo | Diego |
+| 16 | Cronometrar el próximo cliente, hora por hora | Es la hipótesis que decide si esto es negocio o empleo. **La parte de máquina ya está medida y arreglada (fila 169): 17 actos, ninguno entrando a la base.** Falta lo que de verdad decide: el tiempo de una persona pensando, escribiendo el conocimiento y hablando con el cliente | Diego |
 
 ---
 
