@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tu catálogo — ToqueFlow</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#0a2230; --mute:#5b6b75; --line:#e2e6e9; --orange:#f15a24; --bg:#f6f7f8; --card:#fff; --green:#1f8a5b; --amber:#b9770e; --red:#c1272d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Sora",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+
+  .tool-top { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; position:sticky; top:0; z-index:10; }
+  .tool-top .brand b { font-size:15px; }
+  .tool-top .brand span { font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--mute); display:block; }
+  .tool-top .who { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .tool-top a.back { color:var(--orange); text-decoration:none; font-size:13px; }
+
+  .wrap { max-width:1000px; margin:0 auto; padding:22px 22px 80px; display:flex; flex-direction:column; gap:22px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .tile .n { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .tile .l { font-size:12px; color:var(--mute); margin-top:2px; line-height:1.35; }
+  .tile.ojo .n { color:var(--orange); }
+
+  h2 { font-size:16px; margin:0 0 3px; }
+  .porque { font-size:13px; color:var(--mute); margin:0 0 12px; line-height:1.5; max-width:64ch; }
+
+  .caja { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+
+  textarea, input[type="text"], input[type="number"], input[type="search"] {
+    font-family:inherit; font-size:13.5px; color:var(--ink);
+    border:1px solid var(--line); border-radius:9px; padding:8px 11px; background:#fff;
+  }
+  textarea { font-family:"JetBrains Mono",monospace; font-size:12.5px; min-height:130px; resize:vertical; width:100%; }
+
+  .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:8px 15px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+  .btn:hover { border-color:var(--ink); }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .btn.p { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .fila-btn { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th { text-align:left; font-size:11.5px; font-weight:600; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; padding:0 10px 8px; }
+  td { padding:9px 10px; border-top:1px solid var(--line); vertical-align:middle; }
+  tr.apagado td { opacity:.45; }
+  .sku { font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--mute); }
+  .num { font-variant-numeric:tabular-nums; text-align:right; }
+  .num input { width:96px; text-align:right; padding:5px 8px; }
+  .scroll { overflow-x:auto; }
+
+  .msg { display:none; padding:11px 14px; border-radius:10px; font-size:13.5px; line-height:1.5; }
+  .msg.show { display:block; }
+  .msg.ok { background:#f2fbf7; border:1px solid #bfe3d2; color:var(--green); }
+  .msg.error { background:#fdf4f4; border:1px solid #f2cdcf; color:var(--red); }
+  .msg.ojo { background:#fdf8ee; border:1px solid #f0dcae; color:var(--amber); }
+
+  .nada { background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:24px; text-align:center; color:var(--mute); font-size:14px; line-height:1.6; }
+  details summary { cursor:pointer; font-size:13px; font-weight:600; }
+  .ejemplo { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); background:#fafbfb; border:1px solid var(--line); border-radius:9px; padding:10px 12px; white-space:pre; overflow-x:auto; }
+</style>
+</head>
+<body>
+
+<div class="tool-top">
+  <div class="brand"><b id="brand-company">—</b><span>Tu catálogo</span></div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <span class="who" id="who"></span>
+    <a class="back" href="dashboard.html">← Volver</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="msg" class="msg"></div>
+
+  <div class="tiles">
+    <div class="tile"><div class="n" id="t-total">—</div><div class="l">productos cargados</div></div>
+    <div class="tile"><div class="n" id="t-activos">—</div><div class="l">que tu asistente puede ofrecer</div></div>
+    <div class="tile ojo"><div class="n" id="t-sinprecio">—</div><div class="l">sin precio — no los va a ofrecer</div></div>
+    <div class="tile ojo"><div class="n" id="t-agotados">—</div><div class="l">en cero</div></div>
+  </div>
+
+  <section>
+    <h2>Cargar tu catálogo</h2>
+    <p class="porque">
+      Pega aquí tu lista, o sube el archivo. Se identifica cada producto por su
+      <b>código</b>, así que volver a cargarla no duplica nada: actualiza lo que
+      ya estaba. <b>Lo que no venga en el archivo se queda como está</b> — nada
+      se borra.
+    </p>
+    <div class="caja">
+      <details>
+        <summary>¿Cómo tiene que verse?</summary>
+        <p class="porque" style="margin:10px 0 8px;">
+          Una línea por producto, separando con comas o con punto y coma. La
+          primera línea son los nombres de las columnas. Solo el código y el
+          nombre son obligatorios.
+        </p>
+        <div class="ejemplo">sku,nombre,precio,existencias,categoria
+MAR-001,Martillo de uña 16oz,28900,12,Herramienta
+TAL-220,Taladro percutor 650W,189000,3,Herramienta
+CIN-050,Cinta métrica 5m,12500,40,Medición</div>
+      </details>
+
+      <textarea id="pegado" placeholder="Pega aquí tu lista, con la primera línea de encabezados…"></textarea>
+
+      <div class="fila-btn">
+        <input type="file" id="archivo" accept=".csv,.txt,text/csv,text/plain" />
+        <button class="btn p" id="btn-mirar">Mirar qué va a pasar</button>
+      </div>
+
+      <div id="previo"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo que tienes cargado</h2>
+    <p class="porque">
+      El precio y las existencias se cambian aquí mismo: es lo que más se mueve y
+      no merece rearmar el archivo entero. Apagar un producto lo esconde de tu
+      asistente sin borrarlo — si vuelve en temporada, se enciende otra vez.
+    </p>
+    <div class="caja">
+      <input type="search" id="buscar" placeholder="Buscar por nombre, código o categoría…" />
+      <div class="scroll"><div id="lista"></div></div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js?v=8374ba77"></script>
+<script src="auth.js?v=6a51d295"></script>
+<script>
+(async function () {
+  const A = window.TF_AUTH;
+  const profile = await A.guard({});
+  if (!profile) return;
+  const sb = A.sb;
+  const company = window.TF_COMPANY || profile.company || {};
+  const companyId = company.id || profile.company_id;
+  document.getElementById('brand-company').textContent = company.name || company.slug || '—';
+  document.getElementById('who').textContent = profile.email || '';
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+  const plata = (n) => n == null ? '—' : '$' + Number(n).toLocaleString('es-CO');
+
+  function aviso(t, texto) {
+    const m = $('msg');
+    m.className = 'msg show ' + t;
+    m.innerHTML = texto;
+    if (t === 'ok') setTimeout(() => { m.className = 'msg'; }, 6000);
+  }
+
+  let PRODUCTOS = [];
+  let PENDIENTE = null;   // lo leído del archivo, esperando confirmación
+
+  // ── Leer la lista ─────────────────────────────────────────────────────────
+  // Se acepta coma y punto y coma porque un Excel en español exporta con punto
+  // y coma, y ese detalle solito hace que el negocio crea que el archivo está
+  // mal y se rinda.
+  function separador(linea) {
+    return (linea.split(';').length > linea.split(',').length) ? ';' : ',';
+  }
+  function partir(linea, sep) {
+    const out = []; let act = ''; let comillas = false;
+    for (let i = 0; i < linea.length; i++) {
+      const ch = linea[i];
+      if (ch === '"') { comillas = !comillas; continue; }
+      if (ch === sep && !comillas) { out.push(act); act = ''; continue; }
+      act += ch;
+    }
+    out.push(act);
+    return out.map((x) => x.trim());
+  }
+  // Los encabezados se reconocen en las palabras del negocio, no solo en las de
+  // la base: nadie escribe «precio_cop» ni «existencias» en su Excel.
+  const ALIAS = {
+    sku: ['sku', 'codigo', 'código', 'ref', 'referencia', 'id'],
+    nombre: ['nombre', 'producto', 'descripcion corta', 'titulo', 'título'],
+    precio: ['precio', 'precio_cop', 'valor', 'precio venta', 'pvp'],
+    existencias: ['existencias', 'stock', 'cantidad', 'inventario', 'disponible'],
+    categoria: ['categoria', 'categoría', 'linea', 'línea', 'grupo'],
+    descripcion: ['descripcion', 'descripción', 'detalle'],
+    url: ['url', 'enlace', 'link'],
+  };
+  const normal = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+  function leer(texto) {
+    const lineas = String(texto || '').split(/\r?\n/).filter((l) => l.trim());
+    if (lineas.length < 2) return { error: 'Hacen falta al menos la línea de encabezados y un producto.' };
+    const sep = separador(lineas[0]);
+    const cabe = partir(lineas[0], sep).map(normal);
+
+    const col = {};
+    for (const campo of Object.keys(ALIAS)) {
+      const i = cabe.findIndex((h) => ALIAS[campo].some((a) => normal(a) === h));
+      if (i >= 0) col[campo] = i;
+    }
+    if (col.sku === undefined || col.nombre === undefined) {
+      return { error: 'No encontré las columnas de <b>código</b> y <b>nombre</b>. ' +
+        'La primera línea tiene que decir cómo se llama cada columna — por ejemplo: <code>sku,nombre,precio</code>.' };
+    }
+
+    const filas = [];
+    for (let i = 1; i < lineas.length; i++) {
+      const p = partir(lineas[i], sep);
+      const f = {};
+      for (const campo of Object.keys(col)) f[campo] = p[col[campo]] || '';
+      // El precio suele venir como «28.900» o «$28.900»: se limpia antes de
+      // mandarlo, porque si no la base lo rechaza fila por fila y el negocio
+      // solo ve una lista de errores sin entender por qué.
+      if (f.precio) f.precio = f.precio.replace(/[^0-9.,-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.');
+      if (f.existencias) f.existencias = f.existencias.replace(/[^0-9-]/g, '');
+      filas.push(f);
+    }
+    return { filas };
+  }
+
+  // ── Mirar antes de cargar ─────────────────────────────────────────────────
+  $('archivo').onchange = async (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    $('pegado').value = await f.text();
+    aviso('ok', 'Archivo leído. Dale a «Mirar qué va a pasar».');
+  };
+
+  $('btn-mirar').onclick = () => {
+    const r = leer($('pegado').value);
+    if (r.error) { PENDIENTE = null; $('previo').innerHTML = ''; aviso('error', r.error); return; }
+
+    const yaTengo = new Set(PRODUCTOS.map((p) => String(p.sku)));
+    const nuevos = r.filas.filter((f) => f.sku && !yaTengo.has(String(f.sku))).length;
+    const cambian = r.filas.filter((f) => f.sku && yaTengo.has(String(f.sku))).length;
+    const sinCodigo = r.filas.filter((f) => !f.sku).length;
+
+    PENDIENTE = r.filas;
+    // Se enseña qué va a pasar ANTES de tocar nada. Cargar un catálogo a ciegas
+    // y descubrir después que se pisaron los precios es de lo que no se vuelve.
+    $('previo').innerHTML =
+      '<div class="msg show ojo">' +
+        'Leí <b>' + r.filas.length + '</b> líneas: <b>' + nuevos + '</b> productos nuevos y ' +
+        '<b>' + cambian + '</b> que ya tienes y se van a actualizar.' +
+        (sinCodigo ? ' <b>' + sinCodigo + '</b> sin código, que se van a saltar.' : '') +
+        '<br>Los <b>' + Math.max(0, PRODUCTOS.length - cambian) + '</b> que no vienen en el archivo se quedan como están.' +
+      '</div>' +
+      '<div class="fila-btn" style="margin-top:10px;"><button class="btn p" id="btn-cargar">Cargarlos</button>' +
+      '<button class="btn" id="btn-cancelar">Cancelar</button></div>';
+
+    $('btn-cargar').onclick = cargarloS;
+    $('btn-cancelar').onclick = () => { PENDIENTE = null; $('previo').innerHTML = ''; };
+  };
+
+  async function cargarloS() {
+    if (!PENDIENTE) return;
+    $('btn-cargar').disabled = true;
+    const { data, error } = await sb.rpc('tf_productos_importar', { p_company: companyId, p_filas: PENDIENTE });
+    if (error || (data && data.ok === false)) {
+      aviso('error', 'No se pudo: ' + (error ? error.message : data.motivo));
+      $('btn-cargar').disabled = false;
+      return;
+    }
+    const d = (data.detalle || []).slice(0, 8)
+      .map((x) => '<br>· línea ' + x.fila + (x.sku ? ' (' + esc(x.sku) + ')' : '') + ': ' + esc(x.motivo)).join('');
+    aviso(data.rechazados ? 'ojo' : 'ok',
+      '<b>' + data.nuevos + '</b> nuevos y <b>' + data.actualizados + '</b> actualizados. ' +
+      (data.rechazados ? '<b>' + data.rechazados + '</b> no se pudieron cargar:' + d : '') +
+      '<br>' + esc(data.nota));
+    PENDIENTE = null;
+    $('previo').innerHTML = '';
+    $('pegado').value = '';
+    cargar();
+  }
+
+  // ── Lo que hay ────────────────────────────────────────────────────────────
+  async function cargar() {
+    const { data, error } = await sb.from('productos')
+      .select('id,sku,nombre,categoria,precio_cop,existencias,activo')
+      .eq('company_id', companyId).order('nombre');
+    if (error) { $('lista').innerHTML = '<div class="nada">' + esc(error.message) + '</div>'; return; }
+    PRODUCTOS = data || [];
+
+    $('t-total').textContent = PRODUCTOS.length;
+    $('t-activos').textContent = PRODUCTOS.filter((p) => p.activo).length;
+    // Sin precio el agente no lo ofrece, y eso es invisible hasta que alguien
+    // pregunta por ese producto y el asistente lo esquiva.
+    $('t-sinprecio').textContent = PRODUCTOS.filter((p) => p.activo && p.precio_cop == null).length;
+    $('t-agotados').textContent = PRODUCTOS.filter((p) => p.activo && p.existencias === 0).length;
+    pintar();
+  }
+
+  $('buscar').oninput = pintar;
+
+  function pintar() {
+    const q = normal($('buscar').value);
+    const filas = !q ? PRODUCTOS : PRODUCTOS.filter((p) =>
+      normal(p.nombre).includes(q) || normal(p.sku).includes(q) || normal(p.categoria).includes(q));
+
+    if (!PRODUCTOS.length) {
+      $('lista').innerHTML = '<div class="nada"><b>Todavía no has cargado nada.</b><br>' +
+        'Mientras el catálogo esté vacío, tu asistente no puede decirle a nadie qué vendes ' +
+        'ni cuánto cuesta. Pega tu lista arriba.</div>';
+      return;
+    }
+    if (!filas.length) { $('lista').innerHTML = '<div class="nada">Ningún producto coincide con «' + esc($('buscar').value) + '».</div>'; return; }
+
+    $('lista').innerHTML =
+      '<table><thead><tr><th>Producto</th><th>Categoría</th><th class="num">Precio</th>' +
+      '<th class="num">Existencias</th><th></th></tr></thead><tbody>' +
+      filas.map((p) => (
+        '<tr class="' + (p.activo ? '' : 'apagado') + '" data-id="' + esc(p.id) + '">' +
+          '<td><b>' + esc(p.nombre) + '</b><br><span class="sku">' + esc(p.sku) + '</span></td>' +
+          '<td>' + esc(p.categoria || '—') + '</td>' +
+          '<td class="num"><input type="number" min="0" step="100" data-campo="precio" value="' +
+            (p.precio_cop == null ? '' : p.precio_cop) + '" placeholder="sin precio" /></td>' +
+          '<td class="num"><input type="number" min="0" step="1" data-campo="existencias" value="' +
+            (p.existencias == null ? '' : p.existencias) + '" placeholder="—" /></td>' +
+          '<td><button class="btn" data-apagar="' + (p.activo ? '0' : '1') + '">' +
+            (p.activo ? 'Apagar' : 'Encender') + '</button></td>' +
+        '</tr>'
+      )).join('') + '</tbody></table>';
+
+    for (const inp of $('lista').querySelectorAll('input[data-campo]')) {
+      inp.onchange = async () => {
+        const tr = inp.closest('tr');
+        const precio = tr.querySelector('[data-campo="precio"]').value;
+        const exist = tr.querySelector('[data-campo="existencias"]').value;
+        const { data, error } = await sb.rpc('tf_producto_ajustar', {
+          p_producto: tr.dataset.id,
+          p_precio: precio === '' ? null : Number(precio),
+          p_existencias: exist === '' ? null : Number(exist),
+        });
+        if (error || (data && data.ok === false)) { aviso('error', 'No se pudo: ' + (error ? error.message : data.motivo)); return; }
+        aviso('ok', 'Guardado.');
+        cargar();
+      };
+    }
+    for (const b of $('lista').querySelectorAll('[data-apagar]')) {
+      b.onclick = async () => {
+        const tr = b.closest('tr');
+        const { data, error } = await sb.rpc('tf_producto_activo', {
+          p_producto: tr.dataset.id, p_activo: b.dataset.apagar === '1',
+        });
+        if (error || (data && data.ok === false)) { aviso('error', 'No se pudo: ' + (error ? error.message : data.motivo)); return; }
+        cargar();
+      };
+    }
+  }
+
+  await cargar();
+})();
+</script>
+</body>
+</html>

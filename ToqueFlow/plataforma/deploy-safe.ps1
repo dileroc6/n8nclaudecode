@@ -79,7 +79,8 @@ function Test-Live {
     'sm-grand/ocupacion.html',                              # SM Grand Hotel
     'contactos.html','campanas.html','modo-prueba.html',    # Bejauha
     'pedidos.html',                                         # Toque Tienda
-    'agenda.html'                                           # Toque Agenda
+    'agenda.html',                                          # Toque Agenda
+    'productos.html'                                         # Toque Tienda
   )
   for ($try = 1; $try -le 20; $try++) {
     $allOk = $true; $codes = @()

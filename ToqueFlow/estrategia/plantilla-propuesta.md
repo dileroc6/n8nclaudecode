@@ -13,6 +13,47 @@ Todo contacto de cierre lleva las tres cosas: **qué cuesta, qué incluye, hasta
 
 ---
 
+## Se llega con una configuración armada, no con un menú
+
+**Decidido el 8-sep: Ferney propone UNA configuración concreta. El cliente no escoge de la gama.**
+
+Un menú abierto devuelve la cotización a medida por el otro extremo, y además el
+cliente diseña mal. Las dos formas de equivocarse cuestan:
+
+| Si sub-compra | Si sobre-compra |
+|---|---|
+| Se va a los tres meses porque «no hacía lo que necesitaba» | Reclama por lo que no llegó, y tenía razón |
+
+La gama se enseña **después** de la recomendación, como lo que existe además. El
+menú es para que el cliente sepa que hay más, no para que arme su propio producto.
+
+### La chuleta: qué proponerle a cada uno
+
+Todos llevan **Toque Atiende** — es la placa base y sin ella no hay nada que
+colgar. Lo que cambia es el pin.
+
+| Si el negocio… | Se le propone | Por qué ese |
+|---|---|---|
+| Trabaja con cita: clínica, spa, taller, consultorio | Atiende **+ Agenda** | La conversación termina con la cita puesta, no con un «escríbenos para agendar» — que es donde se cae la mitad |
+| Vende paquetes, clases, sesiones o bonos | Atiende **+ Recargas** | Deja de contestar «cuántas me quedan» a mano, y las recargas las sigue confirmando una persona |
+| Tiene tienda en línea | Atiende **+ Tienda** | Deja de contestar «déjame reviso» veinte veces al día por el mismo pedido |
+| Ya tiene agenda y se le están yendo horas | Agrega **Rescata** | Las tres pérdidas que no salen en ningún informe: huecos, los que no vinieron, propuestas sin contestar |
+
+**Una sola cosa que no se negocia al proponer:** un pin nunca abre renglón
+propio. Va indentado bajo la placa base, con «+», y sin cobro de implementación.
+Si abre renglón propio parece que se vende solo, y **no se puede instalar solo**.
+
+La excepción es **Toque Tienda**: la conexión con la plataforma del cliente se
+cobra aparte, una vez por plataforma y no por cliente. Va como línea explicada
+—*«conexión con su plataforma»*— porque esa es la diferencia entre producto y
+consultoría, y cambia cómo se cobra.
+
+> El detalle de qué trae cada pin está en
+> [../arquitectura/producto-paquetes-piezas.md](../arquitectura/producto-paquetes-piezas.md).
+> Aquí va solo lo que hace falta para proponer.
+
+---
+
 ## Correo de reactivación (para los cuatro tibios)
 
 Corto. Sin adjuntos en el primer correo. Sin explicar la tecnología.
