@@ -14,8 +14,19 @@
  * Y no lo cazaba ninguna prueba: los escenarios miden lo que el agente DICE,
  * no a dónde va el aviso cuando deja de hablar.
  *
- * Solo mira los agentes ENCENDIDOS: un agente apagado con las reglas a medias
- * es trabajo pendiente, no una avería.
+ * Mira los encendidos Y los apagados, pero no los trata igual:
+ *
+ *   · un agente ENCENDIDO con el aviso roto es un FALLO — hay gente quedando en
+ *     silencio ahora mismo
+ *   · uno APAGADO es una LISTA de lo que hay que arreglar ANTES de encenderlo
+ *
+ * Antes solo miraba los encendidos, con un argumento razonable: un agente
+ * apagado a medias es trabajo pendiente. Pero el alta crea TODOS los agentes
+ * apagados a propósito, para probarlos antes de encenderlos — así que el
+ * defecto nacía con cada cliente y no lo veía nadie hasta el go-live, que es
+ * cuando más caro sale.
+ *
+ * Y no se mezclan: un ❌ que puede ser ruido se acaba ignorando.
  * ========================================================================== */
 const fs = require('fs');
 const path = require('path');
@@ -47,15 +58,18 @@ const check = (cond, que, detalle) => {
   await c.connect();
 
   const q = await c.query(`
-    select co.name as empresa, ac.nombre as agente, ac.whatsapp_instance, ac.enrutamiento
+    select co.name as empresa, ac.nombre as agente, ac.whatsapp_instance, ac.enrutamiento, ac.activo
     from public.agent_config ac
     join public.companies co on co.id = ac.company_id
-    where ac.activo
-    order by co.name, ac.whatsapp_instance`);
+    order by ac.activo desc, co.name, ac.whatsapp_instance`);
 
-  console.log('\n── Agentes encendidos: ' + q.rows.length + ' ──\n');
+  const encendidos = q.rows.filter((r) => r.activo);
+  const apagados = q.rows.filter((r) => !r.activo);
+  const porEncender = [];
 
-  if (!q.rows.length) console.log('  (ninguno encendido: nada que comprobar)');
+  console.log('\n── Agentes encendidos: ' + encendidos.length + ' ──\n');
+
+  if (!encendidos.length) console.log('  (ninguno encendido)');
 
   for (const r of q.rows) {
     const quien = r.empresa + ' · ' + (r.agente || r.whatsapp_instance);
@@ -72,10 +86,29 @@ const check = (cond, que, detalle) => {
       return !d || !(esNumero(d) || esGrupo(d) || esLink(d));
     });
 
-    check(malos.length === 0,
-      quien + ': sus ' + avisan.length + ' avisos tienen a dónde llegar',
-      malos.map((m) => 'la regla «' + m.si + '» manda el aviso a «' + (m.destino || '(vacío)') +
-        '», que no es un número ni un grupo. El aviso no llega a nadie y el cliente queda esperando.').join('\n       '));
+    const detalle = malos.map((m) => 'la regla «' + m.si + '» manda el aviso a «' +
+      (m.destino || '(vacío)') + '», que no es un número ni un grupo. El aviso no llega ' +
+      'a nadie y el cliente queda esperando.').join('\n       ');
+
+    if (r.activo) {
+      // Encendido y roto: hay gente quedando en silencio AHORA. Es un fallo.
+      check(malos.length === 0, quien + ': sus ' + avisan.length + ' avisos tienen a dónde llegar', detalle);
+    } else if (malos.length) {
+      // Apagado: todavía no le ha pasado a nadie. Se anota para antes de encenderlo.
+      porEncender.push({ quien, detalle });
+    }
+  }
+
+  // ── Lo que hay que arreglar ANTES de encender ──────────────────────────────
+  // El alta crea todos los agentes apagados a propósito, para probarlos antes.
+  // Si esto no se mirara, el aviso roto viajaría con cada cliente nuevo hasta
+  // el día del go-live — que es justo lo que pasó con Bejauha.
+  if (porEncender.length) {
+    console.log('\n── Apagados, pero con el aviso roto: ' + porEncender.length + ' ──');
+    console.log('   (todavía no le ha pasado a nadie; hay que arreglarlo ANTES de encenderlos)\n');
+    for (const p of porEncender) console.log('  ⚠️  ' + p.quien + '\n       ' + p.detalle);
+  } else if (apagados.length) {
+    console.log('\n── Apagados: ' + apagados.length + ', y todos saben a quién avisar ──');
   }
 
   await c.end();

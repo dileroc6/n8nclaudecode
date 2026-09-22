@@ -129,11 +129,23 @@ const check = (cond, que, detalle) => {
           },
         }),
       }).catch(() => {});
-      await esperar(2500);
-      const r = await c.query(
-        "select body from public.test_messages where company_id=$1 and author='bot' order by created_at desc limit 1",
-        [empresa.id]);
-      return (r.rows[0] || {}).body || "";
+      // Se ESPERA a que conteste, no se da por vacío a los 2,5 segundos.
+      //
+      // El primer mensaje de una corrida arranca el flujo en frío y tarda más.
+      // Con una espera fija, esa primera respuesta llegaba vacía — y una
+      // respuesta vacía en una prueba de fuga es lo peor que puede pasar: las
+      // comprobaciones «no filtró nada» pasan porque no dijo NADA. Por eso la
+      // prueba se niega a pasar si el control queda mudo; pero quedarse mudo
+      // por lentitud no es lo mismo que quedarse mudo por estar roto.
+      for (let intento = 0; intento < 12; intento++) {
+        await esperar(intento === 0 ? 2500 : 1500);
+        const r = await c.query(
+          "select body from public.test_messages where company_id=$1 and author='bot' order by created_at desc limit 1",
+          [empresa.id]);
+        const body = (r.rows[0] || {}).body || "";
+        if (body.trim()) return body;
+      }
+      return "";
     };
 
     const [A, B] = EMPRESAS;

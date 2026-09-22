@@ -66,6 +66,10 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
     tono: '', negocio: '',
     campos: ALTA_CAMPOS_SUGERIDOS.map((c) => ({ ...c })),
     escalar: 'quiere comprar, agendar o pagar algo',
+    // A dónde llega el aviso. Antes se grababa 'equipo' FIJO, sin preguntarlo:
+    // el agente se callaba bien y el aviso no llegaba a nadie. Es el defecto
+    // que tiene Bejauha, saliendo de fábrica en cada cliente nuevo.
+    destino: '',
     nunca: '',
   });
   const set = (k, v) => setF((d) => ({ ...d, [k]: v }));
@@ -84,6 +88,9 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
     if (pasoActual === 'La empresa')  return f.nombre.trim().length > 1;
     if (pasoActual === 'Quién la usa') return /\S+@\S+\.\S+/.test(f.correo);
     if (pasoActual === 'Qué contrata') return Object.values(f.piezas).some(Boolean);
+    // Se puede dejar en blanco —hay clientes que aún no saben a qué número— pero
+    // NO se puede dejar mal escrito: un destino inválido es el que parece puesto.
+    if (pasoActual === 'El agente') return !f.destino.trim() || TF_DESTINO.valido(f.destino);
     return true;
   };
 
@@ -154,7 +161,14 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
           whatsapp_instance: slug + '-sandbox',
           identidad: { negocio: f.negocio.trim() || f.nombre.trim(), tono: f.tono.trim() },
           captura: { campos: f.campos.filter((c) => c.puesto).map((c) => ({ clave: c.clave, etiqueta: c.etiqueta, obligatorio: c.obligatorio })) },
-          enrutamiento: { reglas: f.escalar.trim() ? [{ si: f.escalar.trim(), accion: 'notificar_humano', destino: 'equipo' }] : [] },
+          // El destino es el que dijo el negocio. Si todavía no lo sabe, la
+          // regla NO se crea: una regla que apunta a un sitio que no existe se
+          // ve bien en la pantalla y se descubre el día del go-live.
+          enrutamiento: {
+            reglas: (f.escalar.trim() && TF_DESTINO.valido(f.destino))
+              ? [{ si: f.escalar.trim(), accion: 'notificar_humano', destino: f.destino.trim() }]
+              : [],
+          },
           limites: { nunca: f.nunca.split('\n').map((x) => x.trim()).filter(Boolean), escalar_si: ['se molesta o repite la misma queja'] },
           agenda: { modo: 'ninguna' },
           // Lo que va SIEMPRE con el producto, mas las claves de los paquetes
@@ -338,6 +352,22 @@ function AltaClienteVista({ catalogo, onListo, onCancelar }) {
 
             <div className="form-field"><label>cuándo pasar a una persona</label>
               <input type="text" value={f.escalar} onChange={(e) => set('escalar', e.target.value)} /></div>
+
+            <div className="form-field"><label>¿a qué número llega ese aviso?</label>
+              <input type="text" value={f.destino} placeholder="573001234567"
+                     onChange={(e) => set('destino', e.target.value)} />
+              {f.destino.trim() && !TF_DESTINO.valido(f.destino) && (
+                <p className="adm-hint" style={{ color: '#c1272d' }}>
+                  {TF_DESTINO.porQueNoSirve(f.destino)}
+                </p>
+              )}
+            </div>
+            <p className="adm-hint">
+              Cuando el agente no sabe algo, deja de responder — eso funciona siempre.
+              Lo que falla es el aviso: si aquí va un nombre en vez de un número,
+              <b> no le llega a nadie</b> y la persona queda esperando en silencio.
+              Eso es peor que un bot que no contesta.
+            </p>
 
             <div className="form-field"><label>lo que nunca debe hacer — uno por línea</label>
               <textarea rows="3" value={f.nunca} placeholder={'Dar consejo médico.\nPrometer resultados.'}

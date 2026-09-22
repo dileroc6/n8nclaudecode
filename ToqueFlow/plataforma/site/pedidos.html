@@ -58,6 +58,25 @@
   .btn { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:9px; padding:8px 15px; font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
   .btn:hover { border-color:var(--ink); }
   .btn.p { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .btn.si { color:var(--green); border-color:#bfe3d2; }
+  .btn.si:hover { background:#f2fbf7; border-color:var(--green); }
+  .btn.no { color:var(--red); border-color:#f2cdcf; }
+  .btn.no:hover { background:#fdf4f4; border-color:var(--red); }
+
+  /* Recargas por aprobar */
+  .rec-sec { display:none; flex-direction:column; gap:12px; }
+  .rec-sec.hay { display:flex; }
+  .rec-sec h2 { font-size:16px; margin:0 0 3px; }
+  .rec-sec .porque { font-size:13px; color:var(--mute); margin:0; line-height:1.5; max-width:62ch; }
+  .rec { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--orange);
+         border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; }
+  .rec-top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .rec-quien { font-weight:600; }
+  .rec-tel { font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--mute); }
+  .rec-cuanto { margin-left:auto; font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .rec-saldo { font-size:12.5px; color:var(--mute); }
+  .rec-nota { width:100%; padding:8px 11px; border:1px solid var(--line); border-radius:9px;
+              font-family:inherit; font-size:13.5px; color:var(--ink); }
   .btn.d { color:var(--red); }
   .btn:disabled { opacity:.5; cursor:default; }
 
@@ -89,6 +108,17 @@
     <div class="tile"><div class="n" id="t-confirmados">—</div><div class="l">confirmados</div></div>
     <div class="tile"><div class="n" id="t-mes">—</div><div class="l">vendido este mes</div></div>
   </div>
+
+  <section class="rec-sec" id="rec-sec">
+    <div>
+      <h2>Recargas por aprobar</h2>
+      <p class="porque">
+        El agente le dijo a la persona que alguien del negocio lo revisa y le confirma.
+        Nada se suma al saldo hasta que tú digas que sí.
+      </p>
+    </div>
+    <div class="lista" id="rec-lista"></div>
+  </section>
 
   <div class="views" id="views"></div>
 
@@ -130,6 +160,78 @@
     m.className = 'msg show ' + t;
     m.textContent = texto;
     if (t === 'ok') setTimeout(() => { m.className = 'msg'; }, 4000);
+  }
+
+  // ── Recargas ──────────────────────────────────────────────────────────────
+  // Se lee de la vista `saldo_pendientes`, que ya junta la solicitud con quién
+  // la pidió y cuánto tiene hoy. Ese «cuánto tiene hoy» importa: aprobar una
+  // recarga sin ver el saldo actual es como se duplica una que ya se había
+  // aprobado por WhatsApp.
+  async function cargarRecargas() {
+    const { data, error } = await sb.from('saldo_pendientes').select('*').order('created_at');
+    const sec = $('rec-sec');
+    const cont = $('rec-lista');
+    if (error) {
+      // Si el cliente no tiene el pin, la vista no le devuelve nada y la
+      // sección se queda escondida. No es un error que haya que enseñarle.
+      sec.classList.remove('hay');
+      return;
+    }
+    const filas = data || [];
+    sec.classList.toggle('hay', filas.length > 0);
+    if (!filas.length) return;
+
+    cont.innerHTML = filas.map((s) => {
+      const esMatricula = s.tipo === 'matricula';
+      return '<div class="rec" data-id="' + esc(s.id) + '">' +
+        '<div class="rec-top">' +
+          '<span class="chip esp">' + (esMatricula ? 'matrícula' : 'recarga') + '</span>' +
+          '<span class="rec-quien">' + esc(s.persona || 'Sin nombre') + '</span>' +
+          '<span class="rec-tel">' + esc(s.telefono || '') + '</span>' +
+          '<span class="rec-cuanto">+' + s.unidades + '</span>' +
+        '</div>' +
+        '<div class="rec-saldo">' +
+          'Hoy tiene <b>' + s.saldo_actual + '</b>' +
+          (s.que_compro ? ' · pidió: ' + esc(s.que_compro) : '') +
+          (s.vence ? ' · vence ' + esc(String(s.vence).slice(0, 10)) : '') +
+          ' · ' + cuando(s.created_at) +
+        '</div>' +
+        // Lo que dijo la persona, tal cual. Quien aprueba decide con esto, no
+        // con el número: «dice que consignó ayer al Nequi» pesa más que «+10».
+        (s.dicho ? '<div class="dicho">«' + esc(s.dicho) + '»</div>' : '') +
+        '<input class="rec-nota" type="text" placeholder="nota (opcional) — queda guardada con la decisión" />' +
+        '<div class="acciones">' +
+          '<button class="btn si" data-rec="1">Aprobar</button>' +
+          '<button class="btn no" data-rec="0">Rechazar</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    for (const b of cont.querySelectorAll('[data-rec]')) {
+      b.onclick = async () => {
+        const caja = b.closest('.rec');
+        const nota = caja.querySelector('.rec-nota').value.trim();
+        const aprobar = b.dataset.rec === '1';
+        // Rechazar sin decir por qué deja a la persona sin respuesta y al
+        // negocio sin memoria de por qué lo hizo.
+        if (!aprobar && !nota) {
+          aviso('error', 'Escribe por qué la rechazas: esa nota es lo único que queda de la decisión.');
+          caja.querySelector('.rec-nota').focus();
+          return;
+        }
+        for (const x of caja.querySelectorAll('button')) x.disabled = true;
+        const { data: r, error: e } = await sb.rpc('tf_saldo_resolver', {
+          p_solicitud: caja.dataset.id, p_aprobar: aprobar, p_nota: nota || null,
+        });
+        if (e || (r && r.ok === false)) {
+          aviso('error', 'No se pudo: ' + (e ? e.message : r.motivo));
+          for (const x of caja.querySelectorAll('button')) x.disabled = false;
+          return;
+        }
+        aviso('ok', aprobar ? 'Aprobada. Ya quedó en su saldo.' : 'Rechazada.');
+        cargarRecargas();
+      };
+    }
   }
 
   async function cargar() {
@@ -299,7 +401,7 @@
     await cargar();
   }
 
-  await cargar();
+  await Promise.all([cargar(), cargarRecargas()]);
 })();
 </script>
 </body>

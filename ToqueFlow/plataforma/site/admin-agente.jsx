@@ -438,6 +438,17 @@ function AgenteModal({ company, config, onClose, onSaved }) {
       setErr('Para encenderlo hace falta la instancia de WhatsApp: es lo único que le dice al agente de qué empresa es cada mensaje.');
       return;
     }
+    // Un aviso que no llega a nadie es peor que no tener la regla: el agente se
+    // calla —eso funciona— y la persona queda esperando en silencio, sin que
+    // nadie se entere. Por eso esto no es una advertencia, es un freno.
+    const malo = f.reglas.find((x) => (x.si || '').trim() &&
+                                      x.accion === 'notificar_humano' &&
+                                      !TF_DESTINO.valido(x.destino));
+    if (malo) {
+      setErr('La regla «' + String(malo.si).slice(0, 40) + '» avisa a «' + (malo.destino || '(vacio)') +
+             '». ' + TF_DESTINO.porQueNoSirve(malo.destino));
+      return;
+    }
     setBusy(true); setErr('');
     const fila = {
       company_id: company.id,
@@ -532,7 +543,9 @@ function AgenteModal({ company, config, onClose, onSaved }) {
           columnas={[
             { k: 'si', ph: 'pide un descuento especial', ancho: 2 },
             { k: 'accion', tipo: 'select', opciones: AG_ACCIONES.map((a) => [a, a.replace(/_/g, ' ')]) },
-            { k: 'destino', ph: 'grupo de ventas · o una URL', ancho: 2 },
+            // El ejemplo IMPORTA: el anterior decía «grupo de ventas», que es
+            // justo lo que no sirve, y así quedó escrito en Bejauha.
+            { k: 'destino', ph: '573001234567 · o …@g.us · o https://…', ancho: 2 },
           ]}
           onChange={(v) => set('reglas', v)}
         />
