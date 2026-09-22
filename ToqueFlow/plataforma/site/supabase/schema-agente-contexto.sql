@@ -78,7 +78,16 @@ begin
 
   select coalesce(json_agg(json_build_object(
            'clave', c.clave, 'nombre', c.nombre,
-           'descripcion', coalesce(c.beneficio, c.descripcion),
+           -- Lo que el MODELO lee para decidir CUANDO llamar una herramienta.
+           -- `instruccion` primero, y no es un detalle: `beneficio` es texto de
+           -- VENTA —«deja de contestar dejame reviso veinte veces al dia»— y eso
+           -- no le dice al modelo cuando llamar nada. `instruccion` empieza por
+           -- el cuando: «USALA EN CUANTO LA PERSONA ACEPTE COMPRAR».
+           --
+           -- Vivio en `schema-agente-lee-instruccion.sql`, que parcheaba esta
+           -- funcion desde fuera. Reaplicar ESTE archivo lo borraba en silencio
+           -- y el agente volvia a leer el texto de venta. Paso el 17-sep.
+           'descripcion', coalesce(nullif(btrim(c.instruccion), ''), c.beneficio, c.descripcion),
            'workflow', c.workflow,
            -- Qué datos necesita. El workflow se lo pasa a Claude tal cual.
            'entrada', coalesce(c.entrada, '{}'::jsonb)
@@ -124,7 +133,21 @@ begin
       'captura', json_build_object('campos', v_campos),
       'enrutamiento', v_rt.enrutamiento, 'limites', v_rt.limites, 'agenda', v_rt.agenda,
       'conocimiento', v_rt.conocimiento, 'conocimiento_at', v_rt.conocimiento_at,
-      'herramientas', v_tools
+      'herramientas', v_tools,
+      -- Como cobra este negocio. Va AQUI y no dentro de la respuesta de una
+      -- herramienta porque la gente pregunta «a que cuenta le consigno» ANTES
+      -- de que exista un pedido, y el agente tiene que poder contestar.
+      --
+      -- Lo encontro una conversacion de prueba: el agente decia «confirmame y
+      -- te paso la cuenta», y no estaba siendo evasivo — NO TENIA la cuenta.
+      -- Los datos llegaban dentro de `crear-pedido`, asi que solo los conocia
+      -- despues de armar un pedido.
+      --
+      -- Esto vivio un tiempo en `schema-agente-cobro-en-contexto.sql`, que
+      -- parcheaba esta funcion desde fuera. Reaplicar ESTE archivo borraba el
+      -- parche en silencio y el agente se quedaba sin saber como le pagan. Paso
+      -- el 17-sep. Por eso vive aqui, que es el unico archivo que la define.
+      'cobro', public.tf_cobro_de(v_rt.company_id)
     ),
     'contacto', case when v_contact.id is null then null else json_build_object(
       'id', v_contact.id, 'nombre', v_contact.full_name,
@@ -140,6 +163,14 @@ begin
       ) end
     ) end,
     'asignado_humano', coalesce((v_contact.metadata->>'asignado_humano')::boolean, false),
+    -- Lo que el agente averiguo antes en esta misma conversacion, con la edad
+    -- de cada dato. Solo puede pedir UNA herramienta por mensaje, asi que sin
+    -- esto vuelve a preguntar lo que ya sabe — o peor, lo repite desactualizado.
+    --
+    -- Vivio en `schema-agente-contexto-averiguado.sql`, parcheando desde fuera.
+    -- Se borro el 17-sep al reaplicar este archivo, y el agente perdio la
+    -- memoria sin que nadie se enterara.
+    'averiguado', public.tf_agente_averiguado(v_rt.company_id, p_telefono, coalesce(p_test, false)),
     'historial', v_hist
   );
 end;

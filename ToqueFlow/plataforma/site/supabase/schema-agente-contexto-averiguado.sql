@@ -18,30 +18,19 @@
 --
 -- Idempotente. Requiere schema-agente-averiguado.sql.
 -- ============================================================================
-do $$
-declare
-  v_def   text;
-  v_nuevo text;
-  v_veces int;
-  v_ancla text := '''historial'', v_hist';
-begin
-  select pg_get_functiondef(oid) into v_def from pg_proc where proname = 'tf_agente_contexto' limit 1;
+-- ⚠ ESTE ARCHIVO YA NO HACE NADA. Se deja por lo que explica arriba.
+--
+-- Parcheaba `tf_agente_contexto` desde fuera para meterle lo que el agente averiguo.
+-- El parche estaba bien hecho —contaba las veces que aparecia el ancla y se
+-- paraba si no era exactamente una— pero seguia siendo un SEGUNDO ESCRITOR.
+--
+-- El 17-sep se reaplico `schema-agente-contexto.sql` para arreglar la zona
+-- horaria, y eso borro TRES parches a la vez, en silencio: este, el del
+-- cobro, y el de la instruccion. Ninguno fallo; simplemente dejaron de estar.
+--
+-- Vive ahora dentro de `schema-agente-contexto.sql`, que es el unico archivo
+-- que define esa funcion. Lo vigila `el-agente-sabe-como-le-pagan.cjs`.
 
-  if position('tf_agente_averiguado(' in v_def) > 0 then
-    raise notice 'ya entregaba lo averiguado'; return;
-  end if;
-
-  -- Cuántas veces aparece el ancla. Si no es exactamente una, se para: un
-  -- reemplazo que pega en dos sitios rompe la función para TODOS los clientes.
-  v_veces := (length(v_def) - length(replace(v_def, v_ancla, ''))) / length(v_ancla);
-  if v_veces <> 1 then
-    raise exception 'el ancla aparece % veces, tiene que aparecer 1 — revisar a mano', v_veces;
-  end if;
-
-  v_nuevo := replace(v_def, v_ancla,
-    '''averiguado'', public.tf_agente_averiguado(v_rt.company_id, p_telefono, coalesce(p_test, false)),' ||
-    chr(10) || '    ' || v_ancla);
-
-  execute v_nuevo;
-  raise notice 'el contexto ya entrega lo averiguado';
+do $$ begin
+  raise notice 'schema-agente-contexto-averiguado.sql: ya no hace nada, vive en schema-agente-contexto.sql';
 end $$;

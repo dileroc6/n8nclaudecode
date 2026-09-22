@@ -67,53 +67,15 @@ create policy tienda_cobro_admin on public.tienda_cobro
 
 
 -- ── Qué se le puede ofrecer a esta persona ──────────────────────────────────
-create or replace function public.tf_cobro_de(p_company uuid)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_c public.tienda_cobro%rowtype;
-  v_m text[] := '{}';
-begin
-  select * into v_c from public.tienda_cobro where company_id = p_company;
-
-  if not found or not (v_c.link or v_c.transferencia or v_c.efectivo) then
-    -- Sin configurar no se inventa nada. El agente tiene que poder decir «le
-    -- confirmo como puede pagar» en vez de sacarse una cuenta de la manga.
-    return json_build_object(
-      'configurado', false,
-      'metodos', '[]'::json,
-      'que_decir', 'Este negocio todavia no tiene configurada la forma de cobro. NO inventes una cuenta ni un link: dile que le confirmas como puede pagar y escala.');
-  end if;
-
-  if v_c.link          then v_m := v_m || 'link'::text; end if;
-  if v_c.transferencia then v_m := v_m || 'transferencia'::text; end if;
-  if v_c.efectivo      then v_m := v_m || 'efectivo'::text; end if;
-
-  return json_build_object(
-    'configurado', true,
-    'metodos', to_json(v_m),
-    -- Solo se manda si la transferencia esta prendida: no hay razon para que
-    -- los datos de la cuenta anden circulando cuando no se van a usar.
-    'datos_cuenta', case when v_c.transferencia then v_c.datos_cuenta else null end,
-    'que_decir', case
-      when array_length(v_m, 1) = 1 and v_m[1] = 'transferencia'
-        then 'Solo recibe transferencia. Dicta los datos de la cuenta TAL CUAL vienen, sin resumir ni reordenar. NO ofrezcas link de pago: no existe.'
-      when array_length(v_m, 1) = 1 and v_m[1] = 'link'
-        then 'Solo cobra con link de pago. NO ofrezcas transferencia ni des datos de cuenta.'
-      when array_length(v_m, 1) = 1 and v_m[1] = 'efectivo'
-        then 'Solo recibe efectivo, contra entrega. NO ofrezcas link ni transferencia.'
-      else 'Ofrece las formas que estan prendidas y deja que la persona escoja. Si escoge transferencia, dicta los datos TAL CUAL.'
-    end
-  );
-end;
-$fn$;
-
-comment on function public.tf_cobro_de(uuid) is
-  'Que formas de cobro puede ofrecer el agente de esta empresa, y que NO puede ofrecer. Sin configurar devuelve configurado:false para que no invente.';
+-- tf_cobro_de NO se define aqui: vive en schema-cobro-unificado.sql.
+--
+-- Tenia que mirar dos sitios —lo que prende la consola y lo que configura el
+-- cliente en su portal— y dejarla aqui habria sido tener la misma funcion en
+-- dos archivos. Reaplicar el que se quedara viejo la devuelve a una version
+-- anterior sin que nadie se entere: es lo que ya paso con tf_tool_agendar_cita
+-- y con el cobro dentro del contexto del agente, los dos el mismo dia.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` vigila.
 
 
 -- ── Al armar el pedido, decirle al agente cómo se cobra aquí ────────────────

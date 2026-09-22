@@ -13,19 +13,19 @@
 -- Ahora lee `instruccion` si existe, y si no cae a lo de antes.
 -- Idempotente.
 -- ============================================================================
-do $$
-declare v_def text; v_nuevo text;
-begin
-  select pg_get_functiondef(oid) into v_def from pg_proc where proname='tf_agente_contexto' limit 1;
-  if position('c.instruccion' in v_def) > 0 then
-    raise notice 'ya entregaba la instruccion'; return;
-  end if;
-  v_nuevo := replace(v_def,
-    '''descripcion'', coalesce(c.beneficio, c.descripcion)',
-    '''descripcion'', coalesce(nullif(btrim(c.instruccion), ''''), c.beneficio, c.descripcion)');
-  if v_nuevo = v_def then
-    raise exception 'no encontre donde cambiar lo que lee el modelo';
-  end if;
-  execute v_nuevo;
-  raise notice 'el modelo ahora lee la instruccion';
+-- ⚠ ESTE ARCHIVO YA NO HACE NADA. Se deja por lo que explica arriba.
+--
+-- Parcheaba `tf_agente_contexto` desde fuera para meterle que el modelo lea la instruccion.
+-- El parche estaba bien hecho —contaba las veces que aparecia el ancla y se
+-- paraba si no era exactamente una— pero seguia siendo un SEGUNDO ESCRITOR.
+--
+-- El 17-sep se reaplico `schema-agente-contexto.sql` para arreglar la zona
+-- horaria, y eso borro TRES parches a la vez, en silencio: este, el del
+-- cobro, y el de la instruccion. Ninguno fallo; simplemente dejaron de estar.
+--
+-- Vive ahora dentro de `schema-agente-contexto.sql`, que es el unico archivo
+-- que define esa funcion. Lo vigila `el-agente-sabe-como-le-pagan.cjs`.
+
+do $$ begin
+  raise notice 'schema-agente-lee-instruccion.sql: ya no hace nada, vive en schema-agente-contexto.sql';
 end $$;

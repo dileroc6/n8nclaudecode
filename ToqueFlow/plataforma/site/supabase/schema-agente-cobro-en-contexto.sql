@@ -22,42 +22,20 @@
 -- Idempotente.
 -- ============================================================================
 
-do $$
-declare
-  v_def text;
-  v_nuevo text;
-begin
-  select pg_get_functiondef(oid) into v_def
-  from pg_proc where proname = 'tf_agente_contexto' limit 1;
+-- ⚠ ESTE ARCHIVO YA NO HACE NADA. Se deja por lo que explica arriba.
+--
+-- Parcheaba `tf_agente_contexto` desde fuera para meterle el cobro. El parche
+-- estaba bien pensado —no reescribia la funcion entera, y fallaba ruidoso si
+-- no encontraba donde meterlo— pero seguia siendo un SEGUNDO ESCRITOR.
+--
+-- El 17-sep se reaplico `schema-agente-contexto.sql` para arreglar la zona
+-- horaria, y eso borro el parche EN SILENCIO. El agente estuvo desde entonces
+-- sin saber como le pagan a su negocio — justo el hueco que este archivo
+-- existia para tapar.
+--
+-- El cobro vive ahora dentro de `schema-agente-contexto.sql`, que es el unico
+-- archivo que define esa funcion.
 
-  if v_def is null then
-    raise notice 'tf_agente_contexto no existe; nada que hacer';
-    return;
-  end if;
-
-  if position('''cobro'', public.tf_cobro_de' in v_def) > 0 then
-    raise notice 'el cobro ya estaba en el contexto';
-    return;
-  end if;
-
-  -- Se agrega una clave al objeto `config`, sin tocar nada más. Reescribir la
-  -- funcion entera aqui significaria mantener dos copias de una funcion larga,
-  -- y la que se quedara vieja rompe algo en silencio.
-  v_nuevo := replace(
-    v_def,
-    '''herramientas'', v_tools' || chr(10) || '    )',
-    '''herramientas'', v_tools,' || chr(10) ||
-    '      -- Como cobra este negocio. Va aqui y no dentro de una herramienta' || chr(10) ||
-    '      -- porque la gente pregunta «a que cuenta le consigno» ANTES de que' || chr(10) ||
-    '      -- exista un pedido, y el agente tiene que poder contestar.' || chr(10) ||
-    '      ''cobro'', public.tf_cobro_de(v_rt.company_id)' || chr(10) ||
-    '    )');
-
-  if v_nuevo = v_def then
-    raise exception 'no encontre donde meter el cobro en tf_agente_contexto — revisar a mano';
-  end if;
-
-  execute v_nuevo;
-  raise notice 'cobro agregado al contexto del agente';
-end
-$$;
+do $$ begin
+  raise notice 'schema-agente-cobro-en-contexto.sql: ya no hace nada, el cobro vive en schema-agente-contexto.sql';
+end $$;
