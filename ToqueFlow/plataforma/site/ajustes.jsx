@@ -336,6 +336,9 @@ function AjustesApp() {
     .some((k) => tiene.has(k));
   const conRescata = !!tiene && ['paquete-rescata', 'huecos-agenda', 'seguimiento-propuestas']
     .some((k) => tiene.has(k));
+  // Quien cobra: la tienda, o cualquiera que tenga la pieza de confirmar pagos.
+  const conCobro = !!tiene && ['paquete-tienda', 'confirmar-pago', 'crear-pedido']
+    .some((k) => tiene.has(k));
 
   const [tog, setTog] = React.useState({
     wa: true, mail: true, resumen: true, alertas: true, marketing: false, twofa: true,
@@ -373,6 +376,8 @@ function AjustesApp() {
         {companyId && (
           <CuandoAtiendes companyId={companyId} tieneAgenda={conAgenda} tieneRescata={conRescata} />
         )}
+
+        {companyId && <ComoTePagan companyId={companyId} tieneTienda={conCobro} />}
 
         <QueSabe />
 

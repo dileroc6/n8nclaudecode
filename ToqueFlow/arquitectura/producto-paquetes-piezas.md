@@ -174,10 +174,34 @@ Para quien tiene tienda en línea.
 
 | | Estado |
 |---|---|
-| Estado del pedido | ⬜ |
-| Confirmar pago | ⬜ |
+| Estado del pedido | ✅ |
+| Buscar en el catálogo | ✅ |
+| Crear el pedido | ✅ |
+| Confirmar pago | 🟡 *anota, no verifica* |
+| **Cargar el catálogo desde el portal** | ✅ *(22-sep)* |
+| **Elegir su pasarela de pagos** | ✅ *(22-sep)* |
 
 **Lo que vende:** dejar de contestar «déjame reviso» veinte veces al día por el mismo pedido.
+
+**Por qué sigue en amarillo, y es honesto:** `confirmar-pago` **anota** que la persona dice
+que pagó, con la referencia que dicte, y se lo pone a alguien del negocio en el portal. No
+lo comprueba contra el banco. Eso no es una pieza a medio hacer: es exactamente lo que
+hace, y así se vende.
+
+**La pasarela es de cada negocio, no de la plataforma.** Hasta el 22-sep había una sola
+—las llaves de ePayco de Bejauha como secretos globales—, que funciona con un cliente y se
+rompe con dos: el segundo que cobrara estaría cobrando a la cuenta del primero. Ahora cada
+uno elige la suya desde Ajustes, con las más usadas sugeridas y **transferencia/Nequi de
+primera**, que es la que más se usa y no cuesta comisión.
+
+**Las llaves no salen del servidor.** Se guardan en un esquema que la API no expone, y el
+portal **nunca las recibe de vuelta** — ve los últimos cuatro caracteres para reconocer
+cuál puso. Una llave privada que el navegador puede pedir viaja en cada carga de la
+pantalla y sale en cualquier captura que el cliente mande pidiendo ayuda.
+
+**Lo que falta para cobrar de verdad** —crear el cobro contra cada pasarela y conciliar su
+respuesta— es trabajo por pasarela y necesita credenciales reales para probarse. La
+configuración ya está; el cobro es la decisión de con cuál se empieza.
 
 **La única excepción a «los pines no cobran implementación»:** la integración es **por
 plataforma, no por cliente**. La primera tienda WooCommerce cuesta construirla; la segunda
