@@ -140,9 +140,11 @@ Para quien vende por paquetes, clases, sesiones o bonos.
 
 | | Estado |
 |---|---|
-| Matricular a un cliente | ⬜ |
-| Descontar del saldo | ⬜ |
-| Recargar el saldo | ⬜ |
+| Matricular a un cliente | ✅ |
+| Descontar del saldo | ✅ |
+| Recargar el saldo | ✅ |
+| **Aprobar las recargas desde el portal** | ✅ *(22-sep)* |
+| **Escribirle a quien se le están acabando** | ✅ *(22-sep)* |
 
 **Lo que vende:** el negocio deja de llevar el saldo en una hoja de cálculo, y nadie se
 queda sin saber cuántas clases le quedan.
@@ -150,6 +152,21 @@ queda sin saber cuántas clases le quedan.
 **La regla que no se negocia:** *matricular* y *recargar* **siempre los confirma una
 persona**. El cliente final los pide por WhatsApp, el agente registra la solicitud, y al
 dueño le llega el aviso para aprobar. Un agente que recarga solo es un agente que regala.
+
+**Completo y liberado desde el 22-sep.** Hasta ese día el pin hacía su trabajo por dentro
+y se quedaba a mitad de camino dos veces. Una: la regla de arriba decía que una persona
+confirma —y el agente se lo promete al cliente final— pero **no había ninguna pantalla
+donde confirmar**. Dos: el negocio veía en su base de contactos a quién se le estaban
+acabando las clases y **no le podía escribir**, porque la segmentación de campañas no
+sabía nada de saldos. El dato estaba; la acción no.
+
+**Lo que más vende, ahora que se puede armar:** «te queda una clase, ¿te la recargo?» y
+«tu paquete se vence en una semana y aún te quedan clases». Las dos salen de un botón.
+
+**Y a quién NO se le escribe:** a quien nunca compró un paquete. Decirle «te queda una
+clase» a alguien que nunca tuvo ninguna es el mensaje que hace que un negocio apague las
+campañas para siempre. Lo ya vencido tampoco entra: eso no es un aviso, es un reclamo, y
+es otra conversación.
 
 ### 🛒 Toque Tienda
 

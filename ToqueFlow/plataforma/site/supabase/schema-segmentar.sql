@@ -28,6 +28,13 @@
 --                   los huecos de mañana»
 --   no_asistio      los que dejaron plantado al negocio. Con ventana, porque
 --                   escribirle a quien faltó hace dos años no es seguimiento
+--   saldo           a quién se le están acabando las clases, las sesiones o los
+--                   bonos. Es la campaña más obvia de un estudio y no se podía
+--                   armar: el dato estaba en `contact_saldo` y la segmentación
+--                   no lo miraba
+--   saldo_vence     a quién se le vence el paquete pronto. Un paquete vencido
+--                   sin avisar es una recompra que no ocurre y un cliente que
+--                   se va pensando que lo estafaron
 --
 -- LO QUE NO SE NEGOCIA
 --
@@ -87,7 +94,9 @@ begin
     or v_f ? 'ultimo_contacto'
     or v_f ? 'campo_fecha'
     or coalesce((v_f->>'sin_cita_futura')::boolean, false)
-    or (v_f ? 'no_asistio' and v_f->'no_asistio' <> 'false'::jsonb);
+    or (v_f ? 'no_asistio' and v_f->'no_asistio' <> 'false'::jsonb)
+    or v_f ? 'saldo'
+    or v_f ? 'saldo_vence';
 
   if not v_hay then
     return;   -- nadie, a propósito
@@ -167,6 +176,34 @@ begin
                  or not (v_f->'no_asistio' ? 'hace_menos_de_dias')
                  or a.inicio >= now() - make_interval(
                       days => (v_f->'no_asistio'->>'hace_menos_de_dias')::int))))
+
+    -- ── Saldo ──────────────────────────────────────────────────────────────
+    -- `{ "hasta": 2 }` → le quedan 2 o menos. `{ "hasta": 0 }` → se le acabó.
+    --
+    -- Quien NO tiene fila de saldo no entra: nunca compró un paquete, así que
+    -- «le queda cero» sería mentira. Decirle «te queda una clase» a alguien que
+    -- nunca compró es la clase de mensaje que hace que el negocio apague las
+    -- campañas para siempre.
+    and (not (v_f ? 'saldo') or exists (
+          select 1 from public.contact_saldo s
+          where s.contact_id = c.id
+            and (not (v_f->'saldo' ? 'hasta')
+                 or s.unidades <= (v_f->'saldo'->>'hasta')::int)
+            and (not (v_f->'saldo' ? 'desde')
+                 or s.unidades >= (v_f->'saldo'->>'desde')::int)))
+
+    -- A quién se le vence el paquete pronto. Un paquete que se vence sin aviso
+    -- es una recompra que no ocurre — y un cliente que se va creyendo que le
+    -- quitaron lo que había pagado.
+    and (not (v_f ? 'saldo_vence') or exists (
+          select 1 from public.contact_saldo s
+          where s.contact_id = c.id
+            and s.vence is not null
+            -- Lo ya vencido NO entra: eso no es un aviso, es un reclamo. Para
+            -- eso está `vencidos_hace_dias`, que es otra conversación.
+            and s.vence >= (timezone(public.tf_zona(p_company), now()))::date
+            and s.vence <= (timezone(public.tf_zona(p_company), now()))::date
+                           + make_interval(days => greatest(coalesce((v_f->'saldo_vence'->>'en_dias')::int, 15), 1))))
 
     -- ── Las bajas, siempre ─────────────────────────────────────────────────
     -- Fuera del filtro a propósito: no es una opción que se pueda desmarcar.

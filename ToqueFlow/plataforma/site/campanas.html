@@ -137,6 +137,16 @@
               <input type="number" id="f-falto-dias" value="60" min="1" max="3650"
                      style="width:64px;padding:2px 6px;font-family:inherit;" /> días</span></label>
 
+          <label class="check-item"><input type="checkbox" id="f-saldo" />
+            <span>Le quedan
+              <input type="number" id="f-saldo-hasta" value="2" min="0" max="999"
+                     style="width:56px;padding:2px 6px;font-family:inherit;" /> o menos</span></label>
+
+          <label class="check-item"><input type="checkbox" id="f-vence" />
+            <span>Se le vence el paquete en menos de
+              <input type="number" id="f-vence-dias" value="15" min="1" max="365"
+                     style="width:56px;padding:2px 6px;font-family:inherit;" /> días</span></label>
+
           <label class="check-item"><input type="checkbox" id="f-callado" />
             <span>Lleva sin hablar con el negocio más de
               <input type="number" id="f-callado-dias" value="90" min="1" max="3650"
@@ -318,6 +328,7 @@
   // Cualquier cambio en los filtros de más recuenta, igual que las casillas de
   // arriba. Un filtro que no mueve el número de destinatarios parece roto.
   ['f-sin-cita','f-falto','f-falto-dias','f-callado','f-callado-dias',
+   'f-saldo','f-saldo-hasta','f-vence','f-vence-dias',
    'f-campo','f-campo-valor','f-fecha','f-fecha-dias'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(el.type === 'number' || el.type === 'text' ? 'input' : 'change', updateCount);
@@ -350,6 +361,24 @@
       filtros: () => ({ no_asistio: { hace_menos_de_dias: 90 }, sin_cita_futura: true }),
       mensaje: 'Hola {nombre}, no pudimos verte la última vez y queremos dejarte ' +
                'otro espacio. ¿Qué día te queda bien?',
+    },
+    // La campaña más obvia de un estudio o un gimnasio, y hasta hoy no se podía
+    // armar: el saldo estaba a la vista en la base de contactos y la
+    // segmentación no lo miraba.
+    seacaban: {
+      titulo: 'A los que se les están acabando',
+      filtros: () => ({ saldo: { hasta: 2 } }),
+      // Sin decir de QUÉ le quedan pocas: unas son clases, otras sesiones,
+      // bonos o recargas. La plataforma pone la forma; las palabras las pone el
+      // negocio al editar el borrador.
+      mensaje: 'Hola {nombre}, ya casi se te acaba el paquete. ' +
+               '¿Te lo recargamos para que no pierdas el ritmo?',
+    },
+    vencen: {
+      titulo: 'Paquetes que se vencen pronto',
+      filtros: () => ({ saldo_vence: { en_dias: 15 } }),
+      mensaje: 'Hola {nombre}, tu paquete se vence pronto y todavía te queda por usar. ' +
+               '¿Quieres que te ayudemos a aprovecharlo?',
     },
     propuestas: {
       // El campo lo eligió el negocio: una clínica lo llama «presupuesto», un
@@ -431,7 +460,8 @@
   // puede borrarle los filtros sin decir nada.
   let filtrosAjenos = {};
   const MIOS = ['status','lead_stage','service_type','campos','sin_campo',
-                'creado','ultimo_contacto','campo_fecha','sin_cita_futura','no_asistio'];
+                'creado','ultimo_contacto','campo_fecha','sin_cita_futura','no_asistio',
+                'saldo','saldo_vence'];
 
   function buildFilters() {
     const f = Object.assign({}, filtrosAjenos);
@@ -445,6 +475,13 @@
     if ($v('f-sin-cita').checked) f.sin_cita_futura = true;
     if ($v('f-falto').checked)    f.no_asistio = { hace_menos_de_dias: num('f-falto-dias', 60) };
     if ($v('f-callado').checked)  f.ultimo_contacto = { hace_mas_de_dias: num('f-callado-dias', 90) };
+    // El 0 es válido y significa «se le acabó», así que aquí no sirve el
+    // `Math.max(1, …)` que usan los demás.
+    if ($v('f-saldo').checked) {
+      const h = parseInt($v('f-saldo-hasta').value, 10);
+      f.saldo = { hasta: Number.isFinite(h) && h >= 0 ? h : 2 };
+    }
+    if ($v('f-vence').checked)  f.saldo_vence = { en_dias: num('f-vence-dias', 15) };
 
     const campo = $v('f-campo').value;
     const valor = $v('f-campo-valor').value.trim();
@@ -685,6 +722,14 @@
     marca('f-falto', fal && fal !== false);
     if (fal && typeof fal === 'object' && fal.hace_menos_de_dias) pon('f-falto-dias', fal.hace_menos_de_dias);
 
+    const sa = F.saldo;
+    marca('f-saldo', sa && sa.hasta != null);
+    if (sa && sa.hasta != null) pon('f-saldo-hasta', sa.hasta);
+
+    const sv = F.saldo_vence;
+    marca('f-vence', sv && sv.en_dias);
+    if (sv && sv.en_dias) pon('f-vence-dias', sv.en_dias);
+
     const uc = F.ultimo_contacto;
     marca('f-callado', uc && uc.hace_mas_de_dias);
     if (uc && uc.hace_mas_de_dias) pon('f-callado-dias', uc.hace_mas_de_dias);
@@ -705,7 +750,7 @@
     // Si trae algo de más, que se vea: un filtro activo escondido detrás de un
     // «Más filtros» cerrado es como se manda una campaña a quien no se quería.
     const hayDeMas = F.sin_cita_futura || F.no_asistio || F.ultimo_contacto ||
-                     F.campo_fecha || claves.length;
+                     F.campo_fecha || F.saldo || F.saldo_vence || claves.length;
     if (hayDeMas && $v('f-mas')) $v('f-mas').open = true;
   }
 

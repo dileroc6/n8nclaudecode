@@ -95,6 +95,12 @@ const leeLaBase = (clave) =>
       values ($1,$2,'X', now() + interval '3 days', now() + interval '3 days' + interval '1 hour','confirmada')`,
       [emp, otro]);
 
+    // Saldos: al elegido se le acaba y se le vence pronto; al otro le sobra.
+    await c.query(`insert into contact_saldo (contact_id, company_id, unidades, vence)
+      values ($1,$2,1,(now() + interval '5 days')::date)`, [elegido, emp]);
+    await c.query(`insert into contact_saldo (contact_id, company_id, unidades, vence)
+      values ($1,$2,20,(now() + interval '200 days')::date)`, [otro, emp]);
+
     const quienes = async (f) => (await c.query(
       "select full_name from tf_campana_destinatarios($1,$2::jsonb,null)",
       [emp, JSON.stringify(f)])).rows.map((x) => x.full_name);
@@ -109,6 +115,10 @@ const leeLaBase = (clave) =>
       ultimo_contacto: { ultimo_contacto: { hace_mas_de_dias: 90 } },
       campos:          { campos: { presupuesto_estado: ["enviado"] } },
       campo_fecha:     { campo_fecha: { clave: "presupuesto_fecha", hace_mas_de_dias: 7 } },
+      // El 0 vale y significa «se le acabó»; por eso el filtro no puede tratar
+      // el cero como «sin valor».
+      saldo:           { saldo: { hasta: 2 } },
+      saldo_vence:     { saldo_vence: { en_dias: 15 } },
     };
 
     console.log("\nCada filtro, armado como lo arma la pantalla:");
