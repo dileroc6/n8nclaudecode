@@ -267,10 +267,39 @@ tiene nada pendiente cuando nadie ha mirado.
 | 3 | **No se abre placa base nueva hasta tener 5 clientes en Toque Atiende** | Cinco productos al 60% en vez de uno excelente |
 | 4 | **Ferney llega con una configuración armada.** El cliente no escoge de la gama | Que el cliente diseñe su propio producto: sub-compra y se va, o sobre-compra y reclama |
 | 5 | **Si piden algo que no existe, no se dice que no** — se anota | El segundo que lo pida ya lo paga hecho |
+| 6 | **Una pieza no está lista hasta que el NEGOCIO puede hacer su parte** — no basta con que la herramienta funcione | Vender lo que no se puede operar. Pasó con tres pines a la vez |
 
 Sobre la 4, que fue lo único en lo que hubo discrepancia y quedó decidido así: la gama se
 muestra **después** de la recomendación, como lo que existe además. El menú es para que el
 cliente sepa que hay más, no para que arme su propio producto.
+
+### Sobre la 6, que se aprendió caro el 17 y el 22 de septiembre
+
+En una semana aparecieron **tres pines vendiéndose que no se podían operar**, y los tres
+del mismo modo: la herramienta funcionaba, las pruebas pasaban, el catálogo decía
+«liberado» — y el negocio no tenía dónde hacer lo suyo.
+
+| Pin | La herramienta hacía | Y el negocio no podía |
+|---|---|---|
+| **Toque Agenda** | ofrecer horas y agendar | decir a qué horas atiende |
+| **Toque Recargas** | dejar la recarga pedida | aprobarla — y el agente se lo prometía al cliente |
+| **Toque Tienda** | buscar en el catálogo | cargar el catálogo |
+
+Ninguno daba error. Un cliente nuevo los compraba, el alta le creaba la tarjeta, y todo
+quedaba esperando a que alguien entrara a la base a correr SQL. **Es la razón por la que
+«11 a 14 horas por cliente» no era un número real:** las horas que el plan dice que no se
+van, se iban ahí.
+
+Lo que falla es siempre lo mismo: se construye la pieza que el agente llama y se da por
+terminada, porque eso es lo que tiene prueba. La otra mitad —la pantalla donde una persona
+del negocio configura, aprueba o carga— no tiene a quién le duela hasta el día del
+go-live.
+
+**Antes de marcar una pieza como liberada, la pregunta es:** ¿puede un cliente nuevo
+usarla de punta a punta sin que nadie entre a la base? Si la respuesta es no, está a
+medias aunque la herramienta funcione. Y si la pieza le PROMETE algo al cliente final
+—«alguien del negocio lo revisa y te confirma»— entonces esa promesa es parte de la pieza,
+no algo aparte.
 
 ### Ejemplo de propuesta
 

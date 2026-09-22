@@ -14,6 +14,7 @@ Sigue la misma convención que las carpetas de cliente (`Bejauha/`, `Savia/`, `Z
 ```
 ToqueFlow/
 ├── TABLERO.md          ← estado vivo de las tareas del proyecto (empezar por aquí)
+├── bitacora/           ← qué se hizo cada día grande, qué se rompió y qué quedó abierto
 ├── TABLERO.html        ← el mismo tablero, para abrir en el navegador
 ├── estrategia/
 │   └── captacion-leads.md   ← cómo consigue clientes ToqueFlow
