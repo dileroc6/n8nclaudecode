@@ -129,15 +129,19 @@ const CAPTURA = { campos: [{ tipo: 'texto', clave: 'nombre', etiqueta: 'Su nombr
   const id = emp.id;
 
   // ── El agente ─────────────────────────────────────────────────────────────
+  // Nace APAGADO. Antes quedaba encendido y se quedaba asi para siempre: un
+  // agente activo permanente en produccion, puesto por un script de pruebas.
+  // Ya no hace falta — desde el 17-sep el sandbox responde con el agente
+  // apagado, que era justo el motivo por el que estaba prendido.
   // `herramientas` lleva la clave del PAQUETE, no las cuatro piezas: la base
   // lo expande sola. Así, el día que el paquete crezca, este agente lo hereda.
   await c.query(`insert into public.agent_config
       (company_id, whatsapp_instance, nombre, activo, identidad, captura,
        enrutamiento, limites, agenda, recordatorios, herramientas)
-    values ($1, $2, 'Mostrador de prueba', true, $3::jsonb, $4::jsonb, $5::jsonb,
+    values ($1, $2, 'Mostrador de prueba', false, $3::jsonb, $4::jsonb, $5::jsonb,
             $6::jsonb, '{}'::jsonb, '{}'::jsonb, $7)
     on conflict (whatsapp_instance) where whatsapp_instance is not null do update set
-      activo = true, identidad = excluded.identidad, captura = excluded.captura,
+      activo = false, identidad = excluded.identidad, captura = excluded.captura,
       enrutamiento = excluded.enrutamiento, limites = excluded.limites,
       herramientas = excluded.herramientas`,
     [id, INST, JSON.stringify(IDENTIDAD), JSON.stringify(CAPTURA),
