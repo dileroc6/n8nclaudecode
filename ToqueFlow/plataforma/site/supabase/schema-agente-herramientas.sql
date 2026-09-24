@@ -64,47 +64,16 @@ end $$;
 -- Lee de `contacts`, que es donde la plataforma ya guarda las clases restantes
 -- de los clientes de Bejauha. El company_id se deriva de la instancia, igual
 -- que en todo lo demás: la herramienta no acepta que le digan de qué empresa es.
-create or replace function public.tf_tool_consultar_saldo(
-  p_instance text,
-  p_telefono text
-)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_c       public.contacts%rowtype;
-begin
-  select company_id into v_company
-  from public.agent_config
-  where whatsapp_instance = p_instance;
-
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  select * into v_c
-  from public.contacts
-  where company_id = v_company and phone = p_telefono;
-
-  if not found then
-    -- Que la herramienta diga que no encontró a la persona es MEJOR que
-    -- devolver cero: cero suena a «se le acabaron» y es una respuesta falsa.
-    return json_build_object('ok', false, 'motivo', 'no encontre a esta persona en la base');
-  end if;
-
-  return json_build_object(
-    'ok', true,
-    'nombre', v_c.full_name,
-    'clases_restantes', v_c.clases_restantes,
-    'fecha_renovacion', v_c.fecha_renovacion,
-    'estado', v_c.status
-  );
-end;
-$fn$;
+-- tf_tool_consultar_saldo NO se define aqui: vive en schema-saldos-aparte.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 revoke all on function public.tf_tool_consultar_saldo(text, text) from public, anon, authenticated;
 do $$

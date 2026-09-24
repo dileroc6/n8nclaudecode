@@ -116,100 +116,16 @@ comment on function public.tf_catalogo_frescura(uuid) is
 
 
 -- ── 4. Buscar, ahora con hermanas y con frescura ────────────────────────────
-create or replace function public.tf_tool_buscar_catalogo(p_payload jsonb)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_texto   text := translate(lower(btrim(coalesce(p_payload->>'que', ''))),
-                              'áéíóúàèìòùäëïöüâêîôûñ', 'aeiouaeiouaeiouaeioun');
-  v_limite  int  := least(greatest(coalesce((p_payload->>'cuantos')::int, 5), 1), 10);
-  v_hay     json;
-  v_n       int;
-  v_fresca  json;
-begin
-  select company_id into v_company
-  from public.agent_config where whatsapp_instance = p_payload->>'instance';
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  if v_texto = '' then
-    return json_build_object('ok', false,
-      'motivo', 'falta que me digas que esta buscando la persona');
-  end if;
-
-  select count(*)::int into v_n
-  from public.productos where company_id = v_company and activo;
-
-  if v_n = 0 then
-    -- Que el catálogo esté vacío es una respuesta legítima y distinta de «no
-    -- encontré ese producto». El agente tiene que poder decir la verdad.
-    return json_build_object('ok', false, 'motivo', 'este negocio todavia no tiene su catalogo cargado');
-  end if;
-
-  v_fresca := public.tf_catalogo_frescura(v_company);
-
-  select coalesce(json_agg(t.x order by t.orden), '[]'::json) into v_hay from (
-    select json_build_object(
-             'nombre', p.nombre,
-             'sku', p.sku,
-             'precio', p.precio_cop,
-             -- Se devuelve tal cual, incluido el nulo: el agente distingue
-             -- «quedan 3», «no quedan» y «no lo sé».
-             'existencias', p.existencias,
-             'variante', p.variante,
-             'url', p.url,
-             'actualizado', p.actualizado_at,
-             -- Las hermanas: lo que permite decir «ese viene en M, L y XL, y
-             -- de M no queda». Sin esto el agente ofrece lo que no hay.
-             'presentaciones', (
-               select coalesce(json_agg(json_build_object(
-                        'sku', h.sku, 'variante', h.variante,
-                        'precio', h.precio_cop, 'existencias', h.existencias)
-                      order by h.nombre), '[]'::json)
-               from public.productos h
-               where h.company_id = p.company_id and h.activo
-                 and h.padre_sku is not null
-                 and h.padre_sku = coalesce(p.padre_sku, p.sku)
-                 and h.sku <> p.sku
-             )
-           ) as x,
-           -- Lo que empieza por lo buscado va primero: quien escribe «guantes»
-           -- espera guantes, no «limpiador para guantes».
-           case when p.busqueda like v_texto || '%' then 0
-                when p.busqueda like '% ' || v_texto || '%' then 1
-                else 2 end as orden
-    from public.productos p
-    where p.company_id = v_company and p.activo
-      and p.busqueda like '%' || v_texto || '%'
-    order by orden, p.nombre
-    limit v_limite
-  ) t;
-
-  return json_build_object(
-    'ok', true,
-    'encontrados', json_array_length(v_hay),
-    'productos', v_hay,
-    'catalogo_al', (v_fresca->>'visto')::timestamptz,
-    -- vivo / fresco / viejo / desconocido. Es lo que decide si el agente dice
-    -- «quedan 12» o «según lo último que tengo, quedan 12».
-    'frescura', v_fresca,
-    'que_decir', case v_fresca->>'estado'
-      when 'vivo'   then null
-      when 'fresco' then 'Puedes decir las existencias, pero no como una promesa.'
-      else 'Este catalogo esta viejo: di cuando es el dato y ofrece confirmar antes de cerrar.'
-    end
-  );
-end;
-$fn$;
-
-comment on function public.tf_tool_buscar_catalogo(jsonb) is
-  'Busca en el catalogo copiado. Devuelve precio, existencias, las variantes hermanas y QUE TAN VIEJO es el dato: un dato viejo dicho como viejo sirve; dicho como actual, miente.';
+-- tf_tool_buscar_catalogo NO se define aqui: vive en schema-toque-tienda-buscar.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva. dicho como actual, miente.';
 
 
 -- ── 5. Al armar el pedido, avisar si hay que confirmar contra la tienda ─────

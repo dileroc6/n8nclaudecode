@@ -79,78 +79,16 @@ comment on table public.productos is
 
 
 -- ── 2. Buscar en el catálogo ────────────────────────────────────────────────
-create or replace function public.tf_tool_buscar_catalogo(p_payload jsonb)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_texto   text := translate(lower(btrim(coalesce(p_payload->>'que', ''))),
-                              'áéíóúàèìòùäëïöüâêîôûñ', 'aeiouaeiouaeiouaeioun');
-  v_limite  int  := least(greatest(coalesce((p_payload->>'cuantos')::int, 5), 1), 10);
-  v_hay     json;
-  v_n       int;
-  v_viejo   timestamptz;
-begin
-  select company_id into v_company
-  from public.agent_config where whatsapp_instance = p_payload->>'instance';
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  if v_texto = '' then
-    return json_build_object('ok', false,
-      'motivo', 'falta que me digas que esta buscando la persona');
-  end if;
-
-  select count(*)::int, min(actualizado_at) into v_n, v_viejo
-  from public.productos where company_id = v_company and activo;
-
-  if v_n = 0 then
-    -- Que el catálogo esté vacío es una respuesta legítima y distinta de «no
-    -- encontré ese producto». El agente tiene que poder decir la verdad.
-    return json_build_object('ok', false, 'motivo', 'este negocio todavia no tiene su catalogo cargado');
-  end if;
-
-  select coalesce(json_agg(t.x order by t.orden), '[]'::json) into v_hay from (
-    select json_build_object(
-             'nombre', p.nombre,
-             'sku', p.sku,
-             'precio', p.precio_cop,
-             -- Se devuelve tal cual, incluido el nulo: el agente distingue
-             -- «quedan 3», «no quedan» y «no lo sé».
-             'existencias', p.existencias,
-             'url', p.url,
-             'actualizado', p.actualizado_at
-           ) as x,
-           -- Lo que empieza por lo buscado va primero: quien escribe «guantes»
-           -- espera guantes, no «limpiador para guantes».
-           case when p.busqueda like v_texto || '%' then 0
-                when p.busqueda like '% ' || v_texto || '%' then 1
-                else 2 end as orden
-    from public.productos p
-    where p.company_id = v_company and p.activo
-      and p.busqueda like '%' || v_texto || '%'
-    order by orden, p.nombre
-    limit v_limite
-  ) t;
-
-  return json_build_object(
-    'ok', true,
-    'encontrados', json_array_length(v_hay),
-    'productos', v_hay,
-    -- Para que el agente pueda decir «segun lo ultimo que tengo» en vez de
-    -- afirmar una existencia de hace tres semanas como si fuera de ahora.
-    'catalogo_al', v_viejo
-  );
-end;
-$fn$;
-
-comment on function public.tf_tool_buscar_catalogo(jsonb) is
-  'Busca en el catalogo copiado del cliente. Devuelve precio, existencias y CUANDO se sincronizo: un dato viejo dicho como viejo sirve; dicho como actual, miente.';
+-- tf_tool_buscar_catalogo NO se define aqui: vive en schema-toque-tienda-buscar.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva. dicho como actual, miente.';
 
 
 -- ── 3. Los pedidos que arma el agente ───────────────────────────────────────
@@ -199,101 +137,16 @@ comment on column public.pedido_lineas.precio_cop is
   'El precio del momento en que se armo. Si mañana sube, el pedido sigue diciendo lo que se le prometio a la persona.';
 
 
-create or replace function public.tf_tool_crear_pedido(p_payload jsonb)
-returns json
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_c       public.contacts%rowtype;
-  v_items   jsonb := coalesce(p_payload->'items', '[]'::jsonb);
-  v_it      jsonb;
-  v_p       public.productos%rowtype;
-  v_id      uuid;
-  v_num     int;
-  v_total   numeric := 0;
-  v_lineas  int := 0;
-  v_falta   text[] := '{}';
-  v_intento int := 0;
-begin
-  select company_id into v_company
-  from public.agent_config where whatsapp_instance = p_payload->>'instance';
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  select * into v_c from public.contacts
-  where company_id = v_company
-    and public.tf_telefono(phone) = public.tf_telefono(p_payload->>'telefono');
-  if not found then
-    return json_build_object('ok', false, 'motivo', 'no tengo a esta persona registrada');
-  end if;
-
-  if jsonb_array_length(v_items) = 0 then
-    return json_build_object('ok', false, 'motivo', 'no me dijiste que va en el pedido');
-  end if;
-
-  loop
-    v_intento := v_intento + 1;
-    select coalesce(max(numero), 0) + 1 into v_num from public.pedidos where company_id = v_company;
-    begin
-      insert into public.pedidos (company_id, contact_id, numero, dicho)
-      values (v_company, v_c.id, v_num, nullif(btrim(coalesce(p_payload->>'dicho', '')), ''))
-      returning id into v_id;
-      exit;
-    exception when unique_violation then
-      if v_intento >= 5 then raise; end if;
-    end;
-  end loop;
-
-  for v_it in select * from jsonb_array_elements(v_items)
-  loop
-    -- El precio sale del CATÁLOGO, no de lo que diga el modelo. Si el agente
-    -- pudiera poner el precio, un cliente que dice «me dijeron que valía
-    -- 10.000» acabaría con un pedido a 10.000.
-    select * into v_p from public.productos
-    where company_id = v_company and sku = (v_it->>'sku') and activo;
-
-    if not found then
-      v_falta := v_falta || coalesce(v_it->>'sku', '(sin sku)');
-      continue;
-    end if;
-
-    insert into public.pedido_lineas (pedido_id, sku, nombre, cantidad, precio_cop)
-    values (v_id, v_p.sku, v_p.nombre,
-            greatest(1, coalesce((v_it->>'cantidad')::int, 1)), v_p.precio_cop);
-
-    v_total := v_total + coalesce(v_p.precio_cop, 0) * greatest(1, coalesce((v_it->>'cantidad')::int, 1));
-    v_lineas := v_lineas + 1;
-  end loop;
-
-  if v_lineas = 0 then
-    delete from public.pedidos where id = v_id;
-    return json_build_object('ok', false,
-      'motivo', 'ninguno de esos productos esta en el catalogo',
-      'no_encontrados', to_json(v_falta));
-  end if;
-
-  update public.pedidos set total_cop = v_total where id = v_id;
-
-  return json_build_object(
-    'ok', true,
-    'aplicado', false,
-    'numero', v_num,
-    'lineas', v_lineas,
-    'total', v_total,
-    'no_encontrados', to_json(v_falta),
-    'que_decir', 'Te dejo armado el pedido numero ' || v_num ||
-                 '. Alguien del equipo lo confirma y te avisa.'
-  );
-end;
-$fn$;
-
-comment on function public.tf_tool_crear_pedido(jsonb) is
-  'Deja un pedido ARMADO, no confirmado. Los precios salen del catalogo y nunca del modelo: si el agente pudiera ponerlos, quien diga "me dijeron que valia 10.000" acabaria con un pedido a 10.000.';
+-- tf_tool_crear_pedido NO se define aqui: vive en schema-toque-tienda-cobro.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 
 -- ── 4. En qué va mi pedido ──────────────────────────────────────────────────

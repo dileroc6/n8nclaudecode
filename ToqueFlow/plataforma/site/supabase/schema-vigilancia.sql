@@ -122,90 +122,16 @@ comment on function public.tf_fallo_registrar(jsonb) is
 -- ── 2. La salud de cada empresa ──────────────────────────────────────────────
 -- Cuenta lo que llegó y lo compara con lo que suele llegar, PERO solo le da
 -- significado al silencio cuando el agente está encendido.
-create or replace function public.tf_salud()
-returns table (
-  company_id    uuid,
-  empresa       text,
-  agente_activo boolean,
-  hoy           int,
-  normal_dia    numeric,
-  ultimo_mensaje timestamptz,
-  fallos_abiertos int,
-  estado        text,
-  detalle       text
-)
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_super boolean := public.is_super_admin();
-  v_mia   uuid    := public.my_company_id();
-begin
-  return query
-  with base as (
-    select
-      co.id, co.name,
-      bool_or(coalesce(ac.activo, false)) as activo,
-      (select count(*)::int from public.message_log m
-        where m.company_id = co.id and m.direction = 'in'
-          and m.created_at > now() - interval '24 hours')                       as hoy,
-      -- Lo normal: lo que entró en 14 días, repartido. Se excluyen las últimas
-      -- 24 h para que un día malo no baje su propia referencia.
-      (select round(count(*)::numeric / 13, 1) from public.message_log m
-        where m.company_id = co.id and m.direction = 'in'
-          and m.created_at between now() - interval '14 days' and now() - interval '24 hours') as normal,
-      (select max(m.created_at) from public.message_log m
-        where m.company_id = co.id and m.direction = 'in')                      as ultimo,
-      (select count(*)::int from public.fallos f
-        where f.company_id = co.id and f.visto_at is null)                      as fallos
-    from public.companies co
-    join public.agent_config ac on ac.company_id = co.id
-    where v_super or co.id = v_mia
-    group by co.id, co.name
-  )
-  select
-    b.id, b.name, b.activo, b.hoy, b.normal, b.ultimo, b.fallos,
-    case
-      -- Apagado: el silencio es lo esperado y no se dice nada.
-      when not b.activo                          then 'apagado'
-      -- Encendido y nunca ha recibido NADA. No hace falta historia para saber
-      -- que esto está mal: es el go-live que no quedó bien.
-      when b.ultimo is null                      then 'sin_estrenar'
-      -- Venía recibiendo y hoy nada.
-      when b.hoy = 0 and b.normal >= 1           then 'callado'
-      -- Mucho más de lo suyo. No es solo un susto: cuesta plata en tokens.
-      when b.normal >= 5 and b.hoy > b.normal * 3 then 'pico'
-      when b.normal < 5  and b.hoy > 50           then 'pico'
-      -- Bastante menos de lo suyo, con historia suficiente para que signifique
-      -- algo. Un domingo flojo no debería sonar igual que una caída.
-      when b.normal >= 10 and b.hoy < b.normal * 0.25 then 'flojo'
-      else 'ok'
-    end as estado,
-    case
-      when not b.activo then 'el agente está apagado'
-      when b.ultimo is null then 'está encendido y nunca le ha llegado un mensaje'
-      when b.hoy = 0 and b.normal >= 1 then
-        'sin mensajes hace ' || greatest(1, extract(day from now() - b.ultimo)::int) || ' día(s); lo normal son ' || b.normal || ' al día'
-      when b.normal >= 5 and b.hoy > b.normal * 3 then
-        b.hoy || ' mensajes hoy contra ' || b.normal || ' de costumbre'
-      when b.normal < 5 and b.hoy > 50 then b.hoy || ' mensajes hoy, y no suele recibir'
-      when b.normal >= 10 and b.hoy < b.normal * 0.25 then
-        'solo ' || b.hoy || ' hoy; lo normal son ' || b.normal
-      else 'andando'
-    end as detalle
-  from base b
-  order by
-    case when not b.activo then 3
-         when b.hoy = 0 and (b.ultimo is null or b.normal >= 1) then 0
-         else 1 end,
-    b.name;
-end;
-$fn$;
-
-comment on function public.tf_salud() is
-  'Como va cada empresa: si su agente esta encendido, cuanto recibio y si eso es normal para ella. El silencio solo cuenta como averia si el agente esta encendido — asi no hace falta configurar un umbral por cliente.';
+-- tf_salud NO se define aqui: vive en schema-silencio-consola.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 
 -- ── 3. RLS y permisos ────────────────────────────────────────────────────────

@@ -31,14 +31,14 @@ const DIR = path.join(__dirname, "..", "..", "site", "supabase");
 
 // Lo que ya estaba roto antes de que esto existiera. Cada línea es una bomba
 // que espera a que alguien reaplique los esquemas en otro orden.
-const PENDIENTES = [
-  "tf_tool_consultar_saldo",      // 4 archivos
-  "tf_agente_registrar",          // 4 archivos
-  "tf_tool_buscar_catalogo",      // 3 archivos
-  "tf_salud",                     // 2
-  "tf_tool_confirmar_pago",       // 2
-  "tf_tool_crear_pedido",         // 2
-];
+// Estuvo llena. El 24-sep se consolidaron las seis que quedaban, y la lista
+// quedo VACIA por primera vez.
+//
+// Se deja el mecanismo, no el contenido: el dia que alguien agregue una
+// funcion en dos archivos, esta prueba lo dice antes de que decida sola cual
+// version corre. Vaciarla no es cerrarla — es el estado en el que tiene que
+// mantenerse.
+const PENDIENTES = [];
 
 const fallos = [];
 const check = (cond, que, detalle) => {

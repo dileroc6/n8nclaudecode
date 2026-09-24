@@ -118,55 +118,16 @@ end $$;
 
 
 -- ── 4. Y la herramienta del saldo responde en esas palabras ──────────────────
-create or replace function public.tf_tool_consultar_saldo(
-  p_instance text,
-  p_telefono text
-)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_voc     jsonb;
-  v_c       public.contacts%rowtype;
-begin
-  select ac.company_id, coalesce(co.metadata->'vocabulario', '{}'::jsonb)
-    into v_company, v_voc
-  from public.agent_config ac
-  join public.companies co on co.id = ac.company_id
-  where ac.whatsapp_instance = p_instance;
-
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  select * into v_c from public.contacts
-  where company_id = v_company
-    and public.tf_telefono(phone) = public.tf_telefono(p_telefono);
-
-  if not found then
-    -- Decir que no se encontró a la persona es MEJOR que devolver cero: cero
-    -- suena a «se le acabaron» y es una respuesta falsa.
-    return json_build_object('ok', false, 'motivo', 'no encontre a esta persona en la base');
-  end if;
-
-  return json_build_object(
-    'ok', true,
-    'nombre', v_c.full_name,
-    'saldo', v_c.clases_restantes,
-    -- Cómo llamar a lo que le queda, en las palabras de ESTE negocio. Sin
-    -- esto el agente diría «clases» en una clínica estética.
-    'unidad', coalesce(v_voc->>'unidad', 'sesión'),
-    'unidad_plural', coalesce(v_voc->>'unidad_plural', 'sesiones'),
-    'vence', v_c.fecha_renovacion,
-    'que_compro', v_c.service_type,
-    'estado', v_c.status
-  );
-end;
-$fn$;
+-- tf_tool_consultar_saldo NO se define aqui: vive en schema-saldos-aparte.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 revoke all on function public.tf_tool_consultar_saldo(text, text) from public, anon, authenticated;
 do $$

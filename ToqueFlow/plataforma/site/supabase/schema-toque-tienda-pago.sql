@@ -44,98 +44,16 @@ create index if not exists pedidos_pago_pendiente_idx
 
 
 -- ── 2. La herramienta: anotar que dice que pagó ─────────────────────────────
-create or replace function public.tf_tool_confirmar_pago(p_payload jsonb)
-returns json
-language plpgsql
-volatile
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_contact uuid;
-  v_p       public.pedidos%rowtype;
-  v_ref     text := nullif(trim(p_payload->>'referencia'), '');
-  v_dicho   text := nullif(trim(p_payload->>'dicho'), '');
-begin
-  -- La empresa se deriva de la instancia, nunca llega en el payload. Igual que
-  -- en todas las demas herramientas.
-  select company_id into v_company
-    from public.agent_config
-   where whatsapp_instance = p_payload->>'instance'
-   limit 1;
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'no reconozco esta linea');
-  end if;
-
-  select id into v_contact
-    from public.contacts
-   where company_id = v_company
-     and public.tf_telefono(phone) = public.tf_telefono(p_payload->>'telefono')
-   limit 1;
-  if v_contact is null then
-    return json_build_object('ok', false, 'motivo', 'no tengo a esta persona registrada');
-  end if;
-
-  -- Si dicta un numero, ese. Si no, el ultimo pedido suyo que siga esperando
-  -- plata. Solo entre SUS pedidos: dictar el numero 1 no da derecho a tocar el
-  -- numero 1 de otra persona.
-  if nullif(trim(p_payload->>'numero'), '') is not null then
-    select * into v_p from public.pedidos
-     where company_id = v_company and contact_id = v_contact
-       and numero = (p_payload->>'numero')::int
-     for update;
-  else
-    -- Los que siguen esperando plata primero, y entre esos el mas reciente. Un
-    -- pedido YA reportado tiene que seguir entrando aqui: quien escribe «ya
-    -- pague» por segunda vez espera que le hablen de ese mismo pedido, no que
-    -- le digan que no le encuentra ninguno.
-    select * into v_p from public.pedidos
-     where company_id = v_company and contact_id = v_contact
-       and estado <> 'rechazado'
-     order by (pago_estado = 'verificado'), created_at desc
-     limit 1
-     for update;
-  end if;
-
-  if v_p.id is null then
-    return json_build_object('ok', false, 'motivo', 'no le encuentro un pedido esperando pago');
-  end if;
-
-  -- Ya verificado: no se vuelve a abrir. Quien insiste sobre algo que ya se
-  -- comprobo no necesita otro registro, necesita que le digan que ya esta.
-  if v_p.pago_estado = 'verificado' then
-    return json_build_object('ok', true, 'numero', v_p.numero,
-      'pago_estado', 'verificado', 'verificado', true, 'repetido', true,
-      'mensaje', 'ese pago ya esta verificado');
-  end if;
-
-  -- Insistir no crea un registro nuevo: actualiza el mismo. Quien escribe tres
-  -- veces «ya pague» no hizo tres pagos.
-  update public.pedidos
-     set pago_estado       = 'reportado',
-         pago_referencia   = coalesce(v_ref, pago_referencia),
-         pago_dicho        = coalesce(v_dicho, pago_dicho),
-         pago_reportado_at = coalesce(pago_reportado_at, now())
-   where id = v_p.id;
-
-  return json_build_object(
-    'ok', true,
-    'numero', v_p.numero,
-    'total_cop', v_p.total_cop,
-    'referencia', coalesce(v_ref, v_p.pago_referencia),
-    'pago_estado', 'reportado',
-    -- Explicito para que el agente no lo redondee a «listo». Queda anotado, no
-    -- comprobado, y decirlo de otra forma es prometer lo que no se hizo.
-    'verificado', false,
-    'repetido', v_p.pago_estado = 'reportado',
-    'mensaje', 'queda anotado; alguien lo verifica y le avisamos'
-  );
-end;
-$fn$;
-
-comment on function public.tf_tool_confirmar_pago(jsonb) is
-  'Anota que la persona DICE que pago, contra su pedido. No comprueba nada: el agente solo puede llegar hasta "reportado".';
+-- tf_tool_confirmar_pago NO se define aqui: vive en schema-toque-tienda-cobro.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 
 -- ── 3. Quien sí verifica: una persona (o mañana, la pasarela) ───────────────

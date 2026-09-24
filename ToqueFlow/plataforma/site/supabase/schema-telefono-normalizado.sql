@@ -53,132 +53,29 @@ create index if not exists contacts_company_telnorm_idx
 
 
 -- ── 3. Al guardar, actualiza al que ya está en vez de duplicarlo ─────────────
-create or replace function public.tf_agente_registrar(
-  p_instance     text,
-  p_telefono     text,
-  p_entrante     text,
-  p_respuesta    text,
-  p_datos        jsonb  default '{}',
-  p_wa_id        text   default null,
-  p_model        text   default null,
-  p_input        int    default 0,
-  p_output       int    default 0,
-  p_cache_read   int    default 0,
-  p_cache_write  int    default 0,
-  p_test         boolean default false
-)
-returns json
-language plpgsql
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_contact uuid;
-  v_precio  jsonb;
-  v_costo   numeric;
-  v_tel     text := public.tf_telefono(p_telefono);
-begin
-  select company_id into v_company
-  from public.agent_config where whatsapp_instance = p_instance;
-
-  if v_company is null then
-    raise exception 'Instancia de WhatsApp desconocida: %', p_instance
-      using errcode = 'foreign_key_violation';
-  end if;
-
-  -- Primero se BUSCA por dígitos. El `on conflict (company_id, phone)` de antes
-  -- no servía: la fila vieja dice «+573185478900» y la nueva llegaba como
-  -- «573185478900», así que el conflicto nunca se daba y se creaba un contacto
-  -- duplicado por cada cliente real que escribiera.
-  select id into v_contact
-  from public.contacts
-  where company_id = v_company and public.tf_telefono(phone) = v_tel;
-
-  if v_contact is null then
-    insert into public.contacts (company_id, phone, full_name, source, last_contact_at, metadata)
-    values (v_company, v_tel, nullif(p_datos->>'nombre', ''), 'whatsapp', now(),
-            coalesce(p_datos, '{}'::jsonb) - 'nombre')
-    returning id into v_contact;
-  else
-    -- `coalesce` en el nombre: un cliente que lleva meses siendo «María» no debe
-    -- quedarse sin nombre porque en el último mensaje solo dijo «gracias».
-    -- Y NO se toca `phone`: se respeta como lo guardó el negocio.
-    update public.contacts set
-      full_name       = coalesce(nullif(p_datos->>'nombre', ''), full_name),
-      last_contact_at = now(),
-      metadata        = metadata || (coalesce(p_datos, '{}'::jsonb) - 'nombre')
-    where id = v_contact;
-  end if;
-
-  if p_test then
-    insert into public.test_messages (company_id, contact_id, telefono, direction, author, body, flow)
-    values (v_company, v_contact, v_tel, 'in',  'cliente', p_entrante,  'agente'),
-           (v_company, v_contact, v_tel, 'out', 'bot',     p_respuesta, 'agente');
-  else
-    insert into public.message_log (company_id, contact_id, direction, channel, body, wa_message_id)
-    values (v_company, v_contact, 'in',  'whatsapp', p_entrante,  p_wa_id),
-           (v_company, v_contact, 'out', 'whatsapp', p_respuesta, null);
-  end if;
-
-  if p_model is not null then
-    v_precio := public.tf_precio_modelo(p_model);
-    v_costo  := (p_input * (v_precio->>'input')::numeric
-               + p_output * (v_precio->>'output')::numeric
-               + p_cache_read * (v_precio->>'cache_read')::numeric
-               + p_cache_write * (v_precio->>'cache_write')::numeric) / 1000000.0;
-
-    insert into public.ai_usage (company_id, tool, model, input_tokens, output_tokens, cost_usd, success)
-    values (v_company,
-            case when p_test then 'agente-atencion-prueba' else 'agente-atencion' end,
-            p_model, p_input + p_cache_read + p_cache_write, p_output, v_costo, true);
-  end if;
-
-  return json_build_object('company_id', v_company, 'contact_id', v_contact, 'costo_usd', coalesce(v_costo, 0));
-end;
-$fn$;
+-- tf_agente_registrar NO se define aqui: vive en schema-captura-columnas.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 
 -- ── 4. La herramienta también ────────────────────────────────────────────────
-create or replace function public.tf_tool_consultar_saldo(
-  p_instance text,
-  p_telefono text
-)
-returns json
-language plpgsql
-stable
-security definer
-set search_path = public
-as $fn$
-declare
-  v_company uuid;
-  v_c       public.contacts%rowtype;
-begin
-  select company_id into v_company
-  from public.agent_config where whatsapp_instance = p_instance;
-
-  if v_company is null then
-    return json_build_object('ok', false, 'motivo', 'instancia desconocida');
-  end if;
-
-  select * into v_c from public.contacts
-  where company_id = v_company
-    and public.tf_telefono(phone) = public.tf_telefono(p_telefono);
-
-  if not found then
-    -- Decir que no se encontró a la persona es MEJOR que devolver cero: cero
-    -- suena a «se le acabaron» y es una respuesta falsa.
-    return json_build_object('ok', false, 'motivo', 'no encontre a esta persona en la base');
-  end if;
-
-  return json_build_object(
-    'ok', true, 'nombre', v_c.full_name,
-    'clases_restantes', v_c.clases_restantes,
-    'fecha_renovacion', v_c.fecha_renovacion,
-    'estado', v_c.status
-  );
-end;
-$fn$;
+-- tf_tool_consultar_saldo NO se define aqui: vive en schema-saldos-aparte.sql.
+--
+-- Estaba definida en varios archivos. Reaplicar los esquemas en un orden u
+-- otro decidia EN SILENCIO cual version corria — y eso ya rompio cosas de
+-- verdad tres veces: la herramienta de agendar, el cobro dentro del contexto
+-- del agente, y la memoria de lo que averiguo en la conversacion. Ninguna
+-- fallo al romperse; simplemente dejaron de hacer lo que hacian.
+--
+-- Una funcion, un archivo. `pruebas/calidad/una-funcion-un-archivo.cjs` lo
+-- vigila y falla si aparece una nueva.
 
 
 -- ── 5. Permisos ──────────────────────────────────────────────────────────────
