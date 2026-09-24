@@ -364,8 +364,14 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                     // activar cualquier cosa: un pin sin su placa quedaba
                     // contratado y sin hacer nada, y el cliente lo veía en su
                     // panel como algo que compró.
-                    const enObra  = p.liberado === false;
-                    const sinBase = !enObra && esPin(p) && p.placa_lista === false;
+                    // La respuesta viene YA CALCULADA de la vista, que la saca
+                    // de `tf_puede_encender`. Antes esta pantalla deducia la
+                    // misma regla en JavaScript: dos copias que hoy coinciden y
+                    // que el dia que alguien agregue una condicion en un solo
+                    // sitio dejan de coincidir sin que nadie se entere.
+                    const puede   = p.encender || {};
+                    const enObra  = puede.motivo === 'todavia en construccion' || p.liberado === false;
+                    const sinBase = !enObra && puede.puede === false;
                     return (
                       <div key={p.catalogo_id} className={'emp-resto-fila' + (esPin(p) ? ' is-pin' : '')}>
                         <div>
@@ -381,7 +387,10 @@ function EmpresaVista({ company, catalogo, matriz, usuarios, consumo, consumoDet
                         {enObra ? (
                           <span className="emp-falta">en construcción</span>
                         ) : sinBase ? (
-                          <span className="emp-falta">falta {p.requiere_nombre}</span>
+                          // El motivo sale de la funcion, no de una suposicion de
+                          // la pantalla: un boton gris sin decir por que hace que
+                          // alguien lo pregunte por WhatsApp.
+                          <span className="emp-falta">{puede.motivo || ('falta ' + p.requiere_nombre)}</span>
                         ) : (
                           <button type="button" className="ag-mini" disabled={busy}
                                   onClick={() => onCambiar(company, comoPieza(p), 'proximamente')}>

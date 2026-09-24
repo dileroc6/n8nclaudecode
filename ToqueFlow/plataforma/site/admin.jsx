@@ -333,6 +333,7 @@ function AdminApp({ profile }) {
   const [salud, setSalud] = React.useState([]);            // como va cada empresa: andando, callada, sin estrenar
   const [consumoDet, setConsumoDet] = React.useState([]);  // consumo por producto y mes
   const [consumoPlan, setConsumoPlan] = React.useState([]);// consumo contra lo que paga
+  const [alerta, setAlerta] = React.useState([]);          // a quién se le está yendo el margen
   const [catBusy, setCatBusy] = React.useState(false);
   const [fichaCo, setFichaCo] = React.useState(null);   // empresa cuya ficha está abierta
   const [dandoAlta, setDandoAlta] = React.useState(false);
@@ -349,7 +350,7 @@ function AdminApp({ profile }) {
 
   const reload = React.useCallback(async () => {
     setLoading(true);
-    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp, sal, cob] = await Promise.all([
+    const [c, u, s, ai, fl, rt, cat, mx, res, cd, cp, al, sal, cob] = await Promise.all([
       sb.from('companies').select('*').order('created_at', { ascending: true }),
       sb.from('profiles').select('*, company:companies(name)').order('created_at', { ascending: true }),
       sb.from('sedes').select('*').order('created_at', { ascending: true }),
@@ -363,6 +364,9 @@ function AdminApp({ profile }) {
       sb.from('empresa_resumen').select('*'),
       sb.from('consumo_detalle').select('*'),
       sb.from('consumo_vs_plan').select('*'),
+      // A quién se le está yendo el margen. Existía desde hacía semanas y no
+      // la llamaba nadie: había que abrir cliente por cliente para verlo.
+      sb.rpc('tf_consumo_alerta'),
       // Como va cada empresa. Es una funcion y no una vista porque compara lo
       // de hoy con lo normal de ESA empresa, y eso se calcula, no se guarda.
       sb.rpc('tf_salud'),
@@ -370,6 +374,7 @@ function AdminApp({ profile }) {
       // cobra distinto, igual que el tono o el horario.
       sb.from('tienda_cobro').select('*'),
     ]);
+    setAlerta(al.data || []);
     setCompanies(c.data || []);
     setUsers(u.data || []);
     setSedes(s.data || []);
@@ -808,8 +813,57 @@ function AdminApp({ profile }) {
           });
           const groups = Object.values(byCo).sort((a, b) => b.usd - a.usd);
 
+          // ── A quién se le está yendo el margen ──────────────────────────
+          // Al 20% es una conversación de venta; al 40% es un problema. Si no
+          // hay nadie, se dice — un panel vacío sin explicación se lee como
+          // «esto no funciona».
+          const enRojo = (alerta || []).filter((a) => a.nivel === 'problema');
+          const enAmbar = (alerta || []).filter((a) => a.nivel !== 'problema');
+
+          // Lo que paga contra lo que costaría a precio de lista. Cuando la
+          // lista da 0 y el cliente paga, NO es un cliente regalado: es que su
+          // configuración está vacía y no tiene nada encendido.
+          const sinConfigurar = (consumoPlan || []).filter((p) =>
+            Number(p.mensualidad_cop || 0) > 0 && Number(p.mensualidad_lista || 0) === 0);
+
           return (
             <div>
+              <section className="admin-margen">
+                <h3>A quién se le está yendo el margen</h3>
+                {alerta.length === 0 ? (
+                  <p className="admin-margen-ok">
+                    Ningún cliente pasa del 20% de lo que paga. Al 20% es una conversación
+                    de venta; al 40% es un problema.
+                  </p>
+                ) : (
+                  <div className="admin-margen-lista">
+                    {[...enRojo, ...enAmbar].map((a) => (
+                      <div key={a.company_id} className={'admin-margen-fila ' + (a.nivel === 'problema' ? 'mal' : 'ojo')}>
+                        <b>{a.empresa}</b>
+                        <span className="admin-margen-pct">{Math.round(Number(a.pct))}%</span>
+                        <span className="admin-margen-det">
+                          paga {Number(a.mensualidad).toLocaleString('es-CO')} · la IA le cuesta
+                          {' '}${Number(a.usd_mes).toFixed(2)}/mes
+                          {a.detalle ? ' · ' + a.detalle : ''}
+                        </span>
+                        <button type="button" className="admin-co-btn"
+                                onClick={() => setConsumoCo(a.company_id)}>Ver</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {sinConfigurar.length > 0 && (
+                  <div className="admin-margen-hueco">
+                    <b>{sinConfigurar.length === 1 ? 'Un cliente paga' : sinConfigurar.length + ' clientes pagan'} y
+                    {sinConfigurar.length === 1 ? ' no tiene' : ' no tienen'} nada encendido:</b>{' '}
+                    {sinConfigurar.map((p) => p.empresa).join(', ')}.
+                    {' '}A precio de lista lo que {sinConfigurar.length === 1 ? 'tiene' : 'tienen'} vale $0, así que
+                    no es un descuento — es configuración vacía, y su asistente no puede hacer nada.
+                  </div>
+                )}
+              </section>
+
               <div className="admin-filters">
                 <span className="admin-filter-label">// filtrar por empresa</span>
                 <select value={consumoCo} onChange={(e) => setConsumoCo(e.target.value)}>

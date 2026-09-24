@@ -4749,3 +4749,32 @@ button.dash-profile-item { width: 100%; text-align: left; background: none; bord
 }
 .ag-rec .ag-check { align-items: flex-start; }
 .ag-rec .ag-check span { max-width: 52ch; line-height: 1.45; }
+
+/* ── El margen de cada cliente, en la consola ─────────────────────────────── */
+/* «Al 20% es una conversación de venta; al 40% es un problema» — la función lo
+   decía desde hacía semanas y no la llamaba nadie. */
+.admin-margen { margin-bottom: 22px; }
+.admin-margen h3 { font-size: 14.5px; font-weight: 600; margin: 0 0 8px; }
+.admin-margen-ok { font-size: 13px; color: var(--light-mute); line-height: 1.5; margin: 0; max-width: 64ch; }
+.admin-margen-lista { display: flex; flex-direction: column; gap: 8px; }
+.admin-margen-fila {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  border: 1px solid var(--light-line); border-left-width: 3px; border-radius: 12px;
+  padding: 11px 14px; background: #fff; font-size: 13px;
+}
+.admin-margen-fila.ojo { border-left-color: #b9770e; }
+.admin-margen-fila.mal { border-left-color: #c1272d; }
+.admin-margen-fila b { font-size: 14px; }
+.admin-margen-pct {
+  font-family: "JetBrains Mono", monospace; font-size: 15px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.admin-margen-fila.ojo .admin-margen-pct { color: #b9770e; }
+.admin-margen-fila.mal .admin-margen-pct { color: #c1272d; }
+.admin-margen-det { color: var(--light-mute); flex: 1; min-width: 220px; line-height: 1.45; }
+.admin-margen-hueco {
+  margin-top: 10px; font-size: 13px; line-height: 1.55; color: var(--light-mute);
+  background: #fdf8ee; border: 1px solid #f0dcae; border-radius: 10px; padding: 11px 14px;
+  max-width: 76ch;
+}
+.admin-margen-hueco b { color: #b9770e; }
