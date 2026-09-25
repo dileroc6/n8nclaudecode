@@ -37,6 +37,37 @@ const check = (cond, que, detalle) => {
   console.log((cond ? "  ✅ " : "  ❌ ") + que + (cond ? "" : "   ← " + detalle));
   if (!cond) fallos.push(que);
 };
+
+// ── Tres clases de comprobación, y no se tratan igual ────────────────────────
+//
+// Esta prueba fallaba AL AZAR: dos corridas seguidas, dos comprobaciones
+// distintas. Y un banco que falla al azar deja de significar algo — la fila 32
+// pide correrlo antes de cada cambio del agente, y si un ❌ puede ser ruido,
+// nadie lo mira.
+//
+// Mirando cuáles fallaban, se separan solas:
+//
+//   1. LOS HECHOS — que la cita exista en la base, a la hora pedida, con el
+//      servicio correcto. Pasan siempre. `check` a secas: fallo duro.
+//
+//   2. LO QUE NO PUEDE DECIR — «quedaste agendada» cuando no quedó nada.
+//      También `check` duro, y **nunca con reintento**: repetir hasta que la
+//      respuesta peligrosa desaparezca es enseñarle a la prueba a mentir.
+//
+//   3. CÓMO LO DIJO — «dice qué sí ofrece en vez de solo negar». Aquí una
+//      respuesta correcta pero redactada de otra forma falla, y eso es ruido.
+//      Se le da UNA segunda oportunidad: se vuelve a preguntar lo mismo. Fallar
+//      dos veces sobre la misma pregunta ya no es casualidad, es una regresión.
+//
+// `dosVeces` es solo para la clase 3.
+const dosVeces = async (decir, pregunta, evaluar, que, detalle) => {
+  let r = await decir(pregunta);
+  if (evaluar(r)) { check(true, que); return r; }
+  console.log("     (reintento: la respuesta valía pero venía redactada de otra forma)");
+  r = await decir(pregunta);
+  check(evaluar(r), que, detalle(r));
+  return r;
+};
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 const plano = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -165,7 +196,19 @@ const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
     const t3 = plano(r3);
     check(!/quedaste agendada|ya quedo|listo, agendad|confirmada a las 10/.test(t3),
       "y NO le dice al cliente que quedó agendada cuando no quedó", r3.slice(0, 200));
-    check(/9|11|otra hora|disponible|libre|ocupad|lleno|no hay/.test(t3),
+    // Esta NO se puede reintentar aunque sea de las de «cómo lo dijo»: volver a
+    // decir «agéndala a las 10» intentaría agendar otra vez y movería la base.
+    // Un reintento que cambia lo que está midiendo no es un reintento.
+    //
+    // Así que en vez de repetir, se acepta cualquier forma razonable de decirlo.
+    // La lista salió de leer las respuestas reales que fallaban siendo
+    // correctas: el agente decía «no tengo cupo», «ese espacio está tomado»,
+    // «te propongo otro horario» — todo bien dicho, y la prueba lo marcaba en
+    // rojo por no usar sus palabras.
+    //
+    // Lo que de verdad no puede pasar ya lo cubre la comprobación de arriba: que
+    // NO diga que quedó agendada. Esta solo pide que diga algo útil.
+    check(/9|11|otra hora|otro horario|disponib|libre|ocupad|lleno|no hay|no tengo|agotad|cupo|espacio|tomad/.test(t3),
       "le ofrece otra hora o le dice que esa se llenó", r3.slice(0, 200));
 
     // ── 4. «No puedo, ¿me lo cambias?» ─────────────────────────────────────
@@ -210,11 +253,19 @@ const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "ag
       "y se lo dice sin hablar de cancelar", r5.slice(0, 200));
 
     // ── 5. Un servicio que no existe ───────────────────────────────────────
+    // La primera es de las que NO puede decir: agendar un masaje que el negocio
+    // no ofrece compromete al negocio. Fallo duro y sin reintento.
     const r4 = await decir("y hacen masajes descontracturantes? me agendas uno el jueves");
-    const t4 = plano(r4);
-    check(!/masaje.*(agendad|quedo|listo)/.test(t4), "no agenda un servicio que el negocio no ofrece", r4.slice(0, 200));
-    check(/limpieza|depilaci|no (lo )?(ofrec|tenemos|hacemos)|no manejamos/.test(t4),
-      "y dice qué SÍ ofrece en vez de solo negar", r4.slice(0, 200));
+    check(!/masaje.*(agendad|quedo|listo)/.test(plano(r4)),
+      "no agenda un servicio que el negocio no ofrece", r4.slice(0, 200));
+
+    // La segunda es de cómo lo dijo: negar está bien, pero decir qué sí hay es
+    // la diferencia entre perder la venta y reconducirla. Con segunda oportunidad.
+    await dosVeces(decir,
+      "y hacen masajes descontracturantes? me agendas uno el jueves",
+      (r) => /limpieza|depilaci|no (lo )?(ofrec|tenemos|hacemos)|no manejamos/.test(plano(r)),
+      "y dice qué SÍ ofrece en vez de solo negar",
+      (r) => r.slice(0, 200));
 
   } finally {
     // Se borra todo: la empresa arrastra agente, conocimiento, agenda, citas y
