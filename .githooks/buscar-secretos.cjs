@@ -37,8 +37,20 @@ const PATRONES = [
     re: /\bgh[pousr]_[A-Za-z0-9]{30,}/ },
   // Lo genérico va al final: un campo que se llama KEY/TOKEN/SECRET y trae un
   // valor largo en vez de una referencia `${VARIABLE}`.
+  // Sin distinguir mayúsculas, y ahí está el asunto: el patrón exigía el nombre
+  // del campo en MAYÚSCULAS —`"N8N_API_KEY"`— y un workflow de n8n exportado no
+  // los escribe así. Los escribe `"apikey"`, `"instanceToken"`, `"token"`.
+  //
+  // O sea que la forma más común de sacar un secreto de este proyecto —exportar
+  // un flujo al repo, que es lo que se hace cada vez que se toca n8n— pasaba
+  // por delante del hook sin que lo viera. Un token de instancia de Evolution
+  // vale como llave global (fila 144): con uno se listan las nueve instancias y
+  // se opera sobre todas.
+  //
+  // `\S` en vez de `[^"\s]` para que también cace los que llevan comillas
+  // escapadas dentro de un JSON anidado.
   { que: "un campo de llave con un valor literal en vez de una variable",
-    re: /"[A-Z_]*(?:KEY|TOKEN|SECRET|PASSWORD)[A-Z_]*"\s*:\s*"(?!\$\{)[^"\s]{20,}"/ },
+    re: /"[A-Za-z_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD)[A-Za-z_]*"\s*:\s*"(?!\$\{|=\{\{|\{\{|<)[^"\s]{16,}"/i },
 
   // Y lo mismo dentro de CÓDIGO, que es por donde se escapó el secreto del
   // receptor: `const SECRET='tqf-…'` no tiene forma de llave conocida, así que
@@ -63,6 +75,40 @@ const NO_REVISAR = [
   "pruebas/seguridad/el-buscador-sabe-fallar.cjs",
   "package-lock.json",
 ];
+
+// ── Lo que TIENE forma de secreto y no lo es ────────────────────────────────
+// Un chequeo que grita lobo se acaba ignorando, y este bloquea commits: cada
+// falsa alarma es un empujón hacia `--no-verify`, y ahí deja de proteger nada.
+//
+// Se descartan dos cosas, y las dos se aprendieron marcando lo correcto:
+//
+//   · la llave `anon` de Supabase, que es PÚBLICA por diseño. Va en el HTML del
+//     sitio a propósito. La auditoría ya se equivocó con esto por leer la forma
+//     del JWT en vez del rol que trae escrito dentro.
+//   · los marcadores de «pon tu valor aquí». Un archivo de ejemplo que dice
+//     PEGA_AQUI_EL_SECRETO no es una fuga: es documentación.
+const MARCADORES = /CAMBIAR|CAMBIA|PEGA_AQUI|PEGA-AQUI|REDACTED|TU_|<.*>|XXXX|EJEMPLO|PLACEHOLDER|AQUI_VA/i;
+
+function esFalsaAlarma(txt) {
+  if (MARCADORES.test(txt)) return true;
+
+  // Un valor que es solo minúsculas y guiones bajos es un identificador, no un
+  // secreto: `"outputKey":"nequi_pedir_pago"` es el nombre de una salida de un
+  // nodo de n8n. Un secreto tiene mezcla de mayúsculas, dígitos o símbolos.
+  const valor = txt.match(/[:=]\s*\\?["'`]([^"'`\\]+)/);
+  if (valor && /^[a-z][a-z0-9_-]*$/.test(valor[1])) return true;
+
+  const jwt = txt.match(/eyJ[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\./);
+  if (jwt) {
+    try {
+      const carga = JSON.parse(Buffer.from(jwt[1], "base64").toString("utf8"));
+      // Se mira el ROL que trae dentro, no la forma. `anon` es pública; una
+      // `service_role` en el repo sí es una fuga y tiene que saltar.
+      if (carga.role === "anon") return true;
+    } catch (e) { /* si no se puede leer, se trata como secreto */ }
+  }
+  return false;
+}
 
 const salida = (s) => process.stdout.write(s + "\n");
 
@@ -93,6 +139,7 @@ for (const f of archivos) {
     for (const { que, re } of PATRONES) {
       const m = lineas[i].match(re);
       if (!m) continue;
+      if (esFalsaAlarma(m[0])) continue;
       hallazgos.push({
         archivo: f,
         linea: i + 1,

@@ -4,7 +4,12 @@ import path from 'path';
 import https from 'https';
 import { URL } from 'url';
 
-const API_TOKEN = 'ojMli0mOUnyN6HVybAlogMFUKMMUbUc0QwosWckff5cd102a';
+// El token NO va aqui: este archivo vive en un repo publico.
+const API_TOKEN = process.env.QDMP_API_TOKEN;
+if (!API_TOKEN) {
+  console.error('Falta QDMP_API_TOKEN en el entorno.');
+  process.exit(2);
+}
 const BASE_URL  = 'https://developers.hostinger.com';
 const DOMAIN    = 'quedicemiperro.com';
 const USERNAME  = 'u473399989';

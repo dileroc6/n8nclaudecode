@@ -29,7 +29,14 @@ const H = { apikey: SERVICE, Authorization: 'Bearer ' + SERVICE, 'Content-Type':
 const rest = (p, opts = {}) => fetch(URL + '/rest/v1/' + p, { ...opts, headers: { ...H, ...(opts.headers || {}) } });
 
 // Usuario demo de FerreteríaYa
-const DEMO = { email: 'nicolas@ferreteriaya.co', password: 'FerreteriaYa2026', name: 'Nicolas Rojas' };
+// La contrasena NO va aqui: estuvo en texto plano en un repo publico. Esta ya
+// no sirve —comprobado— pero el patron es el mismo que dejo vivas otras dos.
+const CLAVE = process.env.FERRETERIAYA_USER_PASSWORD;
+if (!CLAVE) {
+  console.error('Falta FERRETERIAYA_USER_PASSWORD. Ponla en el entorno antes de correr esto.');
+  process.exit(2);
+}
+const DEMO = { email: 'nicolas@ferreteriaya.co', password: CLAVE, name: 'Nicolas Rojas' };
 
 // Flows REALES de FerreteríaYa (sede: 'medellin' | 'bogota' | 'ambas')
 const FLOWS = [
@@ -106,6 +113,8 @@ async function getOrCreate(table, matchQS, insertBody) {
   }
 
   console.log('\n✅ FerreteríaYa lista. Entra en login.html con:');
-  console.log('   ' + DEMO.email + '  /  ' + DEMO.password);
+  // No se imprime la clave: la salida de un seed acaba en una captura de
+  // pantalla o pegada en un chat.
+  console.log('   ' + DEMO.email + '  /  (la que pusiste en el entorno)');
   console.log('   → verás el dashboard de FerreteríaYa con sus 6 flows y el selector de sedes.');
 })().catch((e) => { console.error('FALLÓ: ' + (e && e.message ? e.message : e)); process.exit(1); });

@@ -7,7 +7,7 @@ const TELEGRAM_CRED_ID = process.env.N8N_TG_CRED_ID;
 const VERIFY_CODE = `const msg = $input.item.json.message.text || '';
 const userId = $input.item.json.message.from.id;
 const chatId = $input.item.json.message.chat.id;
-const PASSWORD = '*FerFerreteriaNicoFabi2026';
+const PASSWORD = '${SECRETO_FUERA_DEL_REPO}';
 
 const staticData = $getWorkflowStaticData('global');
 if (!staticData.authorizedUsers) staticData.authorizedUsers = [];

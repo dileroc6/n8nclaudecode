@@ -11,7 +11,7 @@
 ## Limpieza completa antes de probar
 
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai <<'EOF'
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai <<'EOF'
 DELETE FROM zoe.cita_addons;
 DELETE FROM zoe.citas;
 DELETE FROM zoe.conversacion;
@@ -56,7 +56,7 @@ EOF
 
 **Verificar BD**:
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai -c \
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai -c \
   "SELECT s.nombre, t.nombre AS terapeuta, c.slot_inicio AT TIME ZONE 'America/Bogota' FROM zoe.citas c JOIN zoe.servicios s ON s.id=c.servicio_id JOIN zoe.terapeutas t ON t.id=c.terapeuta_id;"
 ```
 
@@ -248,7 +248,7 @@ EOF
 Luego espera ~5 min y verifica que el cron generó OTP:
 
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai -c \
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai -c \
   "SELECT id, estado, otp_code, otp_generado_at AT TIME ZONE 'America/Bogota' AS otp_at, otp_expira_at AT TIME ZONE 'America/Bogota' AS otp_exp FROM zoe.citas WHERE cliente_id IN (SELECT id FROM zoe.clientes WHERE whatsapp_id = 'TEST_OTP_573000000000');"
 ```
 
@@ -266,7 +266,7 @@ Para probar manualmente sin esperar a las 9 AM:
 
 **Verificar**:
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai -c \
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai -c \
   "SELECT * FROM zoe.conversacion WHERE metadata->>'canal' = 'recordatorio_24h' ORDER BY created_at DESC LIMIT 5;"
 ```
 
@@ -294,7 +294,7 @@ ls -la /backups/
 ## E1 — Verificar festivos
 
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai -c \
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai -c \
   "SELECT EXTRACT(YEAR FROM DATE(inicio AT TIME ZONE 'America/Bogota')) AS anio, count(*) FROM zoe.disponibilidad_bloqueos WHERE created_by = 'system' GROUP BY anio ORDER BY anio;"
 ```
 Esperado: 2 filas con count=18 cada una.
@@ -335,7 +335,7 @@ Esperado: el segundo INSERT falla. Limpia: `DELETE FROM zoe.citas WHERE slot_ini
 ## E3 — Verificar que NO hay basura
 
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai <<'EOF'
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai <<'EOF'
 \echo 'Citas por estado:'
 SELECT estado, count(*) FROM zoe.citas GROUP BY estado;
 
@@ -391,7 +391,7 @@ Difícil de simular manualmente. Ya está cubierto por el EXCLUDE constraint en 
 
 Después de probar C1 (OTP generado), espera 1h sin responder. Verifica que la cita pasa a `no_show`:
 ```bash
-docker exec -i -e PGPASSWORD='ZoeApp2026Secure#' evolution_postgres psql -U zoe_app -d leadai -c \
+docker exec -i -e PGPASSWORD='${SECRETO_FUERA_DEL_REPO}' evolution_postgres psql -U zoe_app -d leadai -c \
   "SELECT id, estado FROM zoe.citas WHERE cliente_id IN (SELECT id FROM zoe.clientes WHERE whatsapp_id LIKE 'TEST_OTP_%');"
 ```
 

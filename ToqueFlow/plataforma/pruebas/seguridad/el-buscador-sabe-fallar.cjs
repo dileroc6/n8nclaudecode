@@ -45,6 +45,15 @@ const MALO = [
   ["una llave de Anthropic", "sk-ant-api03-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
   ["una URL de Postgres con contraseña", "postgresql://postgres:LaClaveDeVerdad@db.supabase.co:5432/postgres"],
   ["un token de Hostinger", "hpat_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
+
+  // La forma de un workflow de n8n exportado, que es lo que se sube al repo
+  // cada vez que se toca n8n. El patrón exigía el nombre del campo en
+  // MAYÚSCULAS y un export no los escribe así: los escribe `"apikey"`. O sea
+  // que la vía más común de sacar un secreto de este proyecto pasaba por
+  // delante del hook sin que la viera.
+  ["un flujo de n8n exportado", '"apikey": "B6D711FCDE4D4FD5936544120E713976"'],
+  ["con otro nombre de campo", '"instanceToken": "a1b2c3d4-5e6f-7890-abcd-ef1234567890"'],
+  ["un token a secas", '"token": "xoxb-1234567890-abcdefghijk"'],
 ];
 
 // Lo que NO puede marcar. Son las formas CORRECTAS de escribir lo mismo: si
@@ -58,6 +67,11 @@ const BUENO = [
   ["hablar del tema", "// el secreto va en una variable de entorno, nunca aquí"],
   ["un ejemplo recortado", "token: '…'"],
   ["un marcador de plantilla", "password: '<tu contraseña>'"],
+  // Las formas CORRECTAS dentro de un flujo de n8n. Si las marcara, exportar un
+  // flujo bien escrito fallaría el commit y se aprendería a usar --no-verify.
+  ["una expresión de n8n", '"apikey": "={{ $env.EVOLUTION_API_KEY }}"'],
+  ["una expresión suelta", '"apikey": "{{ $json.key }}"'],
+  ["un marcador en JSON", '"token": "<tu token aquí>"'],
 ];
 
 console.log("Lo que TIENE que cazar:");

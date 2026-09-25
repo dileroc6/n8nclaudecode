@@ -34,7 +34,20 @@ const rest = (p, opts = {}) => fetch(URL + '/rest/v1/' + p, { ...opts, headers: 
 
 // ── Datos del cliente ─────────────────────────────────────────────────────────
 const COMPANY = { name: 'Bejauha', slug: 'bejauha', city: 'Colombia', logo_url: 'assets/bejauha-logo.png' };
-const USER = { email: 'camilasuarez@bejauha.com', password: 'Bejauha2026*', name: 'Camila Suárez' };
+// La contrasena NO va aqui. Estuvo en texto plano en un repo publico y
+// seguia abriendo el portal de este cliente meses despues.
+//
+// Sale de una variable de entorno, y si falta el seed se PARA. No se
+// inventa una al azar —dejaria al cliente con una cuenta que nadie sabe
+// abrir— ni se pone una por defecto, que es volver aqui con otro nombre.
+const CLAVE = process.env.BEJAUHA_USER_PASSWORD;
+if (!CLAVE) {
+  console.error('Falta BEJAUHA_USER_PASSWORD. Ponla en el entorno antes de correr esto:');
+  console.error('  $env:BEJAUHA_USER_PASSWORD="..."   (PowerShell)');
+  console.error('  export BEJAUHA_USER_PASSWORD="..." (bash)');
+  process.exit(2);
+}
+const USER = { email: 'camilasuarez@bejauha.com', password: CLAVE, name: 'Camila Suárez' };
 
 // Los 3 flows: por ahora SOLO las cards (tool_url = null → la card abre el detalle,
 // no una herramienta). El equipo de ToqueFlow conecta la automatización después.

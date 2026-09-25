@@ -34,7 +34,20 @@ const rest = (p, opts = {}) => fetch(URL + '/rest/v1/' + p, { ...opts, headers: 
 
 // ── Datos del cliente ─────────────────────────────────────────────────────────
 const COMPANY = { name: 'SM Grand Hotel', slug: 'sm-grand-hotel', city: 'Bogotá · Colombia' };
-const USER = { email: 'camila.suarez@gruposume.com', password: 'SMGrand2026*', name: 'Camila Suárez' };
+// La contrasena NO va aqui. Estuvo en texto plano en un repo publico y
+// seguia abriendo el portal de este cliente meses despues.
+//
+// Sale de una variable de entorno, y si falta el seed se PARA. No se
+// inventa una al azar —dejaria al cliente con una cuenta que nadie sabe
+// abrir— ni se pone una por defecto, que es volver aqui con otro nombre.
+const CLAVE = process.env.SMGRAND_USER_PASSWORD;
+if (!CLAVE) {
+  console.error('Falta SMGRAND_USER_PASSWORD. Ponla en el entorno antes de correr esto:');
+  console.error('  $env:SMGRAND_USER_PASSWORD="..."   (PowerShell)');
+  console.error('  export SMGRAND_USER_PASSWORD="..." (bash)');
+  process.exit(2);
+}
+const USER = { email: 'camila.suarez@gruposume.com', password: CLAVE, name: 'Camila Suárez' };
 
 // El módulo "Ocupación": tarjeta en el panel que abre el dashboard de ocupación.
 const FLOW = {
