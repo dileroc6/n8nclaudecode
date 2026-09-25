@@ -1,5 +1,66 @@
 # ToqueFlow
 
+## Al empezar una sesión
+
+**Leer primero [`MEMORY.md`](MEMORY.md) y [`TASK.md`](TASK.md).** Entre los dos
+caben en unos pocos miles de tokens y evitan lo caro: redescubrir por qué algo
+está hecho como está, o proponer una tarea que ya estaba hecha.
+
+| Archivo | Qué contesta | Quién lo mantiene |
+|---|---|---|
+| [`MEMORY.md`](MEMORY.md) | Por qué las cosas son como son. Las reglas que costaron un incidente | A mano, cuando se aprende algo |
+| [`TASK.md`](TASK.md) | Qué está pendiente y de quién | **Generado** — `node ToqueFlow/render-task.cjs` |
+| [`ToqueFlow/TABLERO.md`](ToqueFlow/TABLERO.md) | El detalle de cada tarea | A mano. **Es la lista de verdad** |
+| [`ToqueFlow/bitacora/`](ToqueFlow/bitacora/) | Qué pasó en los días grandes | Uno por día grande |
+
+`TASK.md` sale del tablero, así que **si los dos se contradicen manda el
+tablero** y hay que regenerar. Dos listas de lo mismo se separan solas: aquí ha
+habido filas abiertas estando hechas tres días, y dos filas describiendo la
+misma tarea.
+
+### Antes de terminar, y antes de `/clear`
+
+**Guardar el progreso en `MEMORY.md` antes de cerrar una tarea importante o de
+limpiar el contexto.** Lo que se guarda no es un registro de lo hecho —para eso
+están los commits y la bitácora— sino **lo que costó aprender**: una trampa que
+mordió, una decisión y su porqué, un sitio donde la verdad estaba duplicada.
+
+Si no se aprendió nada nuevo, no se escribe nada. Una memoria que crece con
+cada sesión deja de leerse.
+
+Y al cerrar una tarea, **decirle a Diego que puede hacer `/clear`.** Seguir en
+el mismo contexto después de terminar algo es pagar por arrastrar lo que ya no
+hace falta.
+
+### Los comandos que se usan de verdad
+
+Todos desde `ToqueFlow/plataforma/`, salvo el último.
+
+```bash
+# El banco de pruebas. Correrlo ANTES de dar algo por bueno: hay UN solo
+# workflow de n8n para todos los clientes, y un cambio malo los rompe a todos.
+node pruebas/todo.cjs                      # todas, seguridad primero (~8 min)
+node pruebas/todo.cjs seguridad            # solo una carpeta
+node pruebas/todo.cjs --con-ia             # también las de conversación (~$0,10)
+node pruebas/<carpeta>/<nombre>.cjs        # una sola
+
+# Base de datos
+node pruebas/aplicar.cjs schema-<tema>.sql # aplicar un esquema (idempotente)
+
+# Publicar el sitio y el portal
+node sellar-version.cjs                    # huella de contenido, para la caché
+powershell -File deploy-safe.ps1           # respaldo + verifica + rollback solo
+node deploy-edge-fn.cjs <slug>             # una edge function
+
+# Los tableros
+node ../render-tablero.cjs                 # TABLERO.md → TABLERO.html
+node ../render-task.cjs                    # TABLERO.md → TASK.md
+```
+
+Si `NODE_PATH` no encuentra `pg`: `NODE_PATH="$(pwd)/node_modules" node …`
+
+---
+
 ## Qué es
 
 **ToqueFlow es una plataforma de soluciones de automatización, con o sin IA, para pequeñas y medianas empresas.**
@@ -139,8 +200,12 @@ Dónde mirar:
 - Lee/escribe por Postgres directo con el rol `n8n_worker`.
 
 ### Servidor MCP de n8n
-- Ruta: `n8n-mcp/` · entry point `n8n-mcp/dist/mcp/index.js`
-- Requiere `N8N_API_URL` y `N8N_API_KEY`.
+- **Corre por `npx`**, declarado en `.mcp.json`. La carpeta `n8n-mcp/` llega vacía
+  y ya no hace falta — esta sección apuntaba a un entry point dentro de ella que
+  no existe desde la migración a Windows.
+- Requiere `N8N_API_URL` y `N8N_API_KEY`, y en `.mcp.json` van como `${VARIABLE}`,
+  nunca con el valor escrito. El valor vive en `.claude/settings.local.json`,
+  que está ignorado por git.
 - Node en esta máquina (Windows): `C:\Program Files\nodejs\node.exe`
 
 ### Skills de n8n
